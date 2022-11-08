@@ -1,0 +1,31 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id Int @default(autoincrement()) @id
+  blockchainAddress String @unique
+  custodialEntity String
+  graphId String @unique
+  password  String
+  phoneNumber String @unique
+  preferredLanguage String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UssdSession {
+  id String @id
+  history String
+  phoneNumber String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
