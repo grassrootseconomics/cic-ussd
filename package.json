@@ -1,13 +1,9 @@
 {
   "name": "cic-ussd",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A ussd client implementation that interfaces the community inclusion currencies custodial system.",
-  "main": "build/main/index.js",
-  "typings": "build/main/index.d.ts",
-  "module": "build/module/index.js",
-  "repository": "https://github.com/YOUR_GITHUB_USER_NAME/cic-ussd",
-  "license": "MIT",
-  "keywords": [],
+  "repository": "https://github.com/grassrootseconomics/cic-ussd",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "start": " ts-node-dev --exit-child src/index.ts ",
     "build": "run-p build:*",
