@@ -12,20 +12,31 @@ datasource db {
 
 model Account {
   id Int @default(autoincrement()) @id
-  blockchainAddress String @unique
-  custodialEntity String
-  graphId String @unique
-  password  String
+  blockchainAddress String? @unique
+  custodialEntity String?
+  graphId String? @unique
+  password  String?
   phoneNumber String @unique
-  preferredLanguage String
+  preferredLanguage String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime? @updatedAt
 }
 
 model UssdSession {
   id String @id
-  history String
+  history String?
   phoneNumber String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime? @updatedAt
+}
+
+enum TaskType {
+    REGISTER
+    TRANSFER
+}
+
+model CustodialTasks {
+    id Int @default(autoincrement()) @id
+    taskType TaskType
+    taskRef String
 }

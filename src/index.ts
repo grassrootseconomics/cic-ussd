@@ -1,25 +1,37 @@
-import { FastifyInstance } from 'fastify';
+import build from './app'
+import { config } from './config'
 
-import config from './config/config'
-import server from './server';
+const main = () => {
+  const app = build()
+  console.log(`PORT: ${config.SERVER.PORT}`)
 
+  app.ready((error) => {
+    if (error) {
+      app.log.error(error)
+      process.exit(1)
+    }
 
-/**
- * It starts the server and listens on all interfaces
- * @param {FastifyInstance} fastify - FastifyInstance - the fastify instance
- */
-async function initialize(fastify: FastifyInstance) {
-  try {
-    await fastify.ready();
-    await fastify.listen({
-      port: config.get('server.port'),
-      host: '::',
-    }); // listen on all interfaces
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
+    app.listen(
+      {
+        host: config.SERVER.HOST,
+        port: config.SERVER.PORT,
+      },
+      (error) => {
+        if (error) {
+          app.log.error(error)
+          process.exit(1)
+        }
+      },
+    )
+  })
+
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.once(signal, async () => {
+      app.log.info('Gracefully shutting down')
+      await app.close()
+      return process.exit(0)
+    })
   }
 }
 
-/* Starting the server and listening on all interfaces. */
-initialize(server);
+main()

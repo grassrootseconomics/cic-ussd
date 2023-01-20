@@ -1,9 +1,26 @@
-.idea/*
-.nyc_output
-build
-node_modules
-test
+# dependencies
+node_modules/
+
+# build packages
+build/*
 src/**.js
-coverage
+
+# ide-user-sepcific files
+.idea
+
+# distribution packaging
+.nyc_output
+
+# testing files
+.coverage
+test/
+
+# virtualenv
+venv/
+
+# misc
 *.log
 yarn.lock
+
+# env files
+/.env
