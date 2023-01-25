@@ -1,15 +1,19 @@
 import build from './app'
 import { config } from './config'
+import { initChainEventsHandler } from "@lib/events/handler";
 
-const main = () => {
-  const app = build()
-  console.log(`PORT: ${config.SERVER.PORT}`)
+const main = async () => {
+  console.log('Starting server.')
+  const app = await build()
 
   app.ready((error) => {
     if (error) {
       app.log.error(error)
       process.exit(1)
     }
+
+    // perform initializations
+    initChainEventsHandler(app);
 
     app.listen(
       {
@@ -27,7 +31,7 @@ const main = () => {
 
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.once(signal, async () => {
-      app.log.info('Gracefully shutting down')
+      app.log.info('Gracefully shutting down.')
       await app.close()
       return process.exit(0)
     })
