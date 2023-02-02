@@ -1,35 +1,52 @@
 import fastifyCors from '@fastify/cors'
 import formBody from '@fastify/formbody'
 import fastifySensible from '@fastify/sensible'
-import fastify from 'fastify'
+import fastify, { FastifyServerOptions } from "fastify";
 import { config } from './config'
 import qs from 'qs';
 import * as dotenv from 'dotenv'
-import natsService from '@plugins/nats'
-import { initChainEventsHandler } from "@lib/events/handler";
+import natsPlugin from '@plugins/nats'
+import { fastifyServerDevOptions } from "@dev/debug";
+import ussdRoutes from "@routes/ussd";
 
 
 const build = async () => {
   // TODO: [Philip] - Whereas this shifts from convict to dotenv, is it ideal for externally defined variables like ones stored in vault?
   dotenv.config()
 
-  // create fastify app.
-  const app = fastify({
-    disableRequestLogging: true,
+  // set up fastify server options.
+  let serverOptions: FastifyServerOptions = {
+    disableRequestLogging: config.SERVER.DISABLE_REQUEST_LOGGING,
     logger: {
       base: null,
       level: config.LOG.LEVEL,
     },
-  })
+    trustProxy: config.SERVER.TRUST_PROXY_ENABLED
+  }
 
+  // load dev configs if in development mode.
+  if (config.DEV) {
+    console.log('Running in development mode.')
+    serverOptions = fastifyServerDevOptions
+  }
+
+  // create fastify app.
+  const app = fastify(serverOptions)
+
+  // register plugins.
   app.register(formBody, {
     parser: str => qs.parse(str)
   })
   app.register(fastifyCors, { origin: true })
   app.register(fastifySensible)
-  app.register(natsService)
 
+  // register nats service.
+  app.register(natsPlugin)
 
+  // register routes.
+  app.register(ussdRoutes, { prefix: `/${config.API.VERSION}/ussd` })
+
+  // set up error handler.
   app.setErrorHandler<Error>(function(error, request, reply) {
     app.log.error({ error: error.toString(), request: request })
 

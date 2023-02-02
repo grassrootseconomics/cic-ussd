@@ -7,7 +7,7 @@ import {
 
 import {
   CacheAccessor
-} from "@utils/helpers/redis";
+} from "@utils/redis";
 
 
 type SessionData = Record<string, string | number> ;

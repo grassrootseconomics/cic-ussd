@@ -1,5 +1,5 @@
 import { gql, GraphQLClient } from "graphql-request";
-import { JSONToRawString } from "@utils/helpers/graphql";
+import { JSONToRawString } from "@utils/graphql";
 import {
   PersonalInformation,
   personalInformationFields,

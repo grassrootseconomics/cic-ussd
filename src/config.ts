@@ -8,7 +8,7 @@ function stringToList (value : string|undefined) : string[] | void {
 
 export const config = {
   API: {
-    VERSION: process.env.API_VERSION
+    VERSION: process.env.API_VERSION ?? 'v1'
   },
   AFRICASTALKING: {
     VALID_IPS: stringToList(process.env.AFRICASTALKING_VALID_IPS) ?? ['0.0.0.0']
@@ -27,7 +27,7 @@ export const config = {
   },
   DEV: process.env.NODE_ENV !== 'production',
   LOG: {
-    LEVEL: process.env.LOG_LEVEL
+    LEVEL: process.env.LOG_LEVEL ?? 'info'
   },
   NATS : {
     CLIENT_NAME: process.env.NATS_CLIENT_NAME ?? 'cic-ussd',
@@ -43,7 +43,9 @@ export const config = {
     PORT: parseInt(process.env.REDIS_PORT ?? '6379')
   },
   SERVER: {
+    DISABLE_REQUEST_LOGGING: !process.env.SERVER_DISABLE_REQUEST_LOGGING ?? false,
     HOST: process.env.SERVER_HOST,
-    PORT: parseInt(process.env.SERVER_PORT ?? '5000')
+    PORT: parseInt(process.env.SERVER_PORT ?? '5000'),
+    TRUST_PROXY_ENABLED: !process.env.TRUST_PROXY_ENABLED ?? true,
   }
 }

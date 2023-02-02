@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
 import { config } from "@src/config";
 import { connect, ConnectionOptions, NatsConnection } from "nats";
+import { natsConnectionDevOptions } from "@dev/debug";
 
 
 declare module 'fastify' {
@@ -9,15 +10,17 @@ declare module 'fastify' {
     natsConnection: NatsConnection;
   }
 }
-const natsService: FastifyPluginAsync = async (fastify, options) => {
+const natsPlugin: FastifyPluginAsync = async (fastify, options) => {
+
+  // set up nats connection options.
   let natsOptions: ConnectionOptions = {
     name: config.NATS.CLIENT_NAME,
     servers: [config.NATS.URL],
   }
 
+    // load dev configs if in development mode.
    if (config.DEV) {
-     natsOptions.debug = true;
-     natsOptions.verbose = false;
+     natsOptions = natsConnectionDevOptions
    }
 
    if (natsOptions.servers === undefined || natsOptions.servers === null || natsOptions.servers.length < 1) {
@@ -60,7 +63,7 @@ async function initConnectionToNats(fastify: FastifyInstance, natsOptions: Conne
   });
 }
 
-export default fp(natsService, {
+export default fp(natsPlugin, {
   fastify: "4.x",
   name: "chain-events-handler",
 });

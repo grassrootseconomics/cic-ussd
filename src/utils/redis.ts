@@ -1,5 +1,4 @@
 import Redis from 'ioredis';
-import { Redis as RedisType } from 'ioredis';
 import JSONCache from 'redis-json';
 import { config } from "@src/config";
 import { JsonSerializer } from "typescript-json-serializer";

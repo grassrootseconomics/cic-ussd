@@ -1,6 +1,6 @@
 import { gql, GraphQLClient } from "graphql-request";
 import { Account, accountFields } from "@lib/types/graph/account";
-import { JSONToRawString } from "@utils/helpers/graphql";
+import { JSONToRawString } from "@utils/graphql";
 
 
 export async function createAccount(graphqlClient: GraphQLClient, account: Account) {

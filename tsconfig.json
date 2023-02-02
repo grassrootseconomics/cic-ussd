@@ -5,7 +5,7 @@
     "module": "CommonJS",
     "target": "ES2022",
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": "./",
     "sourceMap": true,
     "strict": true,
     "importHelpers": true,
@@ -19,9 +19,11 @@
     "paths": {
       "@src/*": ["./src/*"],
       "@db/*": ["./src/db/*"],
+      "@dev/*": ["./dev/*"],
       "@lib/*": ["./src/lib/*"],
       "@plugins/*": ["./src/plugins/*"],
       "@routes/*": ["./src/routes/*"],
+      "@services/*": ["./src/services/*"],
       "@utils/*": ["./src/utils/*"]
     }
   }

@@ -12,6 +12,10 @@ const main = async () => {
       process.exit(1)
     }
 
+    if (config.DEV) {
+      app.log.debug(`Server routes: ${app.printRoutes()}`)
+    }
+
     // perform initializations
     initChainEventsHandler(app);
 
