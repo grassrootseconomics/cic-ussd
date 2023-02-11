@@ -66,6 +66,11 @@ export class CacheAccessor {
     }
   }
 
+  async updateCacheJsonData(updateData: unknown) {
+    const jsonCache = new JSONCache(this.cacheClient);
+    await jsonCache.set(this.cacheKey, updateData);
+  }
+
   /**
  * Retrieves data from the cache.
  * @returns A promise that resolves to the value in cache associated with the cacheKey.
@@ -87,5 +92,9 @@ export class CacheAccessor {
     } else {
       return await jsonCache.get(this.cacheKey);
     }
+  }
+
+  async deleteCacheData() {
+    await this.cacheClient.del(this.cacheKey);
   }
 }

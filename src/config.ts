@@ -14,7 +14,7 @@ export const config = {
     VALID_IPS: stringToList(process.env.AFRICASTALKING_VALID_IPS) ?? ['0.0.0.0']
   },
   CIC_CUSTODIAL:{
-    BALANCE_ENDPOINT: process.env.CIC_CUSTODIAL_BALANCE_ENDPOINT ?? 'http://localhost:5000/api/balance',
+    BALANCE_ENDPOINT: process.env.CIC_CUSTODIAL_BALANCE_ENDPOINT ?? 'https://data-warehouse.sarafu.network/public/balances/',
     REGISTER_ENDPOINT: process.env.CIC_CUSTODIAL_REGISTER_ENDPOINT ?? 'http://localhost:5000/api/register',
     TRANSFER_ENDPOINT: process.env.CIC_CUSTODIAL_TRANSFER_ENDPOINT ?? 'http://localhost:5000/api/transfer',
   },
