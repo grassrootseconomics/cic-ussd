@@ -9,7 +9,7 @@ interface TransferEvent {
   from: string;
   success: boolean;
   to: string;
-  tokenAddress: string;
+  voucherAddress: string;
   transactionHash: string;
   transactionIndex: number;
   value: number;
@@ -39,15 +39,15 @@ async function processMessage(codec: Codec<TransferEvent>, fastify: FastifyInsta
   switch(msg.subject){
      case "CHAIN.mintTo":
        message = codec.decode(msg.data);
-       fastify.log.info(`MintedTo ${message.value} ${message.tokenAddress} to ${message.to}.`);
+       fastify.log.info(`MintedTo ${message.value} ${message.voucherAddress} to ${message.to}.`);
        break;
      case "CHAIN.transfer":
        message = codec.decode(msg.data);
-       fastify.log.info(`Transferred ${message.value} ${message.tokenAddress} to ${message.to}.`);
+       fastify.log.info(`Transferred ${message.value} ${message.voucherAddress} to ${message.to}.`);
        break;
      case "CHAIN.transferFrom":
        message = codec.decode(msg.data);
-       fastify.log.info(`TransferredFrom ${message.value} ${message.tokenAddress} to ${message.to}.`);
+       fastify.log.info(`TransferredFrom ${message.value} ${message.voucherAddress} to ${message.to}.`);
        break;
      default:
         fastify.log.warn(`Message subject: ${msg.subject} not recognized. Ignoring message`);

@@ -8,7 +8,7 @@ export const voucherFields = `{
     sink_address
     supply
     symbol
-    token_address
+    voucher_address
     voucher_description
     voucher_name
    }`

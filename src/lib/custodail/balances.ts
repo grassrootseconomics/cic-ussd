@@ -29,26 +29,28 @@ export class BalancesManager extends CacheAccessor {
       return null;
   }
 
-  async getByTokenSymbol(tokenSymbol: string) {
+  async getByVoucherSymbol(voucherSymbol: string) {
     const cachedBalanceData = await this.getCacheJSONData();
     if (cachedBalanceData) {
-      return cachedBalanceData[tokenSymbol];
+      return cachedBalanceData[voucherSymbol];
     }
-    console.error(`Failed to retrieve balance for token: ${tokenSymbol} at: ${this.cacheKey}`);
+    console.error(`Failed to retrieve balance for voucher: ${voucherSymbol} at: ${this.cacheKey}`);
     return null;
   }
 
   async update(rawBalances: RawBalance[]) {
+    const rawBalancesSorted = rawBalances.sort((a, b) => b.balance - a.balance);
     let balances: BalanceData = { }
-    for (const rawBalance of rawBalances) {
+    for (const rawBalance of rawBalancesSorted) {
       balances[`${rawBalance.symbol}`] = rawBalance.balance;
     }
     await this.cacheJSONData(balances);
   }
 
-  async updateByTokenSymbol(balanceData: BalanceData) {
+  async updateByVoucherSymbol(balanceData: BalanceData) {
     await this.updateCacheJsonData(balanceData);
   }
+
 }
 
 export class BalanceRetriever {
