@@ -5,7 +5,9 @@ import fastify, { FastifyServerOptions } from "fastify";
 import { config } from './config'
 import qs from 'qs';
 import * as dotenv from 'dotenv'
+import prismaPlugin from '@plugins/db'
 import natsPlugin from '@plugins/nats'
+import redisPlugin from '@plugins/redis'
 import { fastifyServerDevOptions } from "@dev/debug";
 import ussdRoutes from "@routes/ussd";
 
@@ -33,15 +35,17 @@ const build = async () => {
   // create fastify app.
   const app = fastify(serverOptions)
 
-  // register plugins.
+  // register third-party plugins.
   app.register(formBody, {
     parser: str => qs.parse(str)
   })
   app.register(fastifyCors, { origin: true })
   app.register(fastifySensible)
 
-  // register nats service.
+  // register custom plugins
   app.register(natsPlugin)
+  app.register(prismaPlugin)
+  app.register(redisPlugin)
 
   // register routes.
   app.register(ussdRoutes, { prefix: `/${config.API.VERSION}/ussd` })
