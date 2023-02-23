@@ -6,7 +6,7 @@
   "bugs": "https://github.com/grassrootseconomics/cic-ussd/issues",
   "license": "AGPL-3.0-or-later",
   "scripts": {
-    "dev": " ts-node-dev --exit-child -r tsconfig-paths/register src/index.ts",
+    "dev": " ts-node-dev --exit-child  -r tsconfig-paths/register src/index.ts",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint src --ext .ts --fix"
   },
@@ -16,6 +16,7 @@
   "dependencies": {
     "@fastify/cors": "^8.2.0",
     "@fastify/formbody": "^7.3.0",
+    "@fastify/postgres": "^5.2.0",
     "@fastify/sensible": "^5.1.1",
     "@prisma/client": "^4.8.0",
     "@types/qs": "^6.9.7",
@@ -27,7 +28,6 @@
     "ioredis": "^5.2.4",
     "libphonenumber-js": "^1.10.14",
     "nats": "^2.11.0",
-    "prisma": "^4.8.0",
     "qs": "^6.11.0",
     "redis-json": "^6.0.3",
     "typesafe-i18n": "^5.16.3",
@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.11.9",
+    "@types/pg": "^8.6.6",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
     "@xstate/cli": "^0.3.3",
@@ -46,10 +47,6 @@
     "prettier": "^2.7.1",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.1.2",
-    "typescript": "^4.8.4"
-  },
-  "prisma": {
-    "schema": "src/db/prisma/schema.prisma",
-    "generator": "prisma-client-js"
+    "typescript": "^4.9.5"
   }
 }

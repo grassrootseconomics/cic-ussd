@@ -15,8 +15,8 @@ export const config = {
   },
   CIC_CUSTODIAL:{
     BALANCE_ENDPOINT: process.env.CIC_CUSTODIAL_BALANCE_ENDPOINT ?? 'https://data-warehouse.sarafu.network/public/balances/',
-    REGISTER_ENDPOINT: process.env.CIC_CUSTODIAL_REGISTER_ENDPOINT ?? 'http://localhost:5000/api/register',
-    TRANSFER_ENDPOINT: process.env.CIC_CUSTODIAL_TRANSFER_ENDPOINT ?? 'http://localhost:5000/api/transfer',
+    REGISTER_ENDPOINT: process.env.CIC_CUSTODIAL_REGISTER_ENDPOINT ?? 'http://192.168.0.103:5005/api/account/create',
+    TRANSFER_ENDPOINT: process.env.CIC_CUSTODIAL_TRANSFER_ENDPOINT ?? 'http://192.168.0.103:5005/api/sign/transfer',
   },
   CIC_GRAPH: {
     GRAPHQL_ENDPOINT: process.env.CIC_GRAPH_GRAPHQL_ENDPOINT ?? 'http://localhost:6080/v1/graphql',
@@ -44,7 +44,7 @@ export const config = {
   },
   SERVER: {
     DISABLE_REQUEST_LOGGING: !process.env.SERVER_DISABLE_REQUEST_LOGGING ?? false,
-    HOST: process.env.SERVER_HOST,
+    HOST: process.env.SERVER_HOST ?? '192.168.0.100',
     PORT: parseInt(process.env.SERVER_PORT ?? '5000'),
     TRUST_PROXY_ENABLED: !process.env.TRUST_PROXY_ENABLED ?? true,
   }

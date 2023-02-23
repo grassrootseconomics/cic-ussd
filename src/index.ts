@@ -3,7 +3,7 @@ import { config } from './config'
 import { initChainEventsHandler } from "@lib/events/handler";
 
 const main = async () => {
-  console.log('Starting server.')
+  console.info('Starting server...')
   const app = await build()
 
   app.ready((error) => {
@@ -17,7 +17,7 @@ const main = async () => {
     }
 
     // perform initializations
-    initChainEventsHandler(app);
+    //initChainEventsHandler(app);
 
     app.listen(
       {

@@ -5,11 +5,10 @@ import fastify, { FastifyServerOptions } from "fastify";
 import { config } from './config'
 import qs from 'qs';
 import * as dotenv from 'dotenv'
-import prismaPlugin from '@plugins/db'
-import natsPlugin from '@plugins/nats'
 import redisPlugin from '@plugins/redis'
 import { fastifyServerDevOptions } from "@dev/debug";
 import ussdRoutes from "@routes/ussd";
+import fastifyPostgres from "@fastify/postgres";
 
 
 const build = async () => {
@@ -28,7 +27,7 @@ const build = async () => {
 
   // load dev configs if in development mode.
   if (config.DEV) {
-    console.log('Running in development mode.')
+    console.debug('Running in development mode.')
     serverOptions = fastifyServerDevOptions
   }
 
@@ -41,10 +40,12 @@ const build = async () => {
   })
   app.register(fastifyCors, { origin: true })
   app.register(fastifySensible)
+  app.register(fastifyPostgres, {
+    connectionString: config.DATABASE.URL,
+  })
 
   // register custom plugins
-  app.register(natsPlugin)
-  app.register(prismaPlugin)
+  //app.register(natsPlugin)
   app.register(redisPlugin)
 
   // register routes.
