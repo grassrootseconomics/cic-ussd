@@ -14,7 +14,8 @@ export async function createUser(graphqlClient: GraphQLClient, user: User) {
     mutation createUser{
       insert_users_one(object: ${JSONToRawString(user)}) {id}
     }`;
-  return await graphqlClient.request(mutation);
+  const data = await graphqlClient.request(mutation);
+  return data.insert_users_one;
 }
 
 export async function getUsers(graphqlClient: GraphQLClient) {

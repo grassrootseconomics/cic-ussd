@@ -1,7 +1,6 @@
 import { config } from "@src/config";
 import { CacheAccessor } from "@utils/redis";
 import Redis from "ioredis";
-import { JsonSerializer } from "typescript-json-serializer";
 import { createPointer } from "@utils/encoding";
 
 export interface RawBalance {
@@ -12,12 +11,10 @@ export interface RawBalance {
 type BalanceData = Record<string, number>;
 
 export class BalancesManager extends CacheAccessor {
-  serializer: JsonSerializer;
 
-  constructor(address: string, cacheClient: Redis, serializer: JsonSerializer) {
+  constructor(address: string, cacheClient: Redis) {
     const cacheKey = createPointer([address, 'cic:balances'])
-    super(cacheClient, cacheKey, serializer);
-    this.serializer = serializer;
+    super(cacheClient, cacheKey);
   }
 
   async get(){
@@ -74,7 +71,7 @@ export class BalanceRetriever {
       throw new Error(`Failed to retrieve balance: ${response.status} ${response.statusText}`);
     }
 
-    console.log('Successfully retrieved balance.')
+    console.debug('Successfully retrieved balance.')
     return await response.json();
   }
 

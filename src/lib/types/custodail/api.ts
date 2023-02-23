@@ -1,10 +1,12 @@
 export type RegistrationResponse = {
   ok: boolean;
-  data?: {
+  result?: {
+    custodialId: number;
     publicKey: string;
-    taskRef: string;
+    trackingId: string;
   }
-  error?: string;
+  errorCode?: string,
+  message?: string,
 }
 
 export type Transfer = {
@@ -16,8 +18,8 @@ export type Transfer = {
 
 export type TransferResponse = {
   ok: boolean;
-  data? : {
-    taskRef: string;
+  result? : {
+    trackingId: string;
   }
   error? : string;
 }

@@ -2,7 +2,7 @@ import { userFields } from "@lib/types/graph/user";
 
 
 export enum AccountType {
-  CUSTODIAL_PERSONAL = "CUSTODIAL_PERSONAL",
+  CUSTODIAL_PERSONAL = 'CUSTODIAL_PERSONAL',
   CUSTODIAL_BUSINESS = "CUSTODIAL_BUSINESS",
   CUSTODIAL_COMMUNITY = "CUSTODIAL_COMMUNITY",
   CUSTODIAL_SYSTEM = "CUSTODIAL_SYSTEM",
@@ -22,5 +22,5 @@ export const accountFields = `{
 export type Account = {
   account_type?: string;
   blockchain_address?: string;
-  user_identifier?: number;
+  user_identifier?: string;
 }

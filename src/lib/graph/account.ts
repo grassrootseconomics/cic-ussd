@@ -8,7 +8,8 @@ export async function createAccount(graphqlClient: GraphQLClient, account: Accou
     mutation createAccount{
       insert_accounts_one(object: ${JSONToRawString(account)}) {id}
     }`;
-  return await graphqlClient.request(mutation);
+  const data = await graphqlClient.request(mutation);
+  return data.insert_accounts_one;
 }
 
 export async function getAccounts(graphqlClient: GraphQLClient) {

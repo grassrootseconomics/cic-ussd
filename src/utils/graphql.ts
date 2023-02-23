@@ -1,4 +1,4 @@
-const graphEnums = ["gender", "interface_type"]
+const graphEnums = ["gender", "interface_type", "account_type"]
 
 
 // TODO[Philip]: This is a hack. I need to find a better way to do this.

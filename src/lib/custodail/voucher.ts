@@ -2,7 +2,6 @@ import { getVoucherBySymbol, getVouchers } from "@lib/graph/voucher";
 import { GraphQLClient } from "graphql-request";
 import { createPointer } from "@utils/encoding";
 import { CacheAccessor } from "@utils/redis";
-import { JsonSerializer } from "typescript-json-serializer";
 import Redis from "ioredis";
 
 export enum VoucherSalt{
@@ -16,15 +15,15 @@ export class VoucherHandler extends CacheAccessor{
 
   address: string;
 
-  constructor(address: string, cacheClient: Redis, serializer: JsonSerializer) {
+  constructor(address: string, cacheClient: Redis) {
     // TODO[Philip]: This pattern of overriding the cacheKey is seems unclean. We should refactor this to be more explicit.
-    super(cacheClient, "", serializer);
+    super(cacheClient, "");
     this.address = address;
   }
 
   async setActiveVoucher(voucherSymbol: string) {
     this.cacheKey = createPointer([this.address, VoucherSalt.ACTIVE_VOUCHER]);
-    console.log(`Setting ${this.address} 's active voucher to: ${voucherSymbol}`);
+    console.debug(`Setting ${this.address} 's active voucher to: ${voucherSymbol}`);
     await this.cacheData(voucherSymbol);
   }
 
@@ -40,7 +39,7 @@ export class VoucherHandler extends CacheAccessor{
 
   async setLatestReceivedVoucher(voucherSymbol: string) {
     this.cacheKey = createPointer([this.address, VoucherSalt.LATEST_RECEIVED_VOUCHER]);
-    console.log(`Setting ${this.address} 's latest received voucher to: ${voucherSymbol}`);
+    console.debug(`Setting ${this.address} 's latest received voucher to: ${voucherSymbol}`);
     await this.cacheData(voucherSymbol);
   }
 
@@ -56,7 +55,7 @@ export class VoucherHandler extends CacheAccessor{
 
   async setLatestSentVoucher(voucherSymbol: string) {
     this.cacheKey = createPointer([this.address, VoucherSalt.LATEST_SENT_VOUCHER]);
-    console.log(`Setting ${this.address} 's latest sent voucher to: ${voucherSymbol}`);
+    console.debug(`Setting ${this.address} 's latest sent voucher to: ${voucherSymbol}`);
     await this.cacheData(voucherSymbol);
   }
 
@@ -76,9 +75,9 @@ export class VoucherMetadataManager extends CacheAccessor {
 
   address: string;
 
-  constructor(address: string, cacheClient: Redis, serializer: JsonSerializer) {
+  constructor(address: string, cacheClient: Redis) {
     const cacheKey = createPointer([address, VoucherSalt.VOUCHER_METADATA]);
-    super(cacheClient, cacheKey, serializer);
+    super(cacheClient, cacheKey);
     this.address = address;
   }
 

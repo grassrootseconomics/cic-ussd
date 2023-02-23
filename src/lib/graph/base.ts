@@ -22,70 +22,76 @@ import { Account } from "@lib/types/graph/account";
 import { getVoucherBySymbol, getVouchers } from "@lib/graph/voucher";
 
 export class CicGraph {
-  protected static readonly graphqlClient = new GraphQLClient(config.CIC_GRAPH.GRAPHQL_ENDPOINT, {
+
+  graphqlClient: GraphQLClient;
+
+  constructor() {
+    this.graphqlClient = new GraphQLClient(config.CIC_GRAPH.GRAPHQL_ENDPOINT, {
       headers: {
         "x-hasura-admin-secret": config.CIC_GRAPH.HASURA_ADMIN_SECRET
-      },
+      }
     });
 
-  static async createUser(user: User) {
-    return await createUser(CicGraph.graphqlClient, user);
   }
 
-  static async getAllUsers() {
-    return await getUsers(CicGraph.graphqlClient);
+  async createUser(user: User) {
+    return await createUser(this.graphqlClient, user);
   }
 
-  static async getUserById(id: string) {
-    return await getUser(CicGraph.graphqlClient, id);
+  async getAllUsers() {
+    return await getUsers(this.graphqlClient);
   }
 
-  static async deleteUser(id : string) {
-    return await deleteUser(CicGraph.graphqlClient, id);
+  async getUserById(id: string) {
+    return await getUser(this.graphqlClient, id);
   }
 
-  static async addUserPersonalInformation(personalInformation: PersonalInformation) {
-    return await addPersonalInformation(CicGraph.graphqlClient, personalInformation);
+  async deleteUser(id : string) {
+    return await deleteUser(this.graphqlClient, id);
   }
 
-  static async updateUserPersonalInformation(user_identifier: number, personalInformation: PersonalInformation) {
-    return await updatePersonalInformation(CicGraph.graphqlClient, user_identifier, personalInformation);
+  async addUserPersonalInformation(personalInformation: PersonalInformation) {
+    return await addPersonalInformation(this.graphqlClient, personalInformation);
   }
 
-  static async deleteUserPersonalInformation(user_identifier: number) {
-    return await deletePersonalInformation(CicGraph.graphqlClient, user_identifier);
+  async updateUserPersonalInformation(user_identifier: number, personalInformation: PersonalInformation) {
+    return await updatePersonalInformation(this.graphqlClient, user_identifier, personalInformation);
   }
 
-  static async createAccount(account: Account) {
-    return await createAccount(CicGraph.graphqlClient, account);
+  async deleteUserPersonalInformation(user_identifier: number) {
+    return await deletePersonalInformation(this.graphqlClient, user_identifier);
   }
 
-  static async getAllAccounts() {
-    return await getAccounts(CicGraph.graphqlClient);
+  async createAccount(account: Account) {
+    return await createAccount(this.graphqlClient, account);
   }
 
-  static async getAccountById(id: number)
+  async getAllAccounts() {
+    return await getAccounts(this.graphqlClient);
+  }
+
+  async getAccountById(id: number)
   {
-    return await getAccount(CicGraph.graphqlClient, id);
+    return await getAccount(this.graphqlClient, id);
   }
 
-  static async getAccountByBlockchainAddress(blockchainAddress: string) {
-    return await getAccountByBlockchainAddress(CicGraph.graphqlClient, blockchainAddress);
+  async getAccountByBlockchainAddress(blockchainAddress: string) {
+    return await getAccountByBlockchainAddress(this.graphqlClient, blockchainAddress);
   }
 
-  static async updateAccount(account: Account, id: number) {
-    return await updateAccount(CicGraph.graphqlClient, id, account);
+  async updateAccount(account: Account, id: number) {
+    return await updateAccount(this.graphqlClient, id, account);
   }
 
-  static async deleteAccount(id: number) {
-    return await deleteAccount(CicGraph.graphqlClient, id);
+  async deleteAccount(id: number) {
+    return await deleteAccount(this.graphqlClient, id);
   }
 
-  static async getAllActiveVouchers() {
-    return await getVouchers(CicGraph.graphqlClient);
+  async getAllActiveVouchers() {
+    return await getVouchers(this.graphqlClient);
   }
 
-  static async getVoucherBySymbol(symbol: string) {
-    return await getVoucherBySymbol(CicGraph.graphqlClient, symbol);
+  async getVoucherBySymbol(symbol: string) {
+    return await getVoucherBySymbol(this.graphqlClient, symbol);
   }
 }
