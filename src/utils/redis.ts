@@ -1,7 +1,6 @@
 import Redis from 'ioredis';
 import JSONCache from 'redis-json';
 import { config } from "@src/config";
-import { JsonSerializer } from "typescript-json-serializer";
 
 
 
@@ -28,12 +27,10 @@ export function createRedisClient() {
 export class CacheAccessor {
   cacheClient: Redis
   cacheKey: string
-  serializer: JsonSerializer
 
-  constructor(cache: Redis, cacheKey: string, serializer: JsonSerializer) {
+  constructor(cache: Redis, cacheKey: string) {
     this.cacheClient = cache
     this.cacheKey = cacheKey
-    this.serializer = serializer
   }
 
   /**
@@ -59,8 +56,8 @@ export class CacheAccessor {
   async cacheJSONData(data: unknown, expiration?: number) {
     const jsonCache = new JSONCache(this.cacheClient);
     if (expiration){
-      await jsonCache.set(this.cacheKey, data);
-      await this.cacheClient.expire(this.cacheKey, expiration);
+      await jsonCache.set(this.cacheKey, data, { expire: expiration });
+
     } else {
       await jsonCache.set(this.cacheKey, data);
     }
@@ -68,7 +65,7 @@ export class CacheAccessor {
 
   async updateCacheJsonData(updateData: unknown) {
     const jsonCache = new JSONCache(this.cacheClient);
-    await jsonCache.set(this.cacheKey, updateData);
+    jsonCache.set(this.cacheKey, updateData);
   }
 
   /**

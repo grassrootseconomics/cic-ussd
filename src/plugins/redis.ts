@@ -1,9 +1,17 @@
 import { FastifyPluginAsync } from "fastify";
 import { createRedisClient } from "@utils/redis";
 import fp from "fastify-plugin";
+import Redis from "ioredis";
+
+
+declare module "fastify" {
+  interface FastifyInstance {
+    redis: Redis;
+  }
+}
 
 const redisPlugin: FastifyPluginAsync = async (fastify, options) => {
-  const redisClient = createRedisClient()
+  const redisClient = createRedisClient();
 
   fastify.decorate('redis', redisClient)
 

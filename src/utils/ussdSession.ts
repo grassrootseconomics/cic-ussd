@@ -8,53 +8,79 @@ import {
 import {
   CacheAccessor
 } from "@utils/redis";
+import { StateValue } from "xstate";
 
 
-type SessionData = Record<string, string | number> ;
-
-interface UssdSessionObject {
-  actorInput: string;
-  data: SessionData;
-  lastState: string;
-  ussdCode: string;
-  version: number;
+type SessionData = Record<string, string > ;
+export interface SessionHistory {
+  responses: StateValue[]
 }
 
-@JsonObject()
-export class UssdSession extends CacheAccessor {
+interface Session {
   actorInput: string;
-  @JsonProperty()
-  data: SessionData;
-  @JsonProperty()
-  lastState: string;
-  @JsonProperty()
-  ussdCode: string;
-  @JsonProperty()
-  version: number;
+  data?: SessionData;
+  history?: SessionHistory;
+  id : string;
+  machineState: StateValue;
+  phoneNumber: string;
+  serviceCode: string;
+  version?: number;
+}
 
-  constructor(cacheClient: Redis, cacheKey: string, serializer: JsonSerializer, UssdSessionObject: UssdSessionObject) {
-    super(cacheClient, cacheKey, serializer);
-    this.actorInput = UssdSessionObject.actorInput;
-    this.data = UssdSessionObject.data;
-    this.lastState = UssdSessionObject.lastState;
-    this.ussdCode = UssdSessionObject.ussdCode;
-    this.version = UssdSessionObject.version;
+
+export class UssdSession extends CacheAccessor implements Session{
+
+    actorInput: string;
+    data?: SessionData;
+    history?: SessionHistory;
+    id: string;
+    machineState: StateValue;
+    phoneNumber: string;
+    serviceCode: string;
+    version: number;
+
+  constructor(redis: Redis, session: Session) {
+    super(redis, session.id);
+    this.actorInput = session.actorInput;
+    this.data = session.data;
+    this.history = session.history;
+    this.id = session.id;
+    this.machineState = session.machineState;
+    this.phoneNumber = session.phoneNumber;
+    this.serviceCode = session.serviceCode;
+    this.version = session.version || 1;
   }
 
-  async create(serializer: JsonSerializer, ussdSession: UssdSession, expiration = 180) {
-    await this.cacheJSONData(serializer.serialize(ussdSession), expiration);
+  async create() {
+    await this.cacheJSONData(this.toJson(), 180);
+    return this
   }
 
-  async get(cache: Redis, cacheKey: string, serializer: JsonSerializer) {
-    const serializedSession = await this.getCacheJSONData();
-    if (serializedSession) {
-      return serializer.deserialize(serializedSession, UssdSession);
-    } else {
-      return serializedSession;
-    }
+
+  async update(data: unknown) {
+    await this.updateCacheJsonData(data);
   }
 
-  async update(cache: Redis, cacheKey: string, serializer: JsonSerializer, ussdSession: UssdSession) {
-    await this.cacheJSONData(serializer.serialize(ussdSession));
+  toJson() {
+    return {
+      actorInput: this.actorInput,
+      data: this.data,
+      history: this.history,
+      id: this.id,
+      machineState: this.machineState,
+      phoneNumber: this.phoneNumber,
+      serviceCode: this.serviceCode,
+      version: this.version
+    };
   }
+
+}
+
+export async function getUssdSessionById(redis: Redis, sessionId: string) {
+  const cacheAccessor = new CacheAccessor(redis, sessionId);
+  const session = await cacheAccessor.getCacheJSONData();
+  if (session) {
+    return new UssdSession(redis, session);
+  }
+  return null;
 }
