@@ -8,7 +8,8 @@
   "scripts": {
     "dev": " ts-node-dev --exit-child  -r tsconfig-paths/register src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint src --ext .ts --fix"
+    "lint": "eslint src --ext .ts --fix",
+    "typesafe-i18n": "typesafe-i18n"
   },
   "engines": {
     "node": ">=18"
@@ -20,11 +21,9 @@
     "@fastify/sensible": "^5.1.1",
     "@prisma/client": "^4.8.0",
     "@types/qs": "^6.9.7",
-    "@xstate/immer": "^0.3.1",
     "fastify": "^4.9.2",
     "fastify-plugin": "^4.5.0",
     "graphql-request": "^5.1.0",
-    "immer": "^9.0.16",
     "ioredis": "^5.2.4",
     "libphonenumber-js": "^1.10.14",
     "nats": "^2.11.0",

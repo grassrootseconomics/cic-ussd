@@ -19,6 +19,7 @@ export async function ATOnRequestHook(request: UssdSessionRequest, reply: Fastif
 
 // create a hook to populate the ussdContext object for each request.
 export async function ATPreHandlerHook(request: UssdSessionRequest, reply: FastifyReply) {
+  // TODO[Philip]: Is there a way to avoid this type assertion?
   const { phoneNumber, sessionId, serviceCode, text } = request.body as any;
   const countryCode = getCountryCodeFromPhoneNumber(phoneNumber) || "";
   const responseContentType = "application/json";
@@ -28,6 +29,7 @@ export async function ATPreHandlerHook(request: UssdSessionRequest, reply: Fasti
     countryCode,
     phoneNumber,
     responseContentType,
+    serviceCode,
     sessionId
   }
 }

@@ -1,10 +1,21 @@
 import { config } from "@src/config";
 import { RegistrationResponse, Transfer, TransferResponse } from "@lib/types/custodail/api";
+import { randomBytes, randomInt, randomUUID } from "crypto";
 
 export async function createWallet(): Promise <RegistrationResponse> {
-    const url = config.CIC_CUSTODIAL.REGISTER_ENDPOINT;
 
-    const response = await fetch(url, {
+  if(config.DEV){
+    return {
+      ok: true,
+      result: {
+        publicKey: randomBytes(21).toString('hex'),
+        trackingId: randomUUID().toString(),
+        custodialId: randomInt(10000000)
+      }
+    }
+  }
+
+  const response = await fetch(config.CIC_CUSTODIAL.REGISTER_ENDPOINT, {
       method: 'POST'
     });
 
