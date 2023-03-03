@@ -1,26 +1,26 @@
-import { PoolClient } from "pg";
+import { PostgresDb } from '@fastify/postgres'
 
 export enum CustodialTaskType {
-  CREATE_ACCOUNT = 'CREATE_ACCOUNT',
+  REGISTER = 'REGISTER',
   TRANSFER = 'TRANSFER',
-  BALANCE_QUERY = 'BALANCE_QUERY'
+  QUERY_BALANCE = 'QUERY_BALANCE',
 }
 
 export interface CustodialTask {
-  blockchain_address: string;
-  task_type: CustodialTaskType;
-  task_reference: string;
+  address: string
+  task_reference: string
+  task_type: CustodialTaskType
 }
 
-
-export async function createTracker(db: PoolClient, custodialTask: CustodialTask) {
+export async function createTracker (db: PostgresDb, custodialTask: CustodialTask) {
+  const client = await db.connect()
   try {
-    const { rows } = await db.query(
-      `INSERT INTO custodial_tasks (blockchain_address, task_type, task_reference) VALUES ($1, $2, $3) RETURNING *`,
-      [custodialTask.blockchain_address, custodialTask.task_type, custodialTask.task_reference]
-    );
-    return rows[0];
+    const { rows } = await client.query(
+      'INSERT INTO custodial_tasks (address, task_reference, task_type) VALUES ($1, $2, $3) RETURNING *',
+      [custodialTask.address, custodialTask.task_reference, custodialTask.task_type]
+    )
+    return rows[0]
   } catch (error) {
-    db.release();
+    client.release()
   }
 }
