@@ -8,9 +8,22 @@ import { loadedFormatters, loadedLocales, locales } from './i18n-util'
 import en from './en'
 import sw from './sw'
 
+import en_feedback from './en/feedback'
+import en_sms from './en/sms'
+import sw_feedback from './sw/feedback'
+import sw_sms from './sw/sms'
+
 const localeTranslations = {
-	en,
-	sw,
+	en: {
+		...en,
+		feedback: en_feedback,
+		sms: en_sms
+	},
+	sw: {
+		...sw,
+		feedback: sw_feedback,
+		sms: sw_sms
+	},
 }
 
 export const loadLocale = (locale: Locales): void => {

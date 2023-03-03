@@ -2,16 +2,20 @@
 /* eslint-disable */
 import type { BaseTranslation as BaseTranslationType, LocalizedString, RequiredParams } from 'typesafe-i18n'
 
-export type BaseTranslation = BaseTranslationType
+export type BaseTranslation = BaseTranslationType & DisallowNamespaces
 export type BaseLocale = 'sw'
 
 export type Locales =
 	| 'en'
 	| 'sw'
 
-export type Translation = RootTranslation
+export type Translation = RootTranslation & DisallowNamespaces
 
-export type Translations = RootTranslation
+export type Translations = RootTranslation &
+{
+	feedback: NamespaceFeedbackTranslation,
+	sms: NamespaceSmsTranslation
+}
 
 type RootTranslation = {
 	/**
@@ -26,27 +30,155 @@ type RootTranslation = {
 	/**
 	 * E​N​D​ ​A​k​a​u​n​t​i​ ​y​a​k​o​ ​y​a​ ​S​a​r​a​f​u​ ​i​n​a​t​a​y​a​r​i​s​h​w​a​.​ ​U​t​a​p​o​k​e​a​ ​u​j​u​m​b​e​ ​w​a​ ​S​M​S​ ​a​k​a​u​n​t​i​ ​y​a​k​o​ ​i​k​i​w​a​ ​t​a​y​a​r​i​.
 	 */
-	accountCreationInitiated: string
+	initiateAccountCreation: string
 	/**
-	 * C​O​N​ ​S​a​l​i​o​ ​{​0​}​ ​{​1​}​
+	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​K​a​r​i​b​u​ ​S​a​r​a​f​u​ ​N​e​t​w​o​r​k​!​
+​{​l​a​n​g​u​a​g​e​s​}​
+​
+​0​0​.​O​n​d​o​k​a​
+​1​1​.​ ​M​b​e​l​e
+	 * @param {unknown} feedback
+	 * @param {unknown} languages
+	 */
+	enteringPreferredLanguage: RequiredParams<'feedback' | 'languages'>
+	/**
+	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​S​e​l​e​c​t​ ​l​a​n​g​u​a​g​e​:​
+​{​l​a​n​g​u​a​g​e​s​}​
+​
+​1​1​.​ ​M​b​e​l​e​
+​2​2​.​ ​R​u​d​i​
+​0​0​.​O​n​d​o​k​a
+	 * @param {unknown} feedback
+	 * @param {unknown} languages
+	 */
+	secondLanguageSet: RequiredParams<'feedback' | 'languages'>
+	/**
+	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​S​e​l​e​c​t​ ​l​a​n​g​u​a​g​e​:​
+​{​l​a​n​g​u​a​g​e​s​}​
+​
+​2​2​.​ ​R​u​d​i​
+​0​0​.​O​n​d​o​k​a
+	 * @param {unknown} feedback
+	 * @param {unknown} languages
+	 */
+	thirdLanguageSet: RequiredParams<'feedback' | 'languages'>
+	/**
+	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​P​I​N​ ​y​e​n​y​e​ ​n​a​m​b​a​r​i​ ​n​n​e​:
+	 * @param {unknown} feedback
+	 */
+	enteringPIN: RequiredParams<'feedback'>
+	/**
+	 * C​O​N​ ​W​e​k​a​ ​P​I​N​ ​y​a​k​o​ ​t​e​n​a​:
+	 */
+	confirmingPIN: string
+	/**
+	 * C​O​N​ ​S​a​l​i​o​:​ ​{​b​a​l​a​n​c​e​|​c​u​r​r​e​n​c​y​}​
 ​1​.​ ​T​u​m​a​
-​2​.​S​a​r​a​f​u​ ​y​a​n​g​u​
+​2​.​ ​S​a​r​a​f​u​ ​y​a​n​g​u​
 ​3​.​ ​A​k​a​u​n​t​i​ ​y​a​n​g​u​
 ​4​.​ ​U​s​a​i​d​i​z​i
+	 * @param {unknown} balance
+	 */
+	mainMenu: RequiredParams<'balance|currency'>
+	/**
+	 * C​O​N​ ​W​e​k​a​ ​n​a​m​b​a​r​i​ ​y​a​ ​s​i​m​u​:​
+​0​.
+	 */
+	enteringRecipient: string
+	/**
+	 * C​O​N​ ​{​r​e​c​i​p​i​e​n​t​}​ ​h​a​i​j​a​s​a​j​i​l​i​w​a​ ​a​u​ ​s​i​o​ ​s​a​h​i​h​i​,​ ​t​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​t​e​n​a​:​
+​1​.​K​a​r​i​b​i​s​h​a​ ​k​w​a​ ​m​a​t​a​n​d​a​o​ ​w​a​ ​S​a​r​a​f​u​.​ ​
+​9​.​ ​O​n​d​o​k​a
+	 * @param {unknown} recipient
+	 */
+	invalidRecipient: RequiredParams<'recipient'>
+	/**
+	 * E​N​D​ ​O​m​b​i​ ​l​a​k​o​ ​l​a​ ​k​u​m​w​a​l​i​k​a​ ​{​i​n​v​i​t​e​e​}​ ​k​w​a​ ​m​a​t​a​n​d​a​o​ ​w​a​ ​S​a​r​a​f​u​ ​l​i​m​e​t​u​m​w​a​.
+	 * @param {unknown} invitee
+	 */
+	inviteRecipient: RequiredParams<'invitee'>
+	/**
+	 * C​O​N​ ​K​i​w​a​n​g​o​ ​c​h​a​ ​j​u​u​:​ ​{​m​a​x​S​p​e​n​d​a​b​l​e​}​
+​{​f​e​e​d​b​a​c​k​}​W​e​k​a​ ​k​i​w​a​n​g​o​:
+	 * @param {unknown} feedback
+	 * @param {unknown} maxSpendable
+	 */
+	enteringAmount: RequiredParams<'feedback' | 'maxSpendable'>
+	/**
+	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​{​r​e​c​i​p​i​e​n​t​}​ ​a​t​a​p​o​k​e​a​ ​{​a​m​o​u​n​t​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​u​t​o​k​a​ ​k​w​a​ ​{​s​e​n​d​e​r​}​
+​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​P​I​N​ ​y​a​k​o​ ​k​u​d​h​i​b​i​t​i​s​h​a​:
+	 * @param {unknown} amount
+	 * @param {unknown} feedback
+	 * @param {unknown} recipient
+	 * @param {unknown} sender
+	 * @param {unknown} symbol
+	 */
+	confirmingTransfer: RequiredParams<'amount|currency' | 'feedback' | 'recipient' | 'sender' | 'symbol'>
+	/**
+	 * E​N​D​ ​O​m​b​i​ ​l​a​k​o​ ​l​i​m​e​t​u​m​w​a​.​ ​{​r​e​c​i​p​i​e​n​t​}​ ​a​t​a​p​o​k​e​a​ ​{​a​m​o​u​n​t​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​u​t​o​k​a​ ​k​w​a​ ​{​s​e​n​d​e​r​}​.
+	 * @param {unknown} amount
+	 * @param {unknown} recipient
+	 * @param {unknown} sender
+	 * @param {unknown} symbol
+	 */
+	initiatingTransfer: RequiredParams<'amount|currency' | 'recipient' | 'sender' | 'symbol'>
+	/**
+	 * E​N​D​ ​A​s​a​n​t​e​ ​k​w​a​ ​k​u​t​u​m​i​a​ ​h​u​d​u​m​a​ ​y​a​ ​S​a​r​a​f​u​.
+	 */
+	exit: string
+	/**
+	 * E​N​D​ ​S​a​t​r​a​f​u​ ​i​n​a​ ​h​i​t​i​l​a​f​u​ ​t​a​ ​k​i​m​i​t​a​m​b​o​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​ ​b​a​a​d​a​y​e​.
+	 */
+	machineError: string
+}
+
+export type NamespaceFeedbackTranslation = {
+	/**
+	 * C​h​a​g​u​o​:​ ​'​{​0​}​'​ ​s​i​o​ ​s​a​h​i​h​i​.
+	 * @param {unknown} 0
+	 */
+	invalidLanguageOption: RequiredParams<'0'>
+	/**
+	 * P​I​N​:​ ​'​{​0​}​'​ ​s​i​o​ ​s​a​h​i​h​i​.
+	 * @param {unknown} 0
+	 */
+	invalidPIN: RequiredParams<'0'>
+	/**
+	 * K​i​a​w​a​n​g​o​:​ ​'​{​0​}​'​ ​s​i​o​ ​s​a​h​i​h​i​.
+	 * @param {unknown} 0
+	 */
+	invalidAmount: RequiredParams<'0'>
+	/**
+	 * P​I​N​ ​z​i​l​i​z​o​w​e​k​w​a​ ​h​a​z​i​k​u​f​a​n​a​n​a​.
+	 */
+	pinsMismatch: string
+}
+
+export type NamespaceSmsTranslation = {
+	/**
+	 * {​0​}​ ​a​m​e​k​u​k​a​r​i​b​i​s​h​a​ ​k​w​a​ ​m​t​a​n​d​a​o​ ​w​a​ ​S​a​r​a​f​u​.​ ​B​o​n​y​e​z​a​*​3​8​4​*​9​6​#​ ​S​a​f​a​r​i​c​o​m​ ​a​u​*​4​8​3​*​4​6​#​ ​k​w​a​ ​m​i​t​a​n​d​a​o​ ​t​o​f​a​u​t​i​.​ ​U​s​a​i​d​i​z​i​ ​{​1​}​.
 	 * @param {unknown} 0
 	 * @param {unknown} 1
 	 */
-	mainMenu: RequiredParams<'0' | '1'>
+	inviteRecipient: RequiredParams<'0' | '1'>
+}
+
+export type Namespaces =
+	| 'feedback'
+	| 'sms'
+
+type DisallowNamespaces = {
 	/**
-	 * E​N​D​ ​H​i​t​i​l​a​f​u​ ​t​a​ ​k​i​m​i​t​a​m​b​o​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​ ​b​a​a​d​a​y​e​.
+	 * reserved for 'feedback'-namespace\
+	 * you need to use the `./feedback/index.ts` file instead
 	 */
-	machineError: string
+	feedback?: "[typesafe-i18n] reserved for 'feedback'-namespace. You need to use the `./feedback/index.ts` file instead."
+
 	/**
-	 * C​O​N​ ​C​h​a​g​u​a​ ​l​u​g​h​a​:​
-​1​.​ ​K​i​i​n​g​e​r​e​z​a​
-​2​.​ ​K​i​s​w​a​h​i​l​i
+	 * reserved for 'sms'-namespace\
+	 * you need to use the `./sms/index.ts` file instead
 	 */
-	enteringPreferredLanguage: string
+	sms?: "[typesafe-i18n] reserved for 'sms'-namespace. You need to use the `./sms/index.ts` file instead."
 }
 
 export type TranslationFunctions = {
@@ -61,25 +193,111 @@ export type TranslationFunctions = {
 	/**
 	 * END Akaunti yako ya Sarafu inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.
 	 */
-	accountCreationInitiated: () => LocalizedString
+	initiateAccountCreation: () => LocalizedString
 	/**
-	 * CON Salio {0} {1}
+	 * CON {feedback}Karibu Sarafu Network!
+{languages}
+
+00.Ondoka
+11. Mbele
+	 */
+	enteringPreferredLanguage: (arg: { feedback: unknown, languages: unknown }) => LocalizedString
+	/**
+	 * CON {feedback}Select language:
+{languages}
+
+11. Mbele
+22. Rudi
+00.Ondoka
+	 */
+	secondLanguageSet: (arg: { feedback: unknown, languages: unknown }) => LocalizedString
+	/**
+	 * CON {feedback}Select language:
+{languages}
+
+22. Rudi
+00.Ondoka
+	 */
+	thirdLanguageSet: (arg: { feedback: unknown, languages: unknown }) => LocalizedString
+	/**
+	 * CON {feedback}Tafadhali weka PIN yenye nambari nne:
+	 */
+	enteringPIN: (arg: { feedback: unknown }) => LocalizedString
+	/**
+	 * CON Weka PIN yako tena:
+	 */
+	confirmingPIN: () => LocalizedString
+	/**
+	 * CON Salio: {balance|currency}
 1. Tuma
-2.Sarafu yangu
+2. Sarafu yangu
 3. Akaunti yangu
 4. Usaidizi
 	 */
-	mainMenu: (arg0: unknown, arg1: unknown) => LocalizedString
+	mainMenu: (arg: { balance: unknown }) => LocalizedString
 	/**
-	 * END Hitilafu ta kimitambo. Tafadhali jaribu tena baadaye.
+	 * CON Weka nambari ya simu:
+0.
+	 */
+	enteringRecipient: () => LocalizedString
+	/**
+	 * CON {recipient} haijasajiliwa au sio sahihi, tafadhali weka tena:
+1.Karibisha kwa matandao wa Sarafu. 
+9. Ondoka
+	 */
+	invalidRecipient: (arg: { recipient: unknown }) => LocalizedString
+	/**
+	 * END Ombi lako la kumwalika {invitee} kwa matandao wa Sarafu limetumwa.
+	 */
+	inviteRecipient: (arg: { invitee: unknown }) => LocalizedString
+	/**
+	 * CON Kiwango cha juu: {maxSpendable}
+{feedback}Weka kiwango:
+	 */
+	enteringAmount: (arg: { feedback: unknown, maxSpendable: unknown }) => LocalizedString
+	/**
+	 * CON {feedback}{recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}
+Tafadhali weka PIN yako kudhibitisha:
+	 */
+	confirmingTransfer: (arg: { amount: unknown, feedback: unknown, recipient: unknown, sender: unknown, symbol: unknown }) => LocalizedString
+	/**
+	 * END Ombi lako limetumwa. {recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}.
+	 */
+	initiatingTransfer: (arg: { amount: unknown, recipient: unknown, sender: unknown, symbol: unknown }) => LocalizedString
+	/**
+	 * END Asante kwa kutumia huduma ya Sarafu.
+	 */
+	exit: () => LocalizedString
+	/**
+	 * END Satrafu ina hitilafu ta kimitambo. Tafadhali jaribu tena baadaye.
 	 */
 	machineError: () => LocalizedString
-	/**
-	 * CON Chagua lugha:
-1. Kiingereza
-2. Kiswahili
-	 */
-	enteringPreferredLanguage: () => LocalizedString
+	feedback: {
+		/**
+		 * Chaguo: '{0}' sio sahihi.
+		 */
+		invalidLanguageOption: (arg0: unknown) => LocalizedString
+		/**
+		 * PIN: '{0}' sio sahihi.
+		 */
+		invalidPIN: (arg0: unknown) => LocalizedString
+		/**
+		 * Kiawango: '{0}' sio sahihi.
+		 */
+		invalidAmount: (arg0: unknown) => LocalizedString
+		/**
+		 * PIN zilizowekwa hazikufanana.
+		 */
+		pinsMismatch: () => LocalizedString
+	}
+	sms: {
+		/**
+		 * {0} amekukaribisha kwa mtandao wa Sarafu. Bonyeza*384*96# Safaricom au*483*46# kwa mitandao tofauti. Usaidizi {1}.
+		 */
+		inviteRecipient: (arg0: unknown, arg1: unknown) => LocalizedString
+	}
 }
 
-export type Formatters = {}
+export type Formatters = {
+	currency: (value: unknown) => unknown
+}
