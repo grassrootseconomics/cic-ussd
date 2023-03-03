@@ -1,69 +1,66 @@
-import { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
+import { ConnectionOptions, connect, NatsError, Msg } from "nats";
 import { config } from "@src/config";
-import { connect, ConnectionOptions, NatsConnection } from "nats";
 import { natsConnectionDevOptions } from "@dev/debug";
+import { processMessage } from "@lib/natsHandler";
 
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    natsConnection: NatsConnection;
-  }
-}
-const natsPlugin: FastifyPluginAsync = async (fastify, options) => {
-
-  // set up nats connection options.
-  let natsOptions: ConnectionOptions = {
-    name: config.NATS.CLIENT_NAME,
-    servers: [config.NATS.URL],
-  }
-
-    // load dev configs if in development mode.
-   if (config.DEV) {
-     natsOptions = natsConnectionDevOptions
-   }
-
-   if (natsOptions.servers === undefined || natsOptions.servers === null || natsOptions.servers.length < 1) {
-     throw new Error(`Must specify NATS Server/s URL.`)
-  }
-   // handle connection to nats.
-   await initConnectionToNats(fastify, natsOptions);
+/**
+ * Interface for NatsPlugin options.
+ * @interface NatsPluginOptions
+ */
+interface NatsPluginOptions {
+  connOpts: ConnectionOptions;
+  subject: string;
 }
 
-async function initConnectionToNats(fastify: FastifyInstance, natsOptions: ConnectionOptions) {
+/**
+ * A Fastify plugin to connect to NATS messaging system.
+ *
+ * @param fastify - Fastify instance.
+ * @param options - NatsPluginOptions.
+ * @throws Error if NATS server URL is not specified.
+ */
+const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, options) => {
 
-   // initiate nats connection
-   let natsConnection: NatsConnection;
+  let { connOpts, subject } = options;
 
-  try {
-    fastify.log.info(`Connecting to NATS server: ${config.NATS.URL}.`);
-    natsConnection = await connect(natsOptions);
-
-    // pass the connection to the fastify instance
-    fastify.decorate("natsConnection", natsConnection);
-  } catch (error) {
-    fastify.log.error(`Failed to connect to NATS server: ${config.NATS.URL}.`);
-    throw error;
+  if (connOpts.servers.length === 0) {
+    throw new Error("NATS server URL not specified.");
   }
 
-  // make sure to gracefully drain the client in the event of server shutdown.
-  // TODO: [Philip x Sohail] - What happens when a pod is killed/deleted?
-  //  Does this get called?
-  //  If so, should we track the last block processed and resume from there?
-  //  How do we do that?
-  fastify.addHook("onClose", async (instance) => {
-    if (config.NATS.DRAIN_ON_SHUTDOWN) {
-      fastify.log.info("Draining NATS connection.");
-      await natsConnection.drain();
-    } else {
-      fastify.log.info("Flushing NATS connection.");
-      await natsConnection.flush();
-      await natsConnection.close();
+
+  if(config.DEV) {
+    connOpts = { ...connOpts, ...natsConnectionDevOptions }
+  }
+
+  const nc = await connect( connOpts);
+  fastify.log.info(`Connected to NATS server at ${connOpts.servers[0]}`);
+
+  const handler = async (err: NatsError, msg: Msg) => {
+    if (err) {
+      fastify.log.error(err);
+      return;
     }
-  });
+    await processMessage(fastify.pg, fastify.graphql, msg, fastify.provider, fastify.redis)
+  }
+
+  if (subject) {
+    fastify.log.info(`Subscribing to subject ${subject}`);
+    nc.subscribe(subject, {
+      callback: handler,
+    });
+  }
+
+  fastify.addHook("onClose", async (instance) => {
+    await nc.drain();
+    await nc.close();
+  })
+
 }
+
 
 export default fp(natsPlugin, {
-  fastify: "4.x",
-  name: "chain-events-handler",
-});
+  fastify: '4.x',
+  name: 'nats-plugin'
+})
