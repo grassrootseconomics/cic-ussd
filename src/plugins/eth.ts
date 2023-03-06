@@ -2,11 +2,7 @@ import { ethers, Provider } from "ethers";
 import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
 
-/**
- * Extends the FastifyInstance interface to add the provider property.
- * This is required to avoid TypeScript errors when accessing the provider property.
- * @see https://www.fastify.io/docs/latest/TypeScript/#type-declaration-for-fastifyinstance
- */
+
 declare module 'fastify' {
   interface FastifyInstance {
     provider: Provider
@@ -14,19 +10,30 @@ declare module 'fastify' {
 }
 
 /**
- * Interface for EthPlugin options.
+ * Description placeholder
+ * @date 3/3/2023 - 10:49:36 AM
+ *
  * @interface EthPluginOptions
- * @property {string} endpoint - The RPC endpoint to connect to.
+ * @typedef {EthPluginOptions}
  */
 interface EthPluginOptions {
+  /**
+   * Description placeholder
+   * @date 3/3/2023 - 10:49:36 AM
+   *
+   * @type {string}
+   */
   endpoint: string
 }
 
 /**
- * Fastify plugin that creates an Ethers provider instance and decorates it onto the fastify instance.
- * Also adds a hook to destroy the provider instance on server close.
- * @param fastify - The Fastify instance.
- * @param {EthPluginOptions} opts - The eth plugin options.
+ * Description placeholder
+ * @date 3/3/2023 - 10:49:36 AM
+ *
+ * @async
+ * @param {*} fastify
+ * @param {*} opts
+ * @returns {*}
  */
 const ethPlugin: FastifyPluginAsync<EthPluginOptions> = async (fastify, opts) => {
   const { endpoint } = opts

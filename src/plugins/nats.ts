@@ -6,20 +6,35 @@ import { natsConnectionDevOptions } from "@dev/debug";
 import { processMessage } from "@lib/natsHandler";
 
 /**
- * Interface for NatsPlugin options.
+ * Description placeholder
+ *
  * @interface NatsPluginOptions
+ * @typedef {NatsPluginOptions}
  */
 interface NatsPluginOptions {
+  /**
+   * Description placeholder
+   *
+   * @type {ConnectionOptions}
+   */
   connOpts: ConnectionOptions;
+  /**
+   * Description placeholder
+   *
+   * @type {string}
+   */
   subject: string;
 }
 
+
 /**
- * A Fastify plugin to connect to NATS messaging system.
+ * Description placeholder
+ * @date 3/3/2023 - 10:50:42 AM
  *
- * @param fastify - Fastify instance.
- * @param options - NatsPluginOptions.
- * @throws Error if NATS server URL is not specified.
+ * @async
+ * @param {*} fastify
+ * @param {*} options
+ * @returns {*}
  */
 const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, options) => {
 

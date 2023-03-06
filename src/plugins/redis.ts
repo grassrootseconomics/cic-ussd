@@ -8,22 +8,36 @@ declare module 'fastify' {
   }
 }
 
+
 /**
- * Interface for RedisPlugin options.
+ * Description placeholder
+ *
  * @interface RedisPluginOptions
- * @property {string} host - The Redis host.
- * @property {number} port - The Redis port.
+ * @typedef {RedisPluginOptions}
  */
 interface RedisPluginOptions {
+  /**
+   * Description placeholder
+   *
+   * @type {string}
+   */
   host: string
+  /**
+   * Description placeholder
+   *
+   * @type {number}
+   */
   port: number
 }
 
+
 /**
- * Fastify plugin that creates a Redis client instance and decorates it onto the fastify instance.
- * Also adds a hook to destroy the Redis client instance on server close.
- * @param fastify - The Fastify instance.
- * @param opts - The plugin options.
+ * Description placeholder
+ *
+ * @async
+ * @param {*} fastify
+ * @param {*} opts
+ * @returns {*}
  */
 const redisPlugin: FastifyPluginAsync<RedisPluginOptions> = async (fastify, opts) => {
   const { host, port } = opts

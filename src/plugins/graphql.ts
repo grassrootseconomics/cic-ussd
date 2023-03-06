@@ -9,18 +9,37 @@ declare module 'fastify' {
 }
 
 /**
- * Interface for GraphQLPlugin options.
+ * Description placeholder
+ * @date 3/3/2023 - 10:49:55 AM
+ *
  * @interface GraphQLPluginOptions
- * @property {string} endpoint - The GraphQL endpoint to connect to.
+ * @typedef {GraphQLPluginOptions}
  */
 interface GraphQLPluginOptions {
+  /**
+   * Description placeholder
+   * @date 3/3/2023 - 10:49:54 AM
+   *
+   * @type {string}
+   */
   endpoint: string
+  /**
+   * Description placeholder
+   * @date 3/3/2023 - 10:49:54 AM
+   *
+   * @type {string}
+   */
   secret: string
 }
 
 /**
- * Plugin that creates a `GraphQLClient` and decorates the Fastify instance with it.
- * @param fastify - The Fastify instance.
+ * Description placeholder
+ * @date 3/3/2023 - 10:49:54 AM
+ *
+ * @async
+ * @param {*} fastify
+ * @param {*} opts
+ * @returns {*}
  */
 const graphqlPlugin: FastifyPluginAsync<GraphQLPluginOptions> = async (fastify, opts) => {
   const { endpoint, secret } = opts
