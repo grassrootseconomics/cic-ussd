@@ -1,56 +1,62 @@
-import { gql, GraphQLClient } from "graphql-request";
-import { Account, accountFields } from "@lib/types/graph/account";
-import { JSONToRawString } from "@utils/graphql";
+import { GraphQLClient } from "graphql-request";
+import { graphUserFields } from "@lib/graph/user";
 
-
-export async function createAccount(graphqlClient: GraphQLClient, account: Account) {
-  const mutation = gql`
-    mutation createAccount{
-      insert_accounts_one(object: ${JSONToRawString(account)}) {id}
-    }`;
-  const data = await graphqlClient.request(mutation);
-  return data.insert_accounts_one;
-}
-
-export async function getAccounts(graphqlClient: GraphQLClient) {
-    const query = gql`
-      query {${accountFields}}`;
-    return  await graphqlClient.request(query);
+/**
+ * Enum for account types
+ * @date 3/3/2023 - 10:29:28 AM
+ *
+ * @export
+ * @enum {number}
+ */
+export enum GraphAccountTypes {
+  CUSTODIAL_PERSONAL = 'CUSTODIAL_PERSONAL',
+  CUSTODIAL_BUSINESS = 'CUSTODIAL_BUSINESS',
+  CUSTODIAL_COMMUNITY = 'CUSTODIAL_COMMUNITY',
+  CUSTODIAL_SYSTEM = 'CUSTODIAL_SYSTEM'
 }
 
 
-export async function getAccount(graphqlClient: GraphQLClient, id: number) {
-    const query = gql`
-      query {
-        accounts_by_pk(id: ${id}) {${accountFields}}
-      }`;
-    return  await graphqlClient.request(query);
+/**
+ * Description placeholder
+ * @date 3/3/2023 - 10:30:23 AM
+ *
+ * @interface GraphAccount
+ * @typedef {GraphAccount}
+ */
+interface GraphAccount {
+  account_type: string
+  blockchain_address: string
+  id?: number
+  user_identifier: number
 }
 
-export async function getAccountByBlockchainAddress(graphqlClient: GraphQLClient, blockchainAddress: string) {
-  const query = gql`
-    query {
-      accounts(where: {blockchain_address: {_eq: "${blockchainAddress}"}}) {${accountFields}}
-      }`;
-  return  await graphqlClient.request(query);
-}
 
-export async function updateAccount(graphqlClient: GraphQLClient, id: number, account: Account) {
-  const mutation = gql`
-    mutation updateAccount{
-      update_accounts_by_pk(pk_columns: {id: ${id}}, _set: ${JSONToRawString(account)}) {
-          ${accountFields}
-      }
-    }`;
-  return await graphqlClient.request(mutation);
-}
+/**
+ * Description placeholder
+ * @date 3/3/2023 - 10:30:39 AM
+ *
+ * @type {string}
+ */
+export const graphAccFields = `account_type blockchain_address id user ${graphUserFields}`
 
-export async function deleteAccount(graphqlClient: GraphQLClient, id: number) {
-  const mutation = gql`
-    mutation deleteAccount{
-      delete_accounts_by_pk(id: ${id}) {
-          ${accountFields}
-      }
-    }`;
-  return await graphqlClient.request(mutation);
+/**
+ * Description placeholder
+ * @date 3/3/2023 - 10:30:47 AM
+ *
+ * @export
+ * @async
+ * @param {GraphQLClient} graphQlClient
+ * @param {Partial<GraphAccount>} account
+ * @returns {Promise<Partial<GraphAccount>>}
+ */
+export async function createGraphAccount(graphQlClient: GraphQLClient, account: Partial<GraphAccount>): Promise<Partial<GraphAccount>> {
+  const query = `mutation CreateAccount($account: accounts_insert_input!) {
+    insert_accounts_one(object: $account) {id}
+  }`
+
+  const variables = {
+    account,
+  }
+  const data = await graphQlClient.request<{ insert_accounts_one: Partial<GraphAccount>  }>(query, variables)
+  return data.insert_accounts_one
 }
