@@ -1,29 +1,38 @@
-import { FastifyInstance } from "fastify";
-import { ussdSessionHandler } from "@src/services/ussdSession";
-import { ATOnRequestHook, ATPreHandlerHook, ATRequestBody } from "@src/services/africasTalking";
+import { ATOnRequestHook, ATPreHandlerHook, ATRequestBody } from '@src/services/africasTalking'
+import { sessionHandler } from '@src/services/session'
 
-export default async function ussdRoutes(fastify: FastifyInstance, options: any) {
+import { FastifyInstance } from 'fastify'
 
+/**
+ * Description placeholder
+ *
+ * @export
+ * @async
+ * @param {FastifyInstance} fastify
+ * @returns {*}
+ */
+export default async function ussdRoutes (fastify: FastifyInstance) {
   // add route to handle AT ussd requests.
-  // TODO[Philip]: Does this constrain the hooks to only be used for this route?
-  fastify.route({
-    method: "POST",
-    url: "/africasTalking",
+  fastify.route<{
+    Body: typeof ATRequestBody
+  }>({
+    handler: sessionHandler,
+    method: 'POST',
     onRequest: ATOnRequestHook,
     preHandler: ATPreHandlerHook,
-    handler: ussdSessionHandler,
     schema: {
       body: ATRequestBody
-    }
-  });
+    },
+    url: '/africasTalking'
+  })
 
   fastify.route({
-    method: "POST",
-    url: "/debug",
+    method: 'POST',
+    url: '/debug',
     handler: async (request, reply) => {
       reply.send({
-        endpoint: "debug",
+        endpoint: 'debug'
       })
     }
-  });
+  })
 }

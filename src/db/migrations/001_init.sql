@@ -1,5 +1,7 @@
+--- ACCOUNT_STATUS enum
 CREATE TYPE ACCOUNT_STATUS AS ENUM ('ACTIVE', 'BLOCKED', 'PENDING', 'RESETTING_PASSWORD', 'DELETED');
 
+--- accounts table
 CREATE TABLE IF NOT EXISTS accounts (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     address TEXT UNIQUE CHECK (address <> '' AND char_length(address) = 42),
@@ -8,11 +10,24 @@ CREATE TABLE IF NOT EXISTS accounts (
     language TEXT NOT NULL,
     password TEXT,
     phone_number TEXT UNIQUE NOT NULL CHECK (phone_number <> '' AND char_length(phone_number) = 13),
-    pin_attempts INT NOT NULL DEFAULT 2,
+    pin_attempts INT NOT NULL DEFAULT 0,
     status ACCOUNT_STATUS NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+--- TASK_TYPE enum
+CREATE TYPE TASK_TYPE AS ENUM ('REGISTER', 'TRANSFER', 'QUERY_BALANCE');
+
+--- custodial_tasks table
+CREATE TABLE IF NOT EXISTS custodial_tasks (
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    address TEXT NOT NULL CHECK (address <> '' AND char_length(address) = 42),
+    task_reference TEXT NOT NULL UNIQUE,
+    task_type TASK_TYPE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+--- sessions table
 CREATE TABLE IF NOT EXISTS "sessions" (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     ext_id TEXT UNIQUE CHECK (ext_id <> ''),
@@ -25,15 +40,16 @@ CREATE TABLE IF NOT EXISTS "sessions" (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TYPE TASK_TYPE AS ENUM ('REGISTER', 'TRANSFER', 'QUERY_BALANCE');
-
-CREATE TABLE IF NOT EXISTS custodial_tasks (
+--- guardians table
+CREATE TABLE IF NOT EXISTS guardians (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    address TEXT NOT NULL CHECK (address <> '' AND char_length(address) = 42),
-    task_reference TEXT NOT NULL UNIQUE,
-    task_type TASK_TYPE NOT NULL,
+    account_phone_number TEXT NOT NULL REFERENCES accounts(phone_number),
+    wards TEXT[] NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+)
+
+
+
 ---- create above / drop below ----
 
 DROP TYPE IF EXISTS ACCOUNT_STATUS;
