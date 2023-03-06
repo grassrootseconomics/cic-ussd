@@ -1,35 +1,93 @@
-import { FastifyReply } from "fastify";
+import { SessionRequest } from "@services/session";
 import { getCountryCodeFromPhoneNumber } from "@utils/phoneNumber";
-import { UssdSessionRequest } from "@src/services/ussdSession";
 
+/**
+ * Description placeholder
+ *
+ * @type {{ type: string; properties: { phoneNumber: { type: string; }; sessionId: { type: string; }; serviceCode: { type: string; }; text: { type: string; }; }; required: {}; }}
+ */
 export const ATRequestBody = {
-    type: "object",
-    properties: {
-      phoneNumber: { type: "string" },
-      sessionId: { type: "string" },
-      serviceCode: { type: "string" },
-      text: { type: "string" }
-    }
+  type: 'object',
+  properties: {
+    phoneNumber: { type: 'string' },
+    sessionId: { type: 'string' },
+    serviceCode: { type: 'string' },
+    text: { type: 'string' }
+  },
+  required: ['phoneNumber', 'sessionId', 'serviceCode', 'text']
 }
 
-// create a hook to initialize the ussdContext object for each request.
-export async function ATOnRequestHook(request: UssdSessionRequest, reply: FastifyReply) {
-  request.ussdContext = {}
+/**
+ * Description placeholder
+ *
+ * @export
+ * @interface ATRequest
+ * @typedef {ATRequest}
+ */
+export interface ATRequest {
+  /**
+   * Description placeholder
+   *
+   * @type {string}
+   */
+  phoneNumber: string
+  /**
+   * Description placeholder
+   *
+   * @type {string}
+   */
+  networkCode: string
+  /**
+   * Description placeholder
+   *
+   * @type {string}
+   */
+  sessionId: string
+  /**
+   * Description placeholder
+   *
+   * @type {string}
+   */
+  serviceCode: string
+  /**
+   * Description placeholder
+   *
+   * @type {string}
+   */
+  text: string
 }
 
-// create a hook to populate the ussdContext object for each request.
-export async function ATPreHandlerHook(request: UssdSessionRequest, reply: FastifyReply) {
-  // TODO[Philip]: Is there a way to avoid this type assertion?
-  const { phoneNumber, sessionId, serviceCode, text } = request.body as any;
-  const countryCode = getCountryCodeFromPhoneNumber(phoneNumber) || "";
-  const responseContentType = "application/json";
-  const actorInput = text.split("*").pop() || "";
-  request.ussdContext = {
-    actorInput,
+/**
+ * Description placeholder
+ *
+ * @export
+ * @async
+ * @param {SessionRequest} request
+ * @returns {*}
+ */
+export async function ATOnRequestHook (request: SessionRequest) {
+  request.uContext = {}
+}
+
+/**
+ * Description placeholder
+ *
+ * @export
+ * @async
+ * @param {SessionRequest} request
+ * @returns {*}
+ */
+export async function ATPreHandlerHook (request: SessionRequest) {
+  const { phoneNumber, sessionId, serviceCode, text } = request.body as ATRequest
+  const countryCode = getCountryCodeFromPhoneNumber(phoneNumber)
+  const responseContentType = 'application/json'
+  const input = text.split('*').pop() || ''
+  request.uContext["ussd"] = {
     countryCode,
+    input,
     phoneNumber,
     responseContentType,
+    requestId: sessionId,
     serviceCode,
-    sessionId
   }
 }

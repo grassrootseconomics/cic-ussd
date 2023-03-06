@@ -1,7 +1,11 @@
-import { PostgresDb } from '@fastify/postgres'
+import { PostgresDb } from "@fastify/postgres";
 
-import { PoolClient } from 'pg'
+import { PoolClient } from "pg";
 
+/**
+ * Enum for account status
+ * @enum {string}
+ */
 export enum AccountStatus {
   ACTIVE = 'ACTIVE',
   BLOCKED = 'BLOCKED',
@@ -10,6 +14,19 @@ export enum AccountStatus {
   RESETTING_PASSWORD = 'RESETTING_PASSWORD',
 }
 
+/**
+ * Interface for account object in database
+ * @interface
+ * @property {number} id - account id
+ * @property {boolean} activated_on_chain - whether account is activated on chain
+ * @property {boolean} activated_on_ussd - whether account is activated on ussd
+ * @property {string} address - account address
+ * @property {string} language - account language
+ * @property {string} password - account password
+ * @property {string} phone_number - account phone number
+ * @property {number} pin_attempts - number of pin attempts
+ * @property {AccountStatus} status - account status
+ */
 export interface Account {
   id: number
   activated_on_chain: boolean
@@ -22,7 +39,13 @@ export interface Account {
   status: AccountStatus
 }
 
-export async function findAccountByPhoneNumber (db: PostgresDb, phoneNumber: string) {
+/**
+ * Find account by address
+ * @param {fastifyPostgres.PostgresDb} db - database connection.
+ * @param {string} phoneNumber - phone number of account.
+ * @returns {Promise<any>} - account object. see {@link Account}
+ */
+export async function findPhoneNumber (db: PostgresDb, phoneNumber: string) {
   const client = await db.connect()
   try {
     const { rows } = await client.query(
@@ -35,7 +58,13 @@ export async function findAccountByPhoneNumber (db: PostgresDb, phoneNumber: str
   }
 }
 
-export async function createDBAccount (
+/**
+ * Creates an account
+ * @param {fastifyPostgres.PostgresDb} db - database connection.
+ * @param {Partial<Account>} account - account object.
+ * @returns {Promise<any>} - account object. see {@link Account}
+ */
+export async function createAccount (
   db: PostgresDb,
   account: Partial<Account>
 ) {
@@ -66,24 +95,16 @@ export async function activateOnChain (
   }
 }
 
-export function activateOnUssd (db: PostgresDb, password: string, phoneNumber: string) {
-  db.connect(onConnect)
-  function onConnect (err: Error, client: PoolClient, release) {
-    if (err) {
-      throw err
-    }
-    client.query(
-      `UPDATE accounts
-       SET password = $1,
-           activated_on_ussd = true,
-           status = $2
-       WHERE phone_number = $3`,
-      [password, AccountStatus.ACTIVE, phoneNumber],
-      function onResult (err) {
-        console.error(err)
-        release()
-      }
+export async function activateOnUssd (db: PostgresDb, password: string, phoneNumber: string) {
+  const client = await db.connect()
+  try {
+    const { rows } = await client.query(
+      'UPDATE accounts SET activated_on_ussd = true, password = $1 WHERE phone_number = $2 RETURNING *',
+      [password, phoneNumber]
     )
+    return rows[0]
+  } catch (error) {
+    client.release()
   }
 }
 
@@ -120,5 +141,30 @@ export function updatePinAttempts (db: PostgresDb, address: string, pinAttempts:
         release()
       }
     )
+  }
+}
+
+export async function findById (db: PostgresDb, id: number) {
+  const client = await db.connect()
+  try {
+    const { rows } = await client.query(
+      'SELECT * FROM accounts WHERE id = $1',
+      [id]
+    )
+    return rows[0]
+  } finally {
+    client.release()
+  }
+}
+
+export async function resetAccount(db: PostgresDb, phoneNumber: string) {
+  const client = await db.connect()
+  try {
+    const { rows } = await client.query(
+      'UPDATE accounts SET status = $1, pin_attempts = $2 WHERE phone_number = $3',
+      [AccountStatus.RESETTING_PASSWORD, 0, phoneNumber]
+    )
+  } finally {
+    client.release()
   }
 }

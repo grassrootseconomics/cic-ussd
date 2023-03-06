@@ -1,97 +1,96 @@
-import Redis from 'ioredis';
-import JSONCache from 'redis-json';
-import { config } from "@src/config";
-
-
+import { Redis as RedisClient } from "ioredis";
+import JSONCache from "redis-json";
 
 /**
- * It creates a new Redis client and returns it
- * @returns A new Redis client
+ * A class for accessing a Redis cache and performing common cache operations.
  */
-export function createRedisClient() {
-  return new Redis(
-    config.REDIS.PORT,
-    config.REDIS.HOST,
-    {
-      db: config.REDIS.DATABASE,
-    }
-  );
-}
+export class Cache {
+  /**
+   * The Redis client instance to use for cache operations.
+   */
+  client: RedisClient
 
-/* This class exposes functions to cache and retrieve data from Redis.
-* @Class CacheAccessor
-* @member {Redis} cacheClient - The Redis client.
-* @member {string} cacheKey - The unique key pointing to data in cache.
-* @member {JsonSerializer} serializer - The serializer instance to convert objects to JSON.
-* */
-export class CacheAccessor {
-  cacheClient: Redis
-  cacheKey: string
+  /**
+   * The cache key to use for cache operations.
+   */
+  key: string
 
-  constructor(cache: Redis, cacheKey: string) {
-    this.cacheClient = cache
-    this.cacheKey = cacheKey
+  /**
+   * Creates a new Cache instance with the specified Redis client and cache key.
+   * @param {RedisClient} client - The Redis client instance to use for cache operations.
+   * @param {string} key - The cache key to use for cache operations.
+   * @constructor
+   */
+  constructor (client: RedisClient, key: string) {
+    this.client = client
+    this.key = key
   }
 
   /**
- * Takes a Redis client instance, a cache key, data, and an optional expiration time,
- * and then sets the data in the cache with the given expiration time if present.
- * @param {string | number} data - The data to be cached.
- * @param {number} [expiration] - The number of seconds the data should be cached
- * for.
- */
-  async cacheData(data: string | number, expiration?: number) {
-      if (expiration) {
-      await this.cacheClient.set(this.cacheKey, data, 'EX', expiration);
+   * Caches data in Redis using the specified expiration time.
+   * @param {string | number} data - The data to cache.
+   * @param {number} expiration - The number of seconds to cache the data for.
+   * @returns {Promise<void>} A promise that resolves when the data has been successfully cached.
+   */
+  async set (data: string | number, expiration?: number): Promise<void> {
+    if (expiration) {
+      await this.client.set(this.key, data, 'EX', expiration)
     } else {
-      await this.cacheClient.set(this.cacheKey, data);
+      await this.client.set(this.key, data)
     }
   }
 
   /**
- * Caches JSON data in Redis.
- * @param data - The data you want to cache.
- * @param {number} [expiration] - The number of seconds to cache the data for.
- */
-  async cacheJSONData(data: unknown, expiration?: number) {
-    const jsonCache = new JSONCache(this.cacheClient);
-    if (expiration){
-      await jsonCache.set(this.cacheKey, data, { expire: expiration });
+   * Retrieves data from the cache.
+   * @returns {Promise<string | null>} A promise that resolves to the data in cache associated with the cache key.
+   */
+  async get (): Promise<string | null> {
+    return this.client.get(this.key);
+  }
 
+  /**
+   * Deletes data from the cache.
+   * @returns {Promise<void>} A promise that resolves when the data has been successfully deleted from the cache.
+   */
+  async del (): Promise<void> {
+    await this.client.del(this.key)
+  }
+
+  /**
+   * Caches JSON data in Redis using the specified expiration time.
+   * @param {unknown} data - The data to cache.
+   * @param {number} [expiration] - The number of seconds to cache the data for.
+   * @returns {Promise<void>} A promise that resolves when the data has been successfully cached.
+   */
+  async setJSON (data: unknown, expiration?: number): Promise<void> {
+    const cache = new JSONCache(this.client)
+    if (expiration) {
+      await cache.set(this.key, data, { expire: expiration })
     } else {
-      await jsonCache.set(this.cacheKey, data);
+      await cache.set(this.key, data)
     }
   }
 
-  async updateCacheJsonData(updateData: unknown) {
-    const jsonCache = new JSONCache(this.cacheClient);
-    jsonCache.set(this.cacheKey, updateData);
-  }
-
   /**
- * Retrieves data from the cache.
- * @returns A promise that resolves to the value in cache associated with the cacheKey.
- */
-  async getCacheData() {
-    return this.cacheClient.get(this.cacheKey);
-  }
-
-  /**
-    * Retrieves JSON data from the cache.
-    * @param {string[]} [keys] - An array of keys to get from the cache. If you don't
-    * pass in any keys, it will return the entire cache.
-    * @returns A promise that resolves to the JSON object in cache associated with the cacheKey.
-  */
-  async getCacheJSONData(keys?: string[]) {
-    const jsonCache = new JSONCache(this.cacheClient);
+   * Retrieves JSON data from the cache.
+   * @param {string[]} [keys] - An array of keys to retrieve from the JSON object in cache. If not provided, the entire JSON object will be returned.
+   * @returns {Promise<unknown>} A promise that resolves to the JSON data in cache associated with the cache key.
+   */
+  async getJSON (keys?: string[]): Promise<unknown> {
+    const cache = new JSONCache(this.client)
     if (keys) {
-      return await jsonCache.get(this.cacheKey, ...keys);
+      return await cache.get(this.key, ...keys)
     } else {
-      return await jsonCache.get(this.cacheKey);
+      return await cache.get(this.key)
     }
   }
 
-  async deleteCacheData() {
-    await this.cacheClient.del(this.cacheKey);
+  /**
+   * Updates a JSON object in the cache by merging it with the provided data.
+   * @param {unknown} data - The data to merge with the JSON object in cache.
+   */
+  async updateJSON (data: unknown): Promise<void> {
+    const cache = new JSONCache(this.client)
+    await cache.set(this.key, data)
   }
 }
