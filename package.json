@@ -6,10 +6,9 @@
   "bugs": "https://github.com/grassrootseconomics/cic-ussd/issues",
   "license": "AGPL-3.0-or-later",
   "scripts": {
-    "dev": " ts-node-dev --exit-child  -r tsconfig-paths/register src/index.ts",
+    "dev": " ts-node-dev --exit-child --require dotenv/config  -r tsconfig-paths/register src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint src --ext .ts --fix",
-    "typesafe-i18n": "typesafe-i18n"
+    "jsdoc": "jsdoc -c jsdoc.json"
   },
   "engines": {
     "node": ">=18"
@@ -19,8 +18,8 @@
     "@fastify/formbody": "^7.3.0",
     "@fastify/postgres": "^5.2.0",
     "@fastify/sensible": "^5.1.1",
-    "@prisma/client": "^4.8.0",
-    "@types/qs": "^6.9.7",
+    "bcrypt": "^5.1.0",
+    "ethers": "^6.0.8",
     "fastify": "^4.9.2",
     "fastify-plugin": "^4.5.0",
     "graphql-request": "^5.1.0",
@@ -30,22 +29,23 @@
     "qs": "^6.11.0",
     "redis-json": "^6.0.3",
     "typesafe-i18n": "^5.16.3",
-    "typescript-json-serializer": "^5.1.0",
     "xstate": "^4.34.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.9",
     "@types/pg": "^8.6.6",
-    "@typescript-eslint/eslint-plugin": "^5.43.0",
-    "@typescript-eslint/parser": "^5.43.0",
-    "@xstate/cli": "^0.3.3",
+    "@types/qs": "^6.9.7",
     "dotenv": "^16.0.3",
-    "eslint": "^8.27.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^2.7.1",
+    "eslint": "^8.35.0",
+    "jsdoc": "^4.0.2",
+    "prettier": "^2.8.4",
     "ts-node-dev": "^2.0.0",
+    "ts-standard": "^12.0.2",
     "tsconfig-paths": "^4.1.2",
+    "typedoc": "^0.23.26",
+    "typedoc-plugin-extras": "^2.3.2",
+    "typedoc-plugin-missing-exports": "^1.0.0",
+    "typedoc-plugin-rename-defaults": "^0.6.4",
     "typescript": "^4.9.5"
   }
 }
