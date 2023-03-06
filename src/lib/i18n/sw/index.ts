@@ -1,4 +1,4 @@
-import type { BaseTranslation } from '../i18n-types'
+import type { BaseTranslation } from "../i18n-types";
 
 const sw = {
   // account creation states
@@ -9,14 +9,14 @@ const sw = {
   initiateAccountCreation:
     'END Akaunti yako ya Sarafu inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.',
   enteringPreferredLanguage:
-    'CON {feedback}Karibu Sarafu Network!\n{languages}\n\n00.Ondoka\n11. Mbele',
+    'CON Karibu Sarafu Network!\n{languages}\n\n00.Ondoka\n11. Mbele',
   secondLanguageSet:
-    'CON {feedback}Select language:\n{languages}\n\n11. Mbele\n22. Rudi\n00.Ondoka',
+    'CON Select language:\n{languages}\n\n11. Mbele\n22. Rudi\n00.Ondoka',
   thirdLanguageSet:
-    'CON {feedback}Select language:\n{languages}\n\n22. Rudi\n00.Ondoka',
+    'CON Select language:\n{languages}\n\n22. Rudi\n00.Ondoka',
 
   // initial pin entry states
-  enteringPIN: 'CON {feedback}Tafadhali weka PIN yenye nambari nne:',
+  enteringPIN: 'CON Tafadhali weka PIN yenye nambari nne:',
   confirmingPIN: 'CON Weka PIN yako tena:',
 
   // main menu states
@@ -30,11 +30,23 @@ const sw = {
   inviteRecipient:
     'END Ombi lako la kumwalika {invitee} kwa matandao wa Sarafu limetumwa.',
   enteringAmount:
-    'CON Kiwango cha juu: {maxSpendable}\n{feedback}Weka kiwango:',
+    'CON Kiwango cha juu: {maxSpendable}\nWeka kiwango:',
   confirmingTransfer:
-    'CON {feedback}{recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}\nTafadhali weka PIN yako kudhibitisha:',
+    'CON {recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}\nTafadhali weka PIN yako kudhibitisha:',
   initiatingTransfer:
     'END Ombi lako limetumwa. {recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}.',
+
+  // select voucher states
+  enteringVoucher:
+    'Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n0. Rudi\n11. Mbele',
+  secondVoucherSet:
+    'Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n11. Mbele\n22. Rudi',
+  thirdVoucherSet:
+    'Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n22. Rudi\n99. Ondoka',
+
+  // active voucher state
+  activeVoucherSet:
+    'CON Success! {symbol} is your active Sarafu\n0. Back\n9. Exit',
 
   // final states
   exit: 'END Asante kwa kutumia huduma ya Sarafu.',

@@ -1,4 +1,4 @@
-import type { Translation } from '../i18n-types'
+import type { Translation } from "../i18n-types";
 
 const en = {
   // account creation states
@@ -9,14 +9,14 @@ const en = {
   initiateAccountCreation:
     'END Your account is being created. You will receive an SMS when your account is ready.',
   enteringPreferredLanguage:
-    'CON {feedback}Welcome to Sarafu Network!\n{languages}\n\n00.Exit\n11. Next',
+    'CON Welcome to Sarafu Network!\n{languages}\n\n00.Exit\n11. Next',
   secondLanguageSet:
-    'CON {feedback}Select language:\n{languages}\n\n11. Next\n22. Back\n00.Exit',
+    'CON Select language:\n{languages}\n\n11. Next\n22. Back\n00.Exit',
   thirdLanguageSet:
-    'CON {feedback}Select language:\n{languages}\n\n22. Back\n00.Exit',
+    'CON Select language:\n{languages}\n\n22. Back\n00.Exit',
 
   // initial pin entry states
-  enteringPIN: 'CON {feedback}Please enter four number PIN:',
+  enteringPIN: 'CON Please enter four number PIN:',
   confirmingPIN: 'CON Enter your four number PIN again:',
 
   // main menu states
@@ -31,11 +31,23 @@ const en = {
     'END Your invitation to {invitee} to join the Voucher Wallet has been sent.',
 
   // amount states
-  enteringAmount: 'CON Maximum amount: {maxSpendable}\n{feedback}Enter amount:',
+  enteringAmount: 'CON Maximum amount: {maxSpendable}\nEnter amount:',
   confirmingTransfer:
-    'CON {feedback}{recipient} will receive {amount|currency} {symbol} from {sender}\nPlease enter your PIN to confirm:',
+    'CON {recipient} will receive {amount|currency} {symbol} from {sender}\nPlease enter your PIN to confirm:',
   initiatingTransfer:
     'END Your request has been sent. {recipient} will receive {amount|currency} {symbol} from {sender}.',
+
+  // select voucher states
+  enteringVoucher:
+    'Choose a number or symbol from your balances:\n{vouchers}\n\n0. Back\n11. Next',
+  secondVoucherSet:
+    'Choose a number or symbol from your balances:\n{vouchers}\n\n11. Next\n22. Back',
+  thirdVoucherSet:
+    'Choose a number or symbol from your balances:\n{vouchers}\n\n22. Back\n00. Exit',
+
+  // active voucher state
+  activeVoucherSet:
+    'CON Success! {symbol} is your active Sarafu\n0. Back\n9. Exit',
 
   // final states
   exit: 'END Thank you for using Sarafu.',

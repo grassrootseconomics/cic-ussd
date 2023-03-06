@@ -13,10 +13,12 @@ const localeTranslationLoaders = {
 const localeNamespaceLoaders = {
 	en: {
 		feedback: () => import('./en/feedback'),
+		helpers: () => import('./en/helpers'),
 		sms: () => import('./en/sms')
 	},
 	sw: {
 		feedback: () => import('./sw/feedback'),
+		helpers: () => import('./sw/helpers'),
 		sms: () => import('./sw/sms')
 	}
 }

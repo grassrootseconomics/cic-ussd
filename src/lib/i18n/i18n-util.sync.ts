@@ -9,19 +9,23 @@ import en from './en'
 import sw from './sw'
 
 import en_feedback from './en/feedback'
+import en_helpers from './en/helpers'
 import en_sms from './en/sms'
 import sw_feedback from './sw/feedback'
+import sw_helpers from './sw/helpers'
 import sw_sms from './sw/sms'
 
 const localeTranslations = {
 	en: {
 		...en,
 		feedback: en_feedback,
+		helpers: en_helpers,
 		sms: en_sms
 	},
 	sw: {
 		...sw,
 		feedback: sw_feedback,
+		helpers: sw_helpers,
 		sms: sw_sms
 	},
 }

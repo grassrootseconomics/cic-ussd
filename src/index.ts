@@ -1,37 +1,36 @@
-import build from './app'
-import { config } from './config'
-import { initChainEventsHandler } from "@lib/events/handler";
+import app from "./app";
+import { config } from "./config";
+import { FastifyInstance } from "fastify";
 
-const main = async () => {
-  console.info('Starting server...')
-  const app = await build()
-
-  app.ready((error) => {
+/**
+ * Description placeholder
+ * @date 3/3/2023 - 10:43:49 AM
+ *
+ * @async
+ * @param {FastifyInstance} fastify
+ * @returns {*}
+ */
+async function init(fastify: FastifyInstance) {
+  fastify.ready((error) => {
     if (error) {
-      app.log.error(error)
-      process.exit(1)
+      fastify.log.error(error);
+      process.exit(1);
     }
 
     if (config.DEV) {
-      app.log.debug(`Server routes: ${app.printRoutes()}`)
+      fastify.log.debug(`Server routes: ${fastify.printRoutes()}`);
     }
+  });
 
-    // perform initializations
-    //initChainEventsHandler(app);
+  fastify.listen({ host: config.SERVER.HOST, port: config.SERVER.PORT },
+    (error) => {
+      if (error) {
+        fastify.log.error(error);
+        process.exit(1);
+      }
+  });
 
-    app.listen(
-      {
-        host: config.SERVER.HOST,
-        port: config.SERVER.PORT,
-      },
-      (error) => {
-        if (error) {
-          app.log.error(error)
-          process.exit(1)
-        }
-      },
-    )
-  })
+  fastify.log.info('Starting server...')
 
   for (const signal of ['SIGINT', 'SIGTERM']) {
     process.once(signal, async () => {
@@ -42,4 +41,4 @@ const main = async () => {
   }
 }
 
-main()
+init(app)

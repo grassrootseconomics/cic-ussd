@@ -14,6 +14,7 @@ export type Translation = RootTranslation & DisallowNamespaces
 export type Translations = RootTranslation &
 {
 	feedback: NamespaceFeedbackTranslation,
+	helpers: NamespaceHelpersTranslation,
 	sms: NamespaceSmsTranslation
 }
 
@@ -32,41 +33,37 @@ type RootTranslation = {
 	 */
 	initiateAccountCreation: string
 	/**
-	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​K​a​r​i​b​u​ ​S​a​r​a​f​u​ ​N​e​t​w​o​r​k​!​
+	 * C​O​N​ ​K​a​r​i​b​u​ ​S​a​r​a​f​u​ ​N​e​t​w​o​r​k​!​
 ​{​l​a​n​g​u​a​g​e​s​}​
 ​
 ​0​0​.​O​n​d​o​k​a​
 ​1​1​.​ ​M​b​e​l​e
-	 * @param {unknown} feedback
 	 * @param {unknown} languages
 	 */
-	enteringPreferredLanguage: RequiredParams<'feedback' | 'languages'>
+	enteringPreferredLanguage: RequiredParams<'languages'>
 	/**
-	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​S​e​l​e​c​t​ ​l​a​n​g​u​a​g​e​:​
+	 * C​O​N​ ​S​e​l​e​c​t​ ​l​a​n​g​u​a​g​e​:​
 ​{​l​a​n​g​u​a​g​e​s​}​
 ​
 ​1​1​.​ ​M​b​e​l​e​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a
-	 * @param {unknown} feedback
 	 * @param {unknown} languages
 	 */
-	secondLanguageSet: RequiredParams<'feedback' | 'languages'>
+	secondLanguageSet: RequiredParams<'languages'>
 	/**
-	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​S​e​l​e​c​t​ ​l​a​n​g​u​a​g​e​:​
+	 * C​O​N​ ​S​e​l​e​c​t​ ​l​a​n​g​u​a​g​e​:​
 ​{​l​a​n​g​u​a​g​e​s​}​
 ​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a
-	 * @param {unknown} feedback
 	 * @param {unknown} languages
 	 */
-	thirdLanguageSet: RequiredParams<'feedback' | 'languages'>
+	thirdLanguageSet: RequiredParams<'languages'>
 	/**
-	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​P​I​N​ ​y​e​n​y​e​ ​n​a​m​b​a​r​i​ ​n​n​e​:
-	 * @param {unknown} feedback
+	 * C​O​N​ ​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​P​I​N​ ​y​e​n​y​e​ ​n​a​m​b​a​r​i​ ​n​n​e​:
 	 */
-	enteringPIN: RequiredParams<'feedback'>
+	enteringPIN: string
 	/**
 	 * C​O​N​ ​W​e​k​a​ ​P​I​N​ ​y​a​k​o​ ​t​e​n​a​:
 	 */
@@ -99,21 +96,19 @@ type RootTranslation = {
 	inviteRecipient: RequiredParams<'invitee'>
 	/**
 	 * C​O​N​ ​K​i​w​a​n​g​o​ ​c​h​a​ ​j​u​u​:​ ​{​m​a​x​S​p​e​n​d​a​b​l​e​}​
-​{​f​e​e​d​b​a​c​k​}​W​e​k​a​ ​k​i​w​a​n​g​o​:
-	 * @param {unknown} feedback
+​W​e​k​a​ ​k​i​w​a​n​g​o​:
 	 * @param {unknown} maxSpendable
 	 */
-	enteringAmount: RequiredParams<'feedback' | 'maxSpendable'>
+	enteringAmount: RequiredParams<'maxSpendable'>
 	/**
-	 * C​O​N​ ​{​f​e​e​d​b​a​c​k​}​{​r​e​c​i​p​i​e​n​t​}​ ​a​t​a​p​o​k​e​a​ ​{​a​m​o​u​n​t​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​u​t​o​k​a​ ​k​w​a​ ​{​s​e​n​d​e​r​}​
+	 * C​O​N​ ​{​r​e​c​i​p​i​e​n​t​}​ ​a​t​a​p​o​k​e​a​ ​{​a​m​o​u​n​t​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​u​t​o​k​a​ ​k​w​a​ ​{​s​e​n​d​e​r​}​
 ​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​P​I​N​ ​y​a​k​o​ ​k​u​d​h​i​b​i​t​i​s​h​a​:
 	 * @param {unknown} amount
-	 * @param {unknown} feedback
 	 * @param {unknown} recipient
 	 * @param {unknown} sender
 	 * @param {unknown} symbol
 	 */
-	confirmingTransfer: RequiredParams<'amount|currency' | 'feedback' | 'recipient' | 'sender' | 'symbol'>
+	confirmingTransfer: RequiredParams<'amount|currency' | 'recipient' | 'sender' | 'symbol'>
 	/**
 	 * E​N​D​ ​O​m​b​i​ ​l​a​k​o​ ​l​i​m​e​t​u​m​w​a​.​ ​{​r​e​c​i​p​i​e​n​t​}​ ​a​t​a​p​o​k​e​a​ ​{​a​m​o​u​n​t​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​u​t​o​k​a​ ​k​w​a​ ​{​s​e​n​d​e​r​}​.
 	 * @param {unknown} amount
@@ -122,6 +117,40 @@ type RootTranslation = {
 	 * @param {unknown} symbol
 	 */
 	initiatingTransfer: RequiredParams<'amount|currency' | 'recipient' | 'sender' | 'symbol'>
+	/**
+	 * C​h​a​g​u​a​ ​n​a​m​b​a​r​i​ ​a​u​ ​i​s​h​a​r​a​ ​k​u​t​o​k​a​ ​k​w​a​ ​s​a​l​i​o​ ​z​a​k​o​:​
+​{​v​o​u​c​h​e​r​s​}​
+​
+​0​.​ ​R​u​d​i​
+​1​1​.​ ​M​b​e​l​e
+	 * @param {unknown} vouchers
+	 */
+	enteringVoucher: RequiredParams<'vouchers'>
+	/**
+	 * C​h​a​g​u​a​ ​n​a​m​b​a​r​i​ ​a​u​ ​i​s​h​a​r​a​ ​k​u​t​o​k​a​ ​k​w​a​ ​s​a​l​i​o​ ​z​a​k​o​:​
+​{​v​o​u​c​h​e​r​s​}​
+​
+​1​1​.​ ​M​b​e​l​e​
+​2​2​.​ ​R​u​d​i
+	 * @param {unknown} vouchers
+	 */
+	secondVoucherSet: RequiredParams<'vouchers'>
+	/**
+	 * C​h​a​g​u​a​ ​n​a​m​b​a​r​i​ ​a​u​ ​i​s​h​a​r​a​ ​k​u​t​o​k​a​ ​k​w​a​ ​s​a​l​i​o​ ​z​a​k​o​:​
+​{​v​o​u​c​h​e​r​s​}​
+​
+​2​2​.​ ​R​u​d​i​
+​9​9​.​ ​O​n​d​o​k​a
+	 * @param {unknown} vouchers
+	 */
+	thirdVoucherSet: RequiredParams<'vouchers'>
+	/**
+	 * C​O​N​ ​S​u​c​c​e​s​s​!​ ​{​s​y​m​b​o​l​}​ ​i​s​ ​y​o​u​r​ ​a​c​t​i​v​e​ ​S​a​r​a​f​u​
+​0​.​ ​B​a​c​k​
+​9​.​ ​E​x​i​t
+	 * @param {unknown} symbol
+	 */
+	activeVoucherSet: RequiredParams<'symbol'>
 	/**
 	 * E​N​D​ ​A​s​a​n​t​e​ ​k​w​a​ ​k​u​t​u​m​i​a​ ​h​u​d​u​m​a​ ​y​a​ ​S​a​r​a​f​u​.
 	 */
@@ -154,6 +183,17 @@ export type NamespaceFeedbackTranslation = {
 	pinsMismatch: string
 }
 
+export type NamespaceHelpersTranslation = {
+	/**
+	 * H​a​m​n​a​ ​l​u​g​h​a​ ​n​y​i​n​g​i​n​e​.
+	 */
+	emptyLanguageSet: string
+	/**
+	 * H​a​m​n​a​ ​S​a​r​a​f​u​ ​n​y​i​n​g​i​n​e​.
+	 */
+	emptyVoucherSet: string
+}
+
 export type NamespaceSmsTranslation = {
 	/**
 	 * {​0​}​ ​a​m​e​k​u​k​a​r​i​b​i​s​h​a​ ​k​w​a​ ​m​t​a​n​d​a​o​ ​w​a​ ​S​a​r​a​f​u​.​ ​B​o​n​y​e​z​a​*​3​8​4​*​9​6​#​ ​S​a​f​a​r​i​c​o​m​ ​a​u​*​4​8​3​*​4​6​#​ ​k​w​a​ ​m​i​t​a​n​d​a​o​ ​t​o​f​a​u​t​i​.​ ​U​s​a​i​d​i​z​i​ ​{​1​}​.
@@ -165,6 +205,7 @@ export type NamespaceSmsTranslation = {
 
 export type Namespaces =
 	| 'feedback'
+	| 'helpers'
 	| 'sms'
 
 type DisallowNamespaces = {
@@ -173,6 +214,12 @@ type DisallowNamespaces = {
 	 * you need to use the `./feedback/index.ts` file instead
 	 */
 	feedback?: "[typesafe-i18n] reserved for 'feedback'-namespace. You need to use the `./feedback/index.ts` file instead."
+
+	/**
+	 * reserved for 'helpers'-namespace\
+	 * you need to use the `./helpers/index.ts` file instead
+	 */
+	helpers?: "[typesafe-i18n] reserved for 'helpers'-namespace. You need to use the `./helpers/index.ts` file instead."
 
 	/**
 	 * reserved for 'sms'-namespace\
@@ -195,34 +242,34 @@ export type TranslationFunctions = {
 	 */
 	initiateAccountCreation: () => LocalizedString
 	/**
-	 * CON {feedback}Karibu Sarafu Network!
+	 * CON Karibu Sarafu Network!
 {languages}
 
 00.Ondoka
 11. Mbele
 	 */
-	enteringPreferredLanguage: (arg: { feedback: unknown, languages: unknown }) => LocalizedString
+	enteringPreferredLanguage: (arg: { languages: unknown }) => LocalizedString
 	/**
-	 * CON {feedback}Select language:
+	 * CON Select language:
 {languages}
 
 11. Mbele
 22. Rudi
 00.Ondoka
 	 */
-	secondLanguageSet: (arg: { feedback: unknown, languages: unknown }) => LocalizedString
+	secondLanguageSet: (arg: { languages: unknown }) => LocalizedString
 	/**
-	 * CON {feedback}Select language:
+	 * CON Select language:
 {languages}
 
 22. Rudi
 00.Ondoka
 	 */
-	thirdLanguageSet: (arg: { feedback: unknown, languages: unknown }) => LocalizedString
+	thirdLanguageSet: (arg: { languages: unknown }) => LocalizedString
 	/**
-	 * CON {feedback}Tafadhali weka PIN yenye nambari nne:
+	 * CON Tafadhali weka PIN yenye nambari nne:
 	 */
-	enteringPIN: (arg: { feedback: unknown }) => LocalizedString
+	enteringPIN: () => LocalizedString
 	/**
 	 * CON Weka PIN yako tena:
 	 */
@@ -252,18 +299,48 @@ export type TranslationFunctions = {
 	inviteRecipient: (arg: { invitee: unknown }) => LocalizedString
 	/**
 	 * CON Kiwango cha juu: {maxSpendable}
-{feedback}Weka kiwango:
+Weka kiwango:
 	 */
-	enteringAmount: (arg: { feedback: unknown, maxSpendable: unknown }) => LocalizedString
+	enteringAmount: (arg: { maxSpendable: unknown }) => LocalizedString
 	/**
-	 * CON {feedback}{recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}
+	 * CON {recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}
 Tafadhali weka PIN yako kudhibitisha:
 	 */
-	confirmingTransfer: (arg: { amount: unknown, feedback: unknown, recipient: unknown, sender: unknown, symbol: unknown }) => LocalizedString
+	confirmingTransfer: (arg: { amount: unknown, recipient: unknown, sender: unknown, symbol: unknown }) => LocalizedString
 	/**
 	 * END Ombi lako limetumwa. {recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}.
 	 */
 	initiatingTransfer: (arg: { amount: unknown, recipient: unknown, sender: unknown, symbol: unknown }) => LocalizedString
+	/**
+	 * Chagua nambari au ishara kutoka kwa salio zako:
+{vouchers}
+
+0. Rudi
+11. Mbele
+	 */
+	enteringVoucher: (arg: { vouchers: unknown }) => LocalizedString
+	/**
+	 * Chagua nambari au ishara kutoka kwa salio zako:
+{vouchers}
+
+11. Mbele
+22. Rudi
+	 */
+	secondVoucherSet: (arg: { vouchers: unknown }) => LocalizedString
+	/**
+	 * Chagua nambari au ishara kutoka kwa salio zako:
+{vouchers}
+
+22. Rudi
+99. Ondoka
+	 */
+	thirdVoucherSet: (arg: { vouchers: unknown }) => LocalizedString
+	/**
+	 * CON Success! {symbol} is your active Sarafu
+0. Back
+9. Exit
+	 */
+	activeVoucherSet: (arg: { symbol: unknown }) => LocalizedString
 	/**
 	 * END Asante kwa kutumia huduma ya Sarafu.
 	 */
@@ -289,6 +366,16 @@ Tafadhali weka PIN yako kudhibitisha:
 		 * PIN zilizowekwa hazikufanana.
 		 */
 		pinsMismatch: () => LocalizedString
+	}
+	helpers: {
+		/**
+		 * Hamna lugha nyingine.
+		 */
+		emptyLanguageSet: () => LocalizedString
+		/**
+		 * Hamna Sarafu nyingine.
+		 */
+		emptyVoucherSet: () => LocalizedString
 	}
 	sms: {
 		/**
