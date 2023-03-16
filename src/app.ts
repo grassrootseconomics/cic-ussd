@@ -1,4 +1,4 @@
-import { fastifyServerDevOptions } from "@dev/debug";
+import {fastifyServerDevOptions} from "@dev/debug";
 import fastifyCors from "@fastify/cors";
 import formBody from "@fastify/formbody";
 import fastifyPostgres from "@fastify/postgres";
@@ -10,21 +10,14 @@ import redisPlugin from "@plugins/redis";
 import ussdRoutes from "@routes/ussd";
 
 import * as dotenv from "dotenv";
-import fastify, { FastifyServerOptions } from "fastify";
+import fastify, {FastifyServerOptions} from "fastify";
 import qs from "qs";
 
-import { config } from "./config";
+import {config} from "./config";
 
 // TODO: [Philip] - Whereas this shifts from convict to dotenv, is it ideal for externally defined variables like ones stored in vault?
 dotenv.config()
 
-// set up fastify server options.
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:43:11 AM
- *
- * @type {FastifyServerOptions}
- */
 let serverOptions: FastifyServerOptions = {
   disableRequestLogging: config.SERVER.DISABLE_REQUEST_LOGGING,
   logger: {
@@ -40,13 +33,6 @@ if (config.DEV) {
   serverOptions = fastifyServerDevOptions
 }
 
-// create fastify app.
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:43:11 AM
- *
- * @type {*}
- */
 const app = fastify(serverOptions)
 
 // register third-party plugins.
@@ -68,7 +54,7 @@ app.register(natsPlugin, {
     name: config.NATS.CLIENT_NAME,
     servers: [config.NATS.URL],
   },
-  subject: config.NATS.SUBJECT,
+  subjects: [ config.NATS.CHAIN.SUBJECTS ]
 })
 app.register(redisPlugin, { host: config.REDIS.HOST, port: config.REDIS.PORT })
 

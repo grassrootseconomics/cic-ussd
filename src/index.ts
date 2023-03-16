@@ -1,6 +1,7 @@
 import app from "./app";
-import { config } from "./config";
-import { FastifyInstance } from "fastify";
+import {config} from "./config";
+import {FastifyInstance} from "fastify";
+import {loadSystemVouchers} from "@lib/ussd/utils";
 
 /**
  * Description placeholder
@@ -20,6 +21,8 @@ async function init(fastify: FastifyInstance) {
     if (config.DEV) {
       fastify.log.debug(`Server routes: ${fastify.printRoutes()}`);
     }
+
+    loadSystemVouchers(fastify.graphql, fastify.p_redis)
   });
 
   fastify.listen({ host: config.SERVER.HOST, port: config.SERVER.PORT },
