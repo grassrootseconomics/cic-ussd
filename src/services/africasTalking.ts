@@ -1,5 +1,5 @@
-import { SessionRequest } from "@services/session";
-import { getCountryCodeFromPhoneNumber } from "@utils/phoneNumber";
+import {SessionRequest} from "@services/session";
+import {getCountryCodeFromPhoneNumber} from "@utils/phoneNumber";
 
 /**
  * Description placeholder

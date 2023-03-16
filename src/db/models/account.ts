@@ -1,6 +1,8 @@
-import { PostgresDb } from "@fastify/postgres";
+import {PostgresDb} from "@fastify/postgres";
 
-import { PoolClient } from "pg";
+import {Redis as RedisClient} from "ioredis";
+import {Cache} from "@utils/redis";
+import {Address} from "@lib/ussd/utils";
 
 /**
  * Enum for account status
@@ -14,24 +16,12 @@ export enum AccountStatus {
   RESETTING_PASSWORD = 'RESETTING_PASSWORD',
 }
 
-/**
- * Interface for account object in database
- * @interface
- * @property {number} id - account id
- * @property {boolean} activated_on_chain - whether account is activated on chain
- * @property {boolean} activated_on_ussd - whether account is activated on ussd
- * @property {string} address - account address
- * @property {string} language - account language
- * @property {string} password - account password
- * @property {string} phone_number - account phone number
- * @property {number} pin_attempts - number of pin attempts
- * @property {AccountStatus} status - account status
- */
 export interface Account {
-  id: number
   activated_on_chain: boolean
   activated_on_ussd: boolean
-  address: string
+  address: Address
+  guardians?: string[]
+  id: number
   language: string
   password: string
   phone_number: string
@@ -62,17 +52,25 @@ export async function findPhoneNumber (db: PostgresDb, phoneNumber: string) {
  * Creates an account
  * @param {fastifyPostgres.PostgresDb} db - database connection.
  * @param {Partial<Account>} account - account object.
+ * @param redis
  * @returns {Promise<any>} - account object. see {@link Account}
  */
 export async function createAccount (
+  account: Partial<Account>,
   db: PostgresDb,
-  account: Partial<Account>
+  redis: RedisClient
 ) {
+  console.debug(`Creating account for: ${account.address} ...`)
   const client = await db.connect()
   try {
     const { rows } = await client.query(`
         INSERT INTO accounts (address, language, phone_number) VALUES ($1, $2, $3) RETURNING *`,
     [account.address, account.language, account.phone_number])
+
+    // create a redis record for the account
+    const cache = new Cache(redis, account.phone_number)
+    await cache.setJSON(rows[0])
+
     return rows[0]
   } catch (error) {
     client.release()
@@ -80,15 +78,22 @@ export async function createAccount (
 }
 
 export async function activateOnChain (
+  address: string,
   db: PostgresDb,
-  address: string
+  redis: RedisClient,
 ) {
+  console.debug(`Marking: ${address} as activated on chain ...`)
   const client = await db.connect()
   try {
     const { rows } = await client.query(
       'UPDATE accounts SET activated_on_chain = true WHERE address = $1 RETURNING *',
       [address]
     )
+    // activate in redis record as well
+    const cache = new Cache(redis, rows[0].phone_number)
+    await cache.updateJSON({
+      activated_on_chain: true
+    })
     return rows[0]
   } catch (error) {
     client.release()
@@ -96,11 +101,12 @@ export async function activateOnChain (
 }
 
 export async function activateOnUssd (db: PostgresDb, password: string, phoneNumber: string) {
+  console.debug(`Marking: ${phoneNumber} as activated on ussd ...`)
   const client = await db.connect()
   try {
     const { rows } = await client.query(
-      'UPDATE accounts SET activated_on_ussd = true, password = $1 WHERE phone_number = $2 RETURNING *',
-      [password, phoneNumber]
+      'UPDATE accounts SET activated_on_ussd = true, password = $1, status = $2 WHERE phone_number = $3 RETURNING activated_on_ussd, password, status',
+      [password, AccountStatus.ACTIVE, phoneNumber]
     )
     return rows[0]
   } catch (error) {
@@ -108,40 +114,63 @@ export async function activateOnUssd (db: PostgresDb, password: string, phoneNum
   }
 }
 
-export function blockOnUssd (db: PostgresDb, address: string) {
-  db.connect(onConnect)
+export async function blockOnUssd (db: PostgresDb, phoneNumber: string, redis: RedisClient) {
+  console.debug(`Marking: ${phoneNumber} as blocked on ussd ...`)
+  const cache = new Cache(redis, phoneNumber)
+  const cu = cache.updateJSON({
+    activated_on_ussd: false,
+    status: AccountStatus.BLOCKED
+  })
 
-  function onConnect (err: Error, client: PoolClient, release) {
-    if (err) {
-      throw err
-    }
-    client.query(
-      'UPDATE accounts SET activated_on_ussd = $1, status = $2 WHERE address = $3',
-      [false, AccountStatus.BLOCKED, address],
-      function onResult (err) {
-        console.error(err)
-        release()
-      }
+  const du = db.connect().then(async (client) => {
+    const { rows } = await client.query(
+      'UPDATE accounts SET status = $1, activated_on_ussd = false WHERE phone_number = $2 RETURNING *',
+      [AccountStatus.BLOCKED, phoneNumber]
     )
-  }
+    return rows[0]
+  })
+
+  const [_, dr] = await Promise.all([cu, du])
+
+  return dr
 }
 
-export function updatePinAttempts (db: PostgresDb, address: string, pinAttempts: number) {
-  db.connect(onConnect)
+export async function updatePinAttempts (db: PostgresDb, phoneNumber: string,  pinAttempts: number, redis: RedisClient) {
+  console.debug(`Updating pin attempts for: ${phoneNumber} ...`)
+  const cache = new Cache(redis, phoneNumber)
 
-  function onConnect (err: Error, client: PoolClient, release) {
-    if (err) {
-      throw err
-    }
-    client.query(
-      'UPDATE accounts SET pin_attempts = $1 WHERE address = $2',
-      [pinAttempts, address],
-      function onResult (err) {
-        console.error(err)
-        release()
-      }
+  const cu = cache.updateJSON({
+    pin_attempts: pinAttempts
+  })
+
+  const du = db.connect().then(async (client) => {
+    const { rows } = await client.query(
+      'UPDATE accounts SET pin_attempts = $1 WHERE phone_number = $2 RETURNING *',
+      [pinAttempts, phoneNumber]
     )
-  }
+    return rows[0]
+  })
+
+  await Promise.all([cu, du])
+}
+
+export async function updateLanguage(db: PostgresDb, phoneNumber: string, language: string, redis: RedisClient) {
+  console.debug(`Updating language to: ${language} for: ${phoneNumber} ...`)
+  const cache = new Cache(redis, phoneNumber)
+
+  const cu = cache.updateJSON({
+    language
+  })
+
+  const du = db.connect().then(async (client) => {
+    const { rows } = await client.query(
+      'UPDATE accounts SET language = $1 WHERE phone_number = $2 RETURNING *',
+      [language, phoneNumber]
+    )
+    return rows[0]
+  })
+
+  await Promise.all([cu, du])
 }
 
 export async function findById (db: PostgresDb, id: number) {
@@ -157,14 +186,41 @@ export async function findById (db: PostgresDb, id: number) {
   }
 }
 
-export async function resetAccount(db: PostgresDb, phoneNumber: string) {
-  const client = await db.connect()
-  try {
+export async function resetAccount(db: PostgresDb, phoneNumber: string, redis: RedisClient) {
+  // reset account in db and redis
+  const cache = new Cache(redis, phoneNumber)
+  const cu = cache.updateJSON({
+    activated_on_ussd: false,
+    pin_attempts: 0,
+    status: AccountStatus.RESETTING_PASSWORD,
+    password: null
+  })
+
+  const du = db.connect().then(async (client) => {
     const { rows } = await client.query(
-      'UPDATE accounts SET status = $1, pin_attempts = $2 WHERE phone_number = $3',
-      [AccountStatus.RESETTING_PASSWORD, 0, phoneNumber]
+      'UPDATE accounts SET activated_on_ussd = false, pin_attempts = 0, status = $1, password = null WHERE phone_number = $2 RETURNING *',
+      [AccountStatus.RESETTING_PASSWORD, phoneNumber]
     )
-  } finally {
-    client.release()
-  }
+    return rows[0]
+  })
+
+  await Promise.all([cu, du])
+}
+
+export async function updatePin (db: PostgresDb, password: string, phoneNumber: string, redis: RedisClient) {
+  console.debug(`Updating pin for: ${phoneNumber} ...`)
+  const cache = new Cache(redis, phoneNumber)
+  const cu = cache.updateJSON({
+    password
+  })
+
+  const du = db.connect().then(async (client) => {
+    const { rows } = await client.query(
+      'UPDATE accounts SET password = $1 WHERE phone_number = $2',
+      [password, phoneNumber]
+    )
+    return rows[0]
+  })
+
+  await Promise.all([cu, du])
 }

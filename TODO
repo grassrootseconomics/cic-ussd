@@ -1,6 +1,2 @@
-- clean up interaction with nested components in UssdSession object that lives in cache.
-- ensure errorMessages from the machine context are concatenated, not overwritten.
-- separate machines.
-- make ussd context dry.
-- find away to execute actions that can offer users meaningful feedback especially in states that circle back to themselves.
-- add failed pin attempts records to account.
+- find a way to execute actions that can offer users meaningful feedback especially in states that circle back to themselves.
+- generate hugo docs theme from tsdoc

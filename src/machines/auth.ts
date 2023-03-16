@@ -1,30 +1,25 @@
-import { createMachine, send } from "xstate";
+import {createMachine, send} from "xstate";
 import bcrypt from "bcrypt";
-import { updatePinAttempts, blockOnUssd, activateOnUssd } from "@db/models/account";
-import { BaseContext, BaseEvent } from "@src/machines/utils";
+import {AccountStatus, activateOnUssd, blockOnUssd, updatePinAttempts} from "@db/models/account";
+import {BaseContext, BaseEvent, isOption00, translate, updateErrorMessages} from "@src/machines/utils";
+import {ActiveVoucher} from "@lib/ussd/voucher";
+import {Cache} from "@utils/redis";
 
-export interface AuthContext extends BaseContext {
-  data: {
-    initialPin?: string;
-  }
-}
 
-type AuthEvent =
-  BaseEvent
-
-export const authMachine = createMachine<AuthContext, AuthEvent>({
-    /** @xstate-layout N4IgpgJg5mDOIC5QEMCuAXAFgWWQY0wEsA7MAOjGPTACcSoAFEgYgBUAlAQQDkBlASVYBtAAwBdRKAAOAe1iF0hGcUkgAHogBMAdgCMZAJwA2ABzaArABoQATy26ALGREPT5g9oe7NukQYcAvgHWaFi4BCTklNR0xIwsHDwCwroSSCCy8orKqhoIOvrGZla2iLoAzCaGukZG5o4i2mbaRkEhGDj4RKRkJABuyAA2hBBMxMzsAKIcAJqiadJyCkoq6XkOIppk9eZGmiV2CCZVXrX1G03aLW0goZ0RPXjKAGaENAC29GNsXHyC86pMsscmsypt9JoROVvActOYnI4TA5NCivD4-IFgrcOuFuuQnsRXh8vglfskhKlAUtsqtQHlfD4yJDoftrIddOYti4audGs09jc7rjImQpCRsIRYO9kOgCBNpuw5uIqVkVrkyhzymRyhY2WD9PCeQ1Li1dIKcV0RfhFANFHFOHgnqgqMwIMpyP0ZABrchCy09a2EW30B1OqgIT14GUreYA9JAmnqhC6CzaZx7WH5DxkMwOAxIzzeXz+c1hf2+vA26P2x0yZ3oZi0GgyGiiwYy54t95kP0PCtVu1QUN18OR6PKWPK+PUtWg5Op9Os0rJ9w5-PI1FFjFBLHEGQQOCqXt4lXA2nqRAAWiMeoQ19L9zxFCotBJ54Ts7piGRt8hRiZebroW6Illix4iv0QwjGMp6JnO5xMlCMK3iY+iAUBaLFpi7Rln2ZAEkSnxxDB06qiCX4IAhzLIcuPgnAYDEFph25gRaeFisQEpSjKBCwZ+F7JpodSLpmqFkHseZMVuoE4Y+VqVkG1ZDrW9Z8eRAkVCYWq6I45haeUBmGeUv6VGQ3iSQ4wFYQ+woBgpwbKJMNDNjQannvSxj-kYfg6pmHJVOZGHSdh2K4U+0ripQqBuUmuieeJPm6rRRhahJQUgZiQRAA */
-    id: 'authMachine',
+export const authMachine = createMachine<BaseContext, BaseEvent>({
+    /** @xstate-layout N4IgpgJg5mDOIC5QEMCuAXAFgOjVsAdugJYDGyJBUAxANoAMAuoqAA4D2sxJ7BLIAD0QAmAIyjsADgDsAFgCc84QGZRwgKwL5AGhABPRGoBs2emfrL16o6OlHpogL6PdeHG8IlylGrVHMkEA4uHj5AoQQxCRktFTVNRV0DSOV6bA0zS1tZZUV6WWdXDHdizzIKYio6YQC2Tm5iXn4IqKk5RTiNLSTEZWVZbHVzYXolaSHJPsKQN2xPMAAnSqgABUrqABUAJQBBADkAZQBJDYZaoPrQ5sR5dWFsfuVpZSNlSSVX0R7I0QH8o3k9EkslE8jeinU01m8yWVDWBE2u0OJz852CDSa4RudweOWer3ewk+31Eb2w8lERiMkgBt1kZmEkihxWwlQAbsgADbECDw6hbACi2wAmmd+OirliEKIgfd3vQjCNZOpnupct9JJJsCCqTT5ApKfRpEyXDMWaReAAzYgLAC2yz5232x1OTHFl0aYVAEVs9AkKskQMBshDKqM3y62F+wOk0nymXeRmZWGwFoI1rtDvWTuRp387pCnuu0rj-uNQfyobsJJx+VsjOkYiByg0yZwrEqAFliLBbRRSJh+UKtqK3YEJUWpaJJspsO15HIcjESX7BiDnkT+nHnvI27hSCQOT4dqQLagiNQILwwKyCGz2ABrG+zZAH4hH5Yns9EBDs9jeT0zjFccPUxb0RDxbUnhDVINGBSwIwXNohmEZUjD9YRpD3V9DwqKgv3Yc90GoRYFnYBZsFYTkKEtcjbVwFkcPfPCoAIojfzvf8Kl4ICxzqQswMECCnigxdYPUeD1BreQpHkSQ7lsSwLHUJxpgIdgIDgfg3ALDEvSEhAAFpw30RBDPUclFCs6yrMbbDSiIcofF0yVwIQWRhG+FtZ3iP1LBGIwckhU0X1PQiiBWMjSDgLgqBcyc3OVNIYluHcXjeBUVzScYzHpUlLFyZQ9xhLN9InQSIiMTRtWs0kKTVHRTMiBV0iGCxA1QmIsJCll2S5Hl4XiirDFBAYA3EQNFHpBcNX9YYzDuWQqQVPc0wze04UqIb9J9UbBmNCbRn1UZpAjadBnmoZRE0OMip6lMOwIbte37TBtuLUaLLxWRGyBI15BM5JJAkRUhlu-6rDs+73DfD98LCoj3qlALZ1kd5NCJNGHCqiMyV8hIlA895uqKFMmI-XgBQWMiFiRtzMZMOScmEVDMLuJ4ay1fHVCeFVKRNUmcD7LtCFQOmDIZ8l4JZjzxhUU6ms3bBQeU6d9TuYLBbmARuHFiIkraBQVUKglMqa1IZIyCxflyI11F3ZxHCAA */
+    id: 'auth',
     initial: "authenticating",
     predictableActionArguments: true,
     states: {
       authenticating: {
         always: [
-          { target: "accountProcessing", cond: "isPendingOnChain" },
+          { target: "processingAccount", cond: "isPendingOnChain" },
           { target: "enteringPin", cond: "isPendingOnUssd" },
+          { target: "accountBlocked", cond: "isBlocked" }
         ]
       },
-      accountProcessing: {
+      processingAccount: {
         type: "final",
         description: "Account is being processed on chain"
       },
@@ -32,6 +27,7 @@ export const authMachine = createMachine<AuthContext, AuthEvent>({
         on: {
           TRANSIT: [
             { target: "confirmingPin", cond: "isValidPin", actions: ["savePin", "encryptInput"] },
+            { target: "exit", cond: "isOption00" },
             { target: "invalidPin" }
           ]
         },
@@ -48,6 +44,7 @@ export const authMachine = createMachine<AuthContext, AuthEvent>({
         on: {
           TRANSIT: [
             { target: "activatingAccount", cond: "pinsMatch", actions: ["encryptInput"] },
+            { target: "exit", cond: "isOption00" },
             { target: "pinMismatch" }
           ]
         },
@@ -66,86 +63,142 @@ export const authMachine = createMachine<AuthContext, AuthEvent>({
           onDone: "mainMenu",
           onError: { target: "activationError", actions: "updateErrorMessages" }
         },
-        description: "Activates the account on the ussd platform."
+        description: "Activates the account on the ussd platform.",
+        tags: "invoked"
       },
       activationError: {
         type: "final",
-        description: "An error occurred while activating the account."
+        description: "An error occurred while activating the account.",
+        tags: "error"
       },
       mainMenu: {
         type: "final",
-        description: "Final state. Indicates successful authentication and access to main menu."
+        description: "Final state. Indicates successful authentication and access to main menu.",
+        tags: "resolved"
       },
+      exit: {
+        type: "final",
+        description: "Final state. Indicates that the user has exited the authentication process."
+      },
+      accountBlocked: {
+        type: "final",
+        description: "Final state. Indicates that the user's account is blocked."
+      }
     }
-  })
+  },
+    {
+      actions: {
+        encryptInput,
+        savePin,
+        updateErrorMessages,
+      },
+      guards: {
+        isOption00,
+        isPendingOnChain,
+        isPendingOnUssd,
+        isValidPin,
+        pinsMatch,
+        isBlocked,
+      },
+      services: {
+        activateAccount,
+      }
+    })
 
-export async function activateAccount (context: AuthContext) {
-  const { data: { initialPin },  resources: { db }, user: { account: { phone_number } } } = context
-  return await activateOnUssd(db, initialPin, phone_number)
+export async function activateAccount (context: BaseContext) {
+  const { data: { initialPin },  resources: { db, p_redis }, user: { account: { phone_number } } } = context
+  const result = await activateOnUssd(db, initialPin, phone_number)
+  if (result?.status === AccountStatus.ACTIVE) {
+    const cache = new Cache(p_redis, phone_number)
+    await cache.updateJSON( { ...result } )
+  }
 }
 
-export function blockAccount (context: BaseContext) {
-  blockOnUssd(context.resources.db, context.user.account.address)
+export async function blockAccount (context: BaseContext) {
+  const { resources: { db, p_redis }, user: { account: { phone_number } } } = context
+  await blockOnUssd(db, phone_number, p_redis)
 }
 
+// TODO[Philip]: Make this async
 export function createPINHash (pin: string) {
   // hash pin with bcrypt and 8 rounds of salt
   return bcrypt.hashSync(pin, 8)
 }
 
-export function encryptInput (context: AuthContext, event: any) {
+export function encryptInput (context: BaseContext, event: any) {
   context.ussd.input = context.data.initialPin || createPINHash(context.ussd.input)
   return context
-}
-
-
-
-export function isAuthorized (context: AuthContext, event: any) {
-  return (
-    bcrypt.compareSync(event.data, context.user.account.password) &&
-    context.user.account.status === 'ACTIVE'
-  )
 }
 
 export function isBlocked (context: BaseContext) {
   return context.user.account.status === 'BLOCKED'
 }
 
+export function isPendingOnChain (context: BaseContext) {
+  const { user: { account: { activated_on_chain, status } } } = context
+  return (
+      !activated_on_chain && status === AccountStatus.PENDING
+  )
+}
 
 export function isPendingOnUssd (context: BaseContext) {
+  const { user: { account: { activated_on_chain, activated_on_ussd, status } } } = context
   return (
-    context.user.account.status === 'PENDING' &&
-    context.user.account.activated_on_chain &&
-    !context.user.account.activated_on_ussd
+    status === AccountStatus.PENDING && activated_on_chain && !activated_on_ussd
   )
 }
 
 export function isValidPin (_, event: any) {
-  return /^\d{4}$/.test(event.data)
+  return /^\d{4}$/.test(event.input)
 }
 
-export function pinsMatch (context: AuthContext, event: any) {
-  const hashedPin = context.data?.initialPin
-  return bcrypt.compareSync(event.data, hashedPin)
+export function pinsMatch (context: BaseContext, event: any) {
+  const { data, ussd: { input } } = context
+  const hashedPin = data?.initialPin
+  return bcrypt.compareSync(input, hashedPin)
 }
 
-export function savePin (context: AuthContext, event: any) {
-  context.data.initialPin = createPINHash(event.data)
+export function savePin (context: BaseContext, event: any) {
+  context.data.initialPin = createPINHash(event.input)
   return context
 }
 
-export function updateAttempts(context: BaseContext) {
-  const { user, resources } = context;
-  const { account } = user;
+export async function updateAttempts(context: BaseContext) {
+  const { user, resources: { db, p_redis } } = context;
+  const { account: { phone_number, pin_attempts, status } } = user;
 
-  if (account.status === 'BLOCKED') {
-    return;
+  if (status === 'BLOCKED') {
+    throw new Error('Account is blocked')
   }
 
-  const remainingAttempts = account.pin_attempts + 1;
-  updatePinAttempts(resources.db, account.address, remainingAttempts);
+  const attempts = pin_attempts + 1;
+  await updatePinAttempts(db, phone_number, attempts, p_redis);
 
-  remainingAttempts === 3 && blockAccount(context);
+  attempts === 3 && await blockAccount(context);
 }
 
+export async function authTranslations(voucher: ActiveVoucher, state: string, translator: any) {
+  const { balance, symbol } = voucher
+  if (state === "mainMenu"){
+    return await translate(state, translator, { balance: balance, symbol: symbol })
+  } else {
+    return await translate(state, translator)
+  }
+}
 
+export async function validatePin(context: BaseContext, event: any) {
+  const { user, ussd: { input }, resources: { db, p_redis } } = context;
+  const { account: { phone_number, password, status } } = user;
+
+  if (status === 'BLOCKED') {
+    throw new Error('Account is blocked')
+  }
+
+  const isValid = await bcrypt.compare(input, password)
+  if (!isValid) {
+    await updateAttempts(context)
+    throw new Error('Invalid pin')
+  }
+
+  await updatePinAttempts(db, phone_number, 0, p_redis);
+}

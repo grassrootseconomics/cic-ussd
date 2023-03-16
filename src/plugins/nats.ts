@@ -1,44 +1,19 @@
-import { FastifyPluginAsync } from "fastify";
+import {FastifyPluginAsync} from "fastify";
 import fp from "fastify-plugin";
-import { ConnectionOptions, connect, NatsError, Msg } from "nats";
-import { config } from "@src/config";
-import { natsConnectionDevOptions } from "@dev/debug";
-import { processMessage } from "@lib/natsHandler";
+import {connect, ConnectionOptions, Msg, NatsError} from "nats";
+import {config} from "@src/config";
+import {natsConnectionDevOptions} from "@dev/debug";
+import {processMessage} from "@lib/natsHandler";
 
-/**
- * Description placeholder
- *
- * @interface NatsPluginOptions
- * @typedef {NatsPluginOptions}
- */
+
 interface NatsPluginOptions {
-  /**
-   * Description placeholder
-   *
-   * @type {ConnectionOptions}
-   */
   connOpts: ConnectionOptions;
-  /**
-   * Description placeholder
-   *
-   * @type {string}
-   */
-  subject: string;
+  subjects: string[];
 }
 
-
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:50:42 AM
- *
- * @async
- * @param {*} fastify
- * @param {*} options
- * @returns {*}
- */
 const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, options) => {
 
-  let { connOpts, subject } = options;
+  let { connOpts, subjects } = options;
 
   if (connOpts.servers.length === 0) {
     throw new Error("NATS server URL not specified.");
@@ -57,11 +32,11 @@ const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, option
       fastify.log.error(err);
       return;
     }
-    await processMessage(fastify.pg, fastify.graphql, msg, fastify.provider, fastify.redis)
+    await processMessage(fastify.pg, fastify.graphql, msg, fastify.provider, fastify.p_redis)
   }
 
-  if (subject) {
-    fastify.log.info(`Subscribing to subject ${subject}`);
+  for (const subject of subjects) {
+    console.info(`Subscribing to subject ${subject}`);
     nc.subscribe(subject, {
       callback: handler,
     });

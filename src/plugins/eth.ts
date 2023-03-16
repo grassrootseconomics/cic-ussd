@@ -1,5 +1,5 @@
-import { ethers, Provider } from "ethers";
-import { FastifyPluginAsync } from "fastify";
+import {ethers, Provider} from "ethers";
+import {FastifyPluginAsync} from "fastify";
 import fp from "fastify-plugin";
 
 

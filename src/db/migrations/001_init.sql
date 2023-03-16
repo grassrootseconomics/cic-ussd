@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS "sessions" (
     ext_id TEXT UNIQUE CHECK (ext_id <> ''),
     inputs TEXT[] NOT NULL,
     machine_state TEXT NOT NULL CHECK (machine_state <> ''),
+    machines TEXT[] NOT NULL,
     phone_number TEXT NOT NULL CHECK (phone_number <> '' AND char_length(phone_number) = 13),
     responses TEXT[] NOT NULL,
     service_code TEXT NOT NULL CHECK (service_code <> ''),

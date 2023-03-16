@@ -1,139 +1,164 @@
-import { config } from "@src/config";
-import { JSONCodec, Msg } from "nats";
-import { GraphQLClient } from "graphql-request";
-import { getVouchersByAddress } from "@lib/graph/voucher";
-import { Redis as RedisClient } from "ioredis";
-import { setVouchers, VoucherMetadata } from "@lib/ussd/voucher";
-import { Provider } from "ethers";
-import { activateOnChain } from "@db/models/account";
-import { PostgresDb } from "@fastify/postgres";
-import { retrieveWalletBalance } from "@lib/ussd/account";
+import {config} from "@src/config";
+import {JSONCodec, Msg} from "nats";
+import {GraphQLClient} from "graphql-request";
+import {Redis as RedisClient} from "ioredis";
+import {getAddress, Provider} from "ethers";
+import {PostgresDb} from "@fastify/postgres";
+import {Cache} from "@utils/redis";
+import {ActiveVoucher, getVouchers, getVoucherSymbol, setVouchers, VoucherMetadata} from "@lib/ussd/voucher";
+import {AccountMetadata, getAccountMetadata, retrieveWalletBalance, setAccountMetadata} from "@lib/ussd/account";
+import {Transaction, TransactionType} from "@machines/statement";
+import {getVouchersByAddress} from "@lib/graph/voucher";
+import {activateOnChain} from "@db/models/account";
+import {Address, Symbol} from "@lib/ussd/utils";
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:42:46 AM
- *
- * @interface AccountRegisterEvent
- * @typedef {AccountRegisterEvent}
- */
-interface AccountRegisterEvent {
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:42:46 AM
-   *
-   * @type {number}
-   */
-  block: number
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:42:46 AM
-   *
-   * @type {string}
-   */
-  publicKey: string
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:42:46 AM
-   *
-   * @type {string}
-   */
-  voucherAddress: string
-}
-
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:42:46 AM
- *
- * @interface TransferEvent
- * @typedef {TransferEvent}
- */
 interface TransferEvent {
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:42:46 AM
-   *
-   * @type {string}
-   */
-  OTxId: string
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:42:46 AM
-   *
-   * @type {string}
-   */
-  TrackingId: string
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:42:45 AM
-   *
-   * @type {string}
-   */
-  TxHash: string
+  block: number;
+  contractAddress: string;
+  from: string;
+  success: boolean;
+  to: string;
+  transactionHash: string;
+  transactionIndex: number;
+  value: number;
 }
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:44:09 AM
- *
- * @export
- * @async
- * @param {PostgresDb} db
- * @param {GraphQLClient} graphql
- * @param {Msg} msg
- * @param {Provider} provider
- * @param {RedisClient} redis
- * @returns {*}
- */
 export async function processMessage (db: PostgresDb, graphql: GraphQLClient, msg: Msg, provider: Provider, redis: RedisClient) {
   let codec: any
   let message: any
 
-  switch (msg.subject) {
-    case `${config.NATS.SUBJECT}.accountRegister`:
-      codec = JSONCodec<AccountRegisterEvent>()
-      message = codec.decode(msg.data)
-      await handleReg(db, graphql, message, provider, redis)
-      msg.respond()
-      break
-    case `${config.NATS.SUBJECT}.signTransfer`:
-      codec = JSONCodec<TransferEvent>()
-      message = codec.decode(msg.data)
-      console.log(`Received transfer message: ${JSON.stringify(message)}`)
-      break
-    default:
-      console.warn(`Message subject: ${msg.subject} not recognized. Ignoring message`)
-      break
+  try{
+    if (msg.subject === `${config.NATS.CHAIN.STREAM_NAME}.transfer`) {
+      {
+        codec = JSONCodec<TransferEvent>()
+        message = codec.decode(msg.data)
+        await handleTransfer(db, graphql, message, provider, redis)
+        //message.respond('OK')
+      }
+    } else {
+      console.log("Unknown subject: ", msg.subject)
+    }
+  } catch(error) {
+    console.error(error)
+    throw new Error(error)
   }
 }
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:44:09 AM
- *
- * @export
- * @async
- * @param {PostgresDb} db
- * @param {GraphQLClient} graphql
- * @param {AccountRegisterEvent} msg
- * @param {Provider} provider
- * @param {RedisClient} redis
- * @returns {*}
- */
-export async function handleReg (db: PostgresDb, graphql: GraphQLClient, msg: AccountRegisterEvent, provider: Provider, redis: RedisClient) {
-  try {
-    // set up account for use on ussd.
-    const voucher = await getVouchersByAddress(graphql, msg.voucherAddress)
-    const balance = await retrieveWalletBalance(msg.publicKey, msg.voucherAddress, provider)
-    await setVouchers(redis,VoucherMetadata.ACTIVE, {
-      address: voucher.token_address,
-      balance,
-      symbol: voucher.symbol,
-    }, msg.publicKey)
+async function updateHeldVouchers(address: Address, contractAddress: Address, redis: RedisClient, symbol: Symbol, balance: number): Promise<ActiveVoucher[]> {
+  const heldVouchers = await getVouchers<ActiveVoucher[]>(address, redis, VoucherMetadata.HELD) || []
+  const updatedVoucherIndex = heldVouchers.findIndex(v => v.symbol === symbol)
 
-    // set activated on chain
-    await activateOnChain(db, msg.publicKey)
-  } catch (err) {
-    console.error('NATs Error: ', err)
-    throw new Error(`Failed to handle accountRegister event: ${err}`)
+  if (updatedVoucherIndex >= 0) {
+    const updatedVoucher = { ...heldVouchers[updatedVoucherIndex], balance }
+    return [ ...heldVouchers.slice(0, updatedVoucherIndex), updatedVoucher, ...heldVouchers.slice(updatedVoucherIndex + 1) ]
+  } else {
+    const newVoucher = { address: contractAddress, symbol, balance }
+    return [ ...heldVouchers, newVoucher ]
   }
+}
+async function getSymbol(redis: RedisClient, graphql: GraphQLClient, contractAddress: string): Promise<Symbol> {
+  let cache = new Cache(redis, `address-symbol:${contractAddress}`)
+  let symbol = await cache.get()
+
+  if (!symbol) {
+    const voucher = await getVouchersByAddress(graphql, contractAddress)
+    if (voucher) {
+      symbol = voucher.symbol
+      cache = new Cache(redis, contractAddress)
+      await cache.set(symbol)
+    } else {
+      throw new Error(`Could not find symbol for contract address: ${contractAddress}`)
+    }
+  }
+
+  return symbol
+}
+function updateStatements(statement: Transaction[], tx: Transaction): Transaction[] {
+  const updatedStatement = [...statement]
+
+  if (updatedStatement.length >= 9) {
+    updatedStatement.shift()
+  }
+
+  updatedStatement.push(tx)
+
+  return updatedStatement
+}
+async function handleTransfer(db: PostgresDb, graphql: GraphQLClient, message: TransferEvent, provider: Provider, redis: RedisClient) {
+  // parse message
+  const { block, success, transactionHash, value } = message
+  const contractAddress = getAddress(message.contractAddress) as Address
+  const from = getAddress(message.from) as Address
+  const to = getAddress(message.to) as Address
+
+
+  if (success) {
+    // get tx count from cache to know if this is the first tx
+    const cache = new Cache(redis, `address-tx-count:${to}`)
+    const txCount = await cache.get()
+    if (!txCount) {
+      await handleRegistration(to, contractAddress, db, graphql, message, provider, redis)
+      // update tx count
+      await cache.set(1)
+    } else {
+      // get symbol from address-symbol mapping
+      const symbol = await getSymbol(redis, graphql, contractAddress)
+
+      // update statements
+      const rStatement = await getAccountMetadata<Transaction[]>(to, redis, AccountMetadata.STATEMENT) || []
+      const sStatement = await getAccountMetadata<Transaction[]>(from, redis, AccountMetadata.STATEMENT) || []
+      const uRStatement = updateStatements(rStatement, {block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.CREDIT, value})
+      const uSStatement = updateStatements(sStatement, {block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.DEBIT, value})
+
+      // retrieve wallet balances
+      const rBalance = await retrieveWalletBalance(to, contractAddress, provider)
+      const sBalance = await retrieveWalletBalance(from, contractAddress, provider)
+      // update held vouchers
+      const uRHeldVouchers = await updateHeldVouchers(to, contractAddress, redis, symbol, rBalance)
+      const uSHeldVouchers = await updateHeldVouchers(from, contractAddress, redis, symbol, sBalance)
+
+
+      // update redis
+      await setAccountMetadata<Transaction[]>(to, uRStatement, redis, AccountMetadata.STATEMENT,)
+      await setAccountMetadata<Transaction[]>(from, uSStatement, redis, AccountMetadata.STATEMENT,)
+      await setVouchers<ActiveVoucher[]>(to, redis, uRHeldVouchers, VoucherMetadata.HELD)
+      await setVouchers<ActiveVoucher[]>(from, redis, uSHeldVouchers, VoucherMetadata.HELD)
+
+      // update tx count
+      await cache.set(txCount + 1)
+    }
+
+  } else {
+    console.error("Transaction failed: ", message)
+  }
+}
+async function handleRegistration(
+  address: Address,
+  contractAddress: Address,
+  db: PostgresDb,
+  graphql: GraphQLClient,
+  message: TransferEvent,
+  provider: Provider,
+  redis: RedisClient) {
+  try{
+    // activate on chain
+    const account = await activateOnChain(address, db, redis)
+
+    // retrieve balance
+    const balance = await retrieveWalletBalance(address, contractAddress, provider)
+    console.debug("Balance for account: ", address, " is: ", balance)
+
+    // get symbol from address_symbol mapping | graph
+    const symbol = await getVoucherSymbol(contractAddress, graphql, redis)
+
+    // set active token
+    const activeVoucher: ActiveVoucher = { address: contractAddress, balance, symbol }
+    await setVouchers<ActiveVoucher>(address, redis, activeVoucher, VoucherMetadata.ACTIVE)
+
+    console.debug(`Account: ${account.address} successfully set up.`)
+  } catch (e) {
+    console.error("Error setting up account: ", e)
+    throw e
+  }
+
 }

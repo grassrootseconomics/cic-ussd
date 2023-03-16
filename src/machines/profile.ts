@@ -1,8 +1,23 @@
-import { BaseContext, BaseEvent } from "@src/machines/utils";
-import { createMachine, send } from "xstate";
-import { isBlocked, isAuthorized } from "@src/machines/auth";
-import { Gender, updatePI, upsertPI } from "@lib/graph/user";
-import { getAccountMetadata, AccountMetadata } from "@lib/ussd/account";
+import {
+  BaseContext,
+  BaseEvent,
+  isOption1,
+  isOption2,
+  isOption3,
+  isOption4,
+  isOption5,
+  isOption6,
+  translate,
+  updateErrorMessages
+} from "@src/machines/utils";
+import {createMachine, send} from "xstate";
+import {Gender, PersonalInformation, upsertPersonalInformation} from "@lib/graph/user";
+import {AccountMetadata, getAccountMetadata} from "@lib/ussd/account";
+import {isBlocked, updateAttempts} from "@machines/auth";
+import {succeeded} from "@machines/voucher";
+import {MachineError} from "@lib/errors";
+import bcrypt from "bcrypt"
+import redis from "@plugins/redis";
 
 export interface ProfileContext extends BaseContext {
   data: {
@@ -17,363 +32,314 @@ export interface ProfileContext extends BaseContext {
 type ProfileEvent =
   BaseEvent
 
+
+enum ProfileErrors {
+  CHANGE_ERROR = "CHANGE_ERROR",
+  INVALID_PIN = "INVALID_PIN",
+  LOAD_ERROR = "LOAD_ERROR",
+  UNAUTHORIZED = "UNAUTHORIZED",
+}
+
+
 export const profileMachine = createMachine<ProfileContext, ProfileEvent>({
-  /** @xstate-layout N4IgpgJg5mDOIC5QAcBOB7AZgSwDZgFkBDAYwAtsA7MAOjSz0LEoFcBiAIQEEBhAaQDaABgC6iFOljYALtnSVxIAB6IAjKoBsAFhoBmVQCYArKoDsqgJwbzpjQBoQATzWmhQmqd0HTBiyYMGWkamAL4hDvQ4+MTkVLSRjATM7AAqAEpcAHIAygCSKcJiSCDIkjJyCsUqCOraeoYm5lY29k5qRlY0WgAc3vpGQhrdFqZaYREYUYSkFNR0k4nJbOlZeQWqRRJSsvKK1bU6+sZmltZmrc4IBoO6NBa9PlqW5gaq4yUL0TNx8wzRSyscvkBAZNiUyjtKqB9ppDg0Ts1zg5LgFVLdVEILAZuk8fBorO8El9YnMiUxWMsMkCCrowaVthU9mpYfVjk0zrZke1MTR1Lp9JYtLpug1CZ9piT4uKkhTAWsBFo6RDGVVmXUjo1Ti0uTVurojDQDF48aZzCKRmK-hLZrRIOVKFAAOLYABuzEyRAAtmBKatgaJFPTyrtVTULPc9ELRsNhhohNidaojCYPEYNGY3LoNAEDJapjEbTQ7bIHc63ZQPd7fdSBBtA8qQ9C1OHupHdNH7lZ491Ez5biK49mTE8jd084lvnMqC6iLhsBAy+6vT60gBRdIATUK9YZjeUiBzphowV6Iq82Pjiest30g90WmM2ez4+JheLVCgADEvXhHJWfXK-pKruUL7lc+JHh0wpWFoIyqEEFztL4qbpq4RjeD0GgaC+1o-O+Drfp6v7-tW8p1sUQaQky4EjMeFjQdocEIb2Tz1He9ymBYmhjuEHxWgWPzTrO86EcRy5sGum7bhRDagdU2IPjQ3QdCY3RCMEWJGFeFjuAOgw9OGTxYjhAlzEQLDSGQ6CoNgABeH7-jwZBEA6AFUvKAYySB1FaEIWg6AiWIio+aKJkYWhHrogwZvpGheBYJmTrQ5mWdZdkOcuTkuTApHAuRWzBnJiC+f5vJNEFDTprovbXLyuh+G48YPkaiWSjQKVWTZ9kOo5zmublBSgjuhU+X5AXldilWhW0NTtoc0UtFicY8RM-FJTQLCUB1aW2ZAvXZSu65pFunkFVRoZPMMXTtumUb8k8V74jQcUNZi+o+MErWFuQ2UZVWEDyLQ07oAA1lKa1tT9Dp-WACDAyQRCQoU0lnSqTYID0QjoscQjqFo6ZWL28HPfVAxY3Fn28WSpm0FDUAw2wANTpQLqg+D+brXTMNwyz6AI0joi1sBI0XWp2MmLj8EE4hNRxgYei+IOnjhfVuhfT8XM9eJYCoBgqB0LgiOYNZnq-BzkN9fTWvejzrP8xUyOneC3mi1jvI43j0uJrBGhKYrQjdKYHRDEY6tzLAYD4CQJZOswEA6wNKPOyL6PhaaSkdPjSZYoYia9L7oxPlx6nxsYYe0BHUcx46ccJ4B6zC+dqcRUeykWFnHSvAYvZGK2anplh+hqaX5c0EJc4LrXqASUdJ2N2jYFpshtjBEInF+EMvYB3o0XWAEDX46P21dR+NeUPHqBZf19dJ5RC-VMt8ueP5PQiuTPYzaogc6Gv2JRaMsFbChCptKdax90qlinlfHKN98rJybmBR+Hh7z+W6G-LMH8UR+V9jpAea8-JpnMEfCynUIGx3PjraBbk-SDXnnuB+Acn4oNfhiDBecjTHh8HqTQaYIrt1HptcBu1J4UMvpbQ6UknZ33oYgbM2IaCNXwe2PGylEzhl9r5AemhNCDD8KPTW5CL6M0BmPXmYMzYTgtr9SBojbZ80Rg7QWUjZLURDqoZ6gcjSaC8aYTBB5S4KNgu2XG4U0ShxARDb6ltT5T2MczVm5jqac2iTYi+dj7byGRnA6RRUEBuI8X2bx+hfHsNuMHbEIxlIBzXvolJhiE46z1gbI2JsLGvg1nUs+aT4YOMyU4uhuT8lDEKdmYpfiwzIUxNmCK+DPBf1HvhKAG4ADyHBE7OJdujCC7gdIdF8cPbM4zjDb2FN4QUvllYLIgPaJZqzE7ZJcaGCCOgehPCxuYDoSYdRGiMLcduBgB69wBcMUe495wrLWZJY6t9HlbOUu44ZXjRlmCOSVLoD50yEPUN0LCxDUonwdBCqh6yBnUXel0YZQpg7hU3jNYwLzwzhk8HGSw9U8WkO6rcjgxLYGktDOS-G399RWBpeMtEOLDScTjDpLu9x2U7Q-ES8RichpeRTmBAVlLhUaFFTqEUXRGXhn0r0a4K0+Lm0LIIkhO1IBKoOjPSRfL0YHFZJqREnJP6+QsAohamI9SjlqdYrlcSgZmPZpYqJQaIXpN6ZQR2TqwIuo1AiDkMsHzuL1PybwOquICmwhEi1HSo13KZqGhJ4b2lzAMdGnpAsRBC2GggmE6p4Tsm1HSvyCijRCjjMmQI0zA3Q0JXcxp1lmnSGNqgU2SSrFDq5TGutMLNmJpZMmttSIZpRW9ehe894sYYjcGXAtEa8LXJjgAGXsZCEljb77NgjLujssZux6qDnRFsOk-AqKuTcy9GTKD3ITfsFsbYn1dgTJuiV7Zd0Aqqr4hKx7K22jPR+P9saVVAfva2R9Bln0QcuBiCKz0OhoKTJ4XGcVQUs2EhAND16oVz1vTIq4ARIK+MmueNS3cZpMt5CR3oryTBcXlQSqAdGKg8vckBJjuSAW0SgrGQB8E0yJlZZwnVgxAhJiliJsh4n5CSZoQ2tVTaDwQTogxJTzFP5NQUYy6wQ4eivF05y-TlBDM1lVajZjcnIL0UU0xFTM1A5sZ1SYcK3CQWIdwnMK1+K7KQDc8ShjS71XVBQb7NObgej-zUqYRM2C-Y6t8L3UYrwEOrULVWupbmQ2mPLW0mLtMatXoqAuxx9aNlpcQBl48My-J6jXnl1T6ElKwRFSXXxWZB1WzE61+QbBR362QIbCdrSZ2RrnW59rfTOuYYQL1rLA3ctr0TIEA0Ys-IAN8nqMY0WabtWtaJgACuKDzHl9u+YswF8w1nLjJncR0RlWYLnDAq+ak9ZkntkNe1ad7eVPvmYUzBQLMshiZcNYYUu52XMflh1MeHtCZPUS+8jxiv2guXGFNh8bX7lO9D0fd9acWOWQHx4wZLs9UumYO-5TL-WctDdOzNVw3qvBhdvE8bQd3KuQ+a0G9n+A6vA0SaA2ds3Few1rR17nd7ef4z664Y7Qv8szQHnoZ+UVqm2EMDNvH4pFu6zHStlpU7GsPYMZrnbcb+nE-5Xzw32XBu+OF-9jESlLevBLmvMwo9cDoCINch0mvldhvd+tePif7dWm9-Gv3zqQM4ZjOBsVnEdADEBUaOMGC48J6T1AFPS3x2TunWrwsmf69e+17t3XzHLAPqjLhkvai3A+oHl4dQnE0RhF4pQdA8d4AUTb3EfPYEAC0MsN8+sPYMbL9VcxM7atTZIq+H6B1A6aQYOKkzVU-o0Mf3EuKwjeIfwsEdpAx1gDKFgp-2hRQjwMLBMPJYMmFeOnJ4H0G4OjmYOErLkhkWChqWK6EuN6L-rLMhF-FmBiOPg9HfqMMgn0NcPyNYLARDvAWCguMgRWMuGgUaPVIaDqqaFiK4P5GYFeMmAQeRsmPcL0D+jHKJLgH+DQSZnrlXu4PiPRI8IEFHqbgRn2pwV4OhEEvwq-oJNRhPAIUIagSIT5n4OXjMjoupLwrIWoNeIaMaF4FjFmEHLjtbGAFQmgcokeGaN-BFHGJ4LfgRu2K2AhCcK4MVi-nAU1htFtNDsIvtK5GgUKLjO7CYIYJYfcFeEEMeGmNxAEMKOYGrKodVkGv+FES-F0DiDlsMD4CMGFNvMmKhJiP5sZNkbQFtN6FQhAGgY0OXkOFiO3E8L8leKPpUZoEFEtMKKPA0fYeIt+IwM0Tobkq0ceO0b4Kwd0Z6n4AoqkZkWElMqPJXGANHDEqIi0WYG0cYB0QsZ4S4IMCsQPHiAMCilRjOBPF0jrC0aMO4kEJYZnPyCAdpO4D4H-D2jdFjLYfUmIgdE8ckbBPgsEL8i+p-A8B4AENwlBJ4ASHUSEUIpAA8cCZEVMa4veN6oig+JxFKtxgRiMPLJxhUn5K8OhHbqko8diU8rBC8UrCHACsKHnPqArH-JoGVsKqPDAKIk0WgT8QXF-BFO9BeDLF-K8H7NiDutBOpAfkEQ9vyRfFQuMfgJMd5rksKR4KKcrFwoMGot4JyWpFYOdkvHwYqqskKQECKTiPqRKd8vFM9EtCcJiPjDqrcTRhCmgTqlmGVNouLv5H4E6fyBnEFMoviC-ICXaliVqT5MSYgMpM9LTjpPGIws5iiSzjahALGTAL6V4KyD0LYGePcJKVmO4BXmYK8EKFmoqWQcEdWtafSejJxPLPBDiKpMpEQVpHSkmB4LTqeO3L8kfDAIKS2YmlCQAX5PcG4CAb2VgvLIEIyjipiPgiKKOaMQdOqZAGgTfrpEHDOcAX4AuT1mvAOfZr3E5j0JaQ6G5nuXFPLO3JxBgv5J3CYRjGiIaLTghOpPsjLg2Q9hQfeROfJPyN6gCsEG2SwbiDqCMNuivD7F-KaIfCiUIqhvNu5uIrQcKpwkKEZFmrSpcIHJlivOFnqP6gIqEfFsIklthaBQeHoYHoYZURFHBQ+pBRLJpNYMAkqckkGiBfGfykNkpGLPjPqBpFiCNjoPnAMDYGvJ4Gahtj8PHv+uOUJejE4bqWggArYGvPyCNu4mvBph9CedoLXmpWMUQBMY4TYNpa4XpR4d7Pqr4c8lLNNmhWEdngTvRRpWBFXjgv3IeOFOojqBkZGIyuFm4MiXxW1NmV1Gzm9r5fAqIUxVlixcYTqFhLpJxUKNIVeTSQ3uKI4fgqmL8vjBFtoqeQgP4GNoykEEbgZKPGSOpSlcxlpS4bpe4QZWbsTEDuGKyUEMpEpcvqSEldudZRqbZWYPZV1fpacTVTyNUYZDqmgsUrXlnsnsVQxbLO3LMccIHJYOcNVWYJ0E5j4JfhiL4vmrFYWGSJeonruTtXQRBYwdBWNGwZ-G2Zwd4PBtfvWcpWNVaA9RADuZqW1bJuBQwVBcwR9R+V-BGEaN4MYCvJirxYBWAiQCQOgJtNIBwKpWDODTkjibBAUtIYSWaa+r7LJeFkwWiAfmEEAA */
-  id: "profileMachine",
+  /** @xstate-layout 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-FW8Ew9mvDBmF2H-R2Dw3LRoToiN2opP0ihB0rGuisNy6SsFZLXiw9mS+nNcwqHBHSRFeVeqaZVXq+B4NbLJn0w6RsdQFDynwWWZcHH-iuhrKZz2xhRLuFaOdeqCVrrqkc09HDMmK5ycIy4IqvUyM2FdOpP6cs4EIIhvNGGuii7nIMMRBcwJKMODLGoXGzpHnznDCsRVVmhM0RE+LSLlteoyY8OWQBZWBOrmKC6EERwmiVw05luzGcs6VEk2PA605K7uGJHsLWkI66ljqINsEWhm5vIUUeAlSCLb5ZmzUFQ82aSGCWwYQaChGZSgpIVskY0MvWdTjZA7YgUHZ1a5xGwtQUnAgmdA5oC8pTcYBsTMsxJDpaY1as45mjvsvicIGNTbdqgLhXJzOQ1ZquAJpKVEEO3M0jp7fgPdiOqgDP6TUckeh0WY9FHSZ0o0FxDbLHkmHXre0+oRwxqdcgl7ymMLOH8jRzvMoRVY0qchhttC7Qc2HfKfUU4UOuCiex1LR1Swz2Qct9KazlYcZwy4qLWaNDFGK6BN1CHoLgPuISIAU5gQIxowzHD+mOKM6OOTgRtq1p7ZVjWCAxWOfZf5LinfAhd56Fw7ujAgM5uCMumLCyQml0RCSdujQQDD9UinhWOsle68TXrnNlzVkdar+bO4aG7cCM+tVrid2QpgBT33+uAYAw+r+YH-wQTVn6lMrcnhgvWYb9m5vY7yUU7SyocHlEQqjQTd1R7VJSzbi1rXzNEBsCwELeYUnYB8-taBJ10rJeKv-j1ifFNeE9zC9oy3sAcRqAW7gBJqtU7nd1Bj-jj3CfRR44b0xpiZbA6sDAfAfAgA */
+  id: "profile",
   initial: "profileMenu",
   predictableActionArguments: true,
   states: {
+    settingsMenu: {
+      type: "final",
+      description: "Displays the settings menu. User can select an option to proceed."
+    },
     profileMenu: {
       on: {
         BACK: "settingsMenu",
         TRANSIT: [
-          { target: "editingGivenName", cond: "isOption1" },
+          { target: "enteringGivenNames", cond: "isOption1" },
           { target: "selectingGender", cond: "isOption2" },
-          { target: "editingYOB", cond: "isOption3" },
-          { target: "editingLocation", cond: "isOption4" },
-          { target: "loadingProfile", cond: "isOption5" }
+          { target: "enteringYOB", cond: "isOption3" },
+          { target: "enteringLocation", cond: "isOption4" },
+          { target: "enteringProfileViewPin", cond: "isOption5" }
         ]
       },
       description: "Displays the profile menu. User can select an option to proceed."
     },
 
-    settingsMenu: {
-      type: "final",
-      description: "Displays the settings menu. User can select an option to proceed."
-    },
-
-    editingGivenName: {
+    // name states
+    enteringGivenNames: {
       on: {
+        BACK: "profileMenu",
         TRANSIT: [
-          { target: "editingFamilyName", cond: "isValidName", actions: "saveGivenName" },
-          { target: "invalidGivenName" }
+          { target: "enteringFamilyName", cond: "isValidName", actions: "saveGivenNames" },
+          { target: "invalidName" }
         ]
       },
-      description: "User is prompted to enter their given name."
+      description: "Asks the user to enter their given names."
     },
-
-    invalidGivenName: {
-      entry: send( { type: "RETRY", feedback: "invalidName" } ),
+    enteringFamilyName: {
       on: {
-        RETRY: "editingGivenName"
-      },
-      description: "User is prompted to enter their given name again."
-    },
-
-    editingFamilyName: {
-      on: {
+        BACK: "enteringGivenNames",
         TRANSIT: [
-          { target: "authorizingNameChange", cond: "isValidName", actions: "saveFamilyName" },
-          { target: "invalidFamilyName" }
+          { target: "selectingGender", cond: "genderAbsent", actions: "saveFamilyName" },
+          { target: "enteringProfileChangePin", cond: "isValidName" },
+          { target: "invalidName" }
         ]
       },
-      description: "User is prompted to enter their family name."
+      description: "Asks the user to enter their family name."
     },
-
-    invalidFamilyName: {
-      entry: send( { type: "RETRY", feedback: "invalidFamilyName" } ),
+    invalidName: {
+      entry: send({ type: "RETRY", feedback: "inValidName" }),
       on: {
-        RETRY: "editingFamilyName"
+        RETRY: "enteringGivenNames"
       },
-      description: "User is prompted to enter their family name again."
+      description: "Displays an error message and asks the user to try again."
     },
 
-    authorizingNameChange: {
-      on: {
-        TRANSIT: [
-          { target: "changingName", cond: "isAuthorized" },
-          { target: "unauthorizedNameChange", cond: `${!isBlocked}`, actions: "updateAttempts" },
-          { target: "accountBlocked"
-          }
-        ]
-      },
-      description: "Expects name change pin input from user."
-    },
 
-    unauthorizedNameChange: {
-      entry: send({ type: "RETRY", feedback: "invalidPIN" }),
-      on: { RETRY: { target: "authorizingNameChange" }
-      },
-      description: "The name change pin entered is invalid. The pin must be a 4-digit number and match the pin set for the account."
-    },
-
-    changingName: {
-      invoke: {
-        src: "initiateNameChange",
-        onDone: [
-          { target: "selectingGender", cond: "genderAbsent" },
-          { target: "nameChanged", actions: "updateName" },
-        ],
-        onError: { target: "nameChangeFailed", actions: "updateErrorMessages" }
-      },
-      description: "Initiates a name change request to graph."
-    },
-
-    nameChanged: {
-      type: "final",
-      description: "Name change was successful."
-    },
-
-    nameChangeFailed: {
-      type: "final",
-      description: "Name change failed."
-    },
-
+    // gender states
     selectingGender: {
       on: {
+        BACK: "profileMenu",
         TRANSIT: [
-          { target: "authorizingGenderChange", cond: "isValidGender", actions: "saveGender" },
-          { target: "invalidGender" }
+          { target: "enteringYOB", cond: "YOBAbsent", actions: "saveGender" },
+          { target: "enteringProfileChangePin", cond: "isValidGender" },
+          { target: "invalidGenderOption" }
         ]
       },
-      description: "User is prompted to select their gender."
+      description: "Expects user to enter a valid option from the provided gender options.",
     },
-
-    invalidGender: {
-      entry: send( { type: "RETRY", feedback: "invalidGender" } ),
+    invalidGenderOption: {
+      entry: send({ type: "RETRY", feedback: "inValidGenderOption" }),
       on: {
         RETRY: "selectingGender"
-      },
-      description: "User is prompted to enter their gender again."
+      }
     },
 
-    authorizingGenderChange: {
+    // YOB states
+    enteringYOB: {
       on: {
+        BACK: "profileMenu",
         TRANSIT: [
-          { target: "changingGender", cond: "isAuthorized" },
-          { target: "unauthorizedGenderChange", cond: `${!isBlocked}`, actions: "updateAttempts" },
-          { target: "accountBlocked"
-          }
+          { target: "enteringLocation", cond: "locationAbsent", actions: "saveYOB" },
+          { target: "enteringProfileChangePin", cond: "isValidYOB" },
+          { target: "invalidYOBEntry" }
         ]
       },
-      description: "Expects gender change pin input from user."
+      description: "Expects user to enter a valid option from the provided gender options.",
     },
-
-    unauthorizedGenderChange: {
-      entry: send({ type: "RETRY", feedback: "invalidPIN" }),
-      on: { RETRY: { target: "authorizingGenderChange" }
-      },
-      description: "The age change pin entered is invalid. The pin must be a 4-digit number and match the pin set for the account."
-    },
-
-    changingGender: {
-      invoke: {
-        src: "initiateGenderChange",
-        onDone: [
-          { target: "editingYOB", cond: "YOBAbsent" },
-          { target: "genderChanged", actions: "updateGender"},
-        ],
-        onError: { target: "genderChangeFailed", actions: "updateErrorMessages" }
-      },
-      description: "Initiates gender change request to graph."
-    },
-
-    genderChanged: {
-      type: "final",
-      description: "Gender change was successful."
-    },
-
-    genderChangeFailed: {
-      type: "final",
-      description: "Gender change failed."
-    },
-
-    editingYOB: {
+    invalidYOBEntry: {
+      entry: send({ type: "RETRY", feedback: "inValidYOBOption" }),
       on: {
+        RETRY: "enteringYOB"
+      }
+    },
+
+    // location states
+    enteringLocation: {
+      on: {
+        BACK: "profileMenu",
         TRANSIT: [
-          { target: "authorizingYOBChange", cond: "isValidYOB", actions: "saveYOB" },
-          { target: "invalidYOB" }
+          { target: "enteringProfileChangePin", cond: "isValidLocation", actions: "saveLocation" },
+          { target: "invalidLocationEntry" }
         ]
       },
-      description: "User is prompted to enter their age."
+      description: "Expects user to enter a valid option from the provided gender options.",
     },
-
-    invalidYOB: {
-      entry: send( { type: "RETRY", feedback: "invalidYOB" } ),
+    invalidLocationEntry: {
+      entry: send({ type: "RETRY", feedback: "inValidLocationOption" }),
       on: {
-        RETRY: "editingYOB"
-      },
-      description: "User is prompted to enter their age again."
+        RETRY: "enteringLocation"
+      }
     },
-
-    authorizingYOBChange: {
+    enteringProfileChangePin: {
       on: {
-        TRANSIT: [
-          { target: "changingYOB", cond: "isAuthorized" },
-          { target: "unauthorizedYOBChange", cond: "!isBlocked", actions: "updateAttempts" },
-          { target: "accountBlocked"
-          }
-        ]
+        BACK: "profileMenu",
+        TRANSIT: "authorizingProfileChange"
       },
-      description: "Expects age change pin input from user."
+      description: "Asks the user to enter their PIN.",
+      tags: "error"
     },
-
-    unauthorizedYOBChange: {
-      entry: send({ type: "RETRY", feedback: "invalidPIN" }),
-      on: { RETRY: "authorizingNameChange" },
-      description: "The age change pin entered is invalid. The pin must be a 4-digit number and match the pin set for the account."
-    },
-
-    changingYOB: {
-      invoke: {
-        src: "initiateYOBChange",
-        onDone: [
-          { target: "editingLocation", cond: "locationAbsent" },
-          { target: "ageChanged", actions: "updateYOB" },
-        ],
-        onError: { target: "ageChangeFailed", actions: "updateErrorMessages" }
-      },
-      description: "Initiates age change request to graph."
-    },
-
-    ageChanged: {
-      type: "final",
-      description: "YOB change was successful."
-    },
-
-    ageChangeFailed: {
-      type: "final",
-      description: "YOB change failed."
-    },
-
-    editingLocation: {
-      on: {
-        TRANSIT: [
-          { target: "authorizingLocationChange", cond: "isValidLocation", actions: "saveLocation" },
-          { target: "authorizingProfileChange", cond: "isCompleteProfileEdit", actions: "saveProducts"},
-          { target: "invalidLocation" }
-        ]
-      },
-      description: "User is prompted to enter their location."
-    },
-
-    invalidLocation: {
-      entry: send( { type: "RETRY", feedback: "invalidLocation" } ),
-      on: {
-        RETRY: "editingLocation"
-      },
-      description: "User is prompted to enter their location again."
-    },
-
-    authorizingLocationChange: {
-      on: {
-        TRANSIT: [
-          { target: "changingLocation", cond: "isAuthorized" },
-          { target: "unauthorizedLocationChange", cond: `${!isBlocked}`, actions: "updateAttempts" },
-          { target: "accountBlocked"
-          }
-        ]
-      },
-      description: "Expects location change pin input from user."
-    },
-
-    unauthorizedLocationChange: {
-      entry: send({ type: "RETRY", feedback: "invalidPIN" }),
-      on: { RETRY: { target: "authorizingNameChange" }
-      },
-      description: "The location change pin entered is invalid. The pin must be a 4-digit number and match the pin set for the account."
-    },
-
-    changingLocation: {
-      invoke: {
-        src: "initiateLocationChange",
-        onDone: { target: "locationChanged", actions: "updateLocation" },
-        onError: { target: "locationChangeFailed", actions: "updateErrorMessages" }
-      },
-      description: "Initiates location change request to graph."
-    },
-
-    locationChanged: {
-      type: "final",
-      description: "Location change was successful."
-    },
-
-    locationChangeFailed: {
-      type: "final",
-      description: "Location change failed."
-    },
-
     authorizingProfileChange: {
+      invoke: {
+        id: "authorizingProfileChange",
+        src: "initiateProfileChange",
+        onDone: { target: "profileChangeSuccess", cond: "succeeded" },
+        onError: [
+          { target: "accountBlocked", cond: "isBlocked", actions: "updateErrorMessages" },
+          { target: "changeError", cond: "isError", actions: "updateErrorMessages" },
+          { target: "unauthorizedProfileChange", actions: "updateErrorMessages" }
+          ]
+      },
+      description: "Asks the user to enter their PIN.",
+      tags: "invoked"
+    },
+
+    // profile view states
+    enteringProfileViewPin: {
       on: {
-        TRANSIT: [
-          { target: "changingProfile", cond: "isAuthorized" },
-          { target: "unauthorizedProfileChange", cond: `${!isBlocked}`, actions: "updateAttempts" },
-          { target: "accountBlocked"
-          }
+        BACK: "profileMenu",
+        TRANSIT: "authorizingProfileView"
+      },
+      description: "Asks the user to enter their PIN.",
+      tags: "error"
+    },
+    authorizingProfileView: {
+      invoke: {
+        id: "authorizingProfileView",
+        src: "loadPersonalInformation",
+        onDone: { target: "displayingProfile", cond: "succeeded" },
+        onError: [
+          { target: "accountBlocked", cond: "isBlocked" },
+          { target: "loadError", cond: "isError" },
+          { target: "unauthorizedProfileView" }
         ]
       },
-      description: "Expects profile change pin input from user."
+      description: "Asks the user to enter their PIN.",
+      tags: "invoked"
     },
 
-    unauthorizedProfileChange: {
-      entry: send({ type: "RETRY", feedback: "invalidPIN" }),
-      on: { RETRY: { target: "authorizingNameChange" }
-      },
-      description: "The profile change pin entered is invalid. The pin must be a 4-digit number and match the pin set for the account."
-    },
-
-    changingProfile: {
-      invoke: {
-        src: "initiateProfileChange",
-        onDone: { target: "profileChanged", actions: "updateProfile" },
-        onError: { target: "profileChangeFailed", actions: "updateErrorMessages" }
-      },
-      description: "Initiates full profile change request to graph."
-    },
-
-    profileChanged: {
-      type: "final",
-      description: "Profile change was successful."
-    },
-
-    profileChangeFailed: {
-      type: "final",
-      description: "Profile change failed."
-    },
-
-    loadingProfile: {
-      invoke: {
-        src: "loadProfile",
-        onDone: { target: "profileLoaded", actions: "updateProfile" },
-        onError: { target: "profileLoadFailed", actions: "updateErrorMessages" }
-      },
-      description: "Loads profile from redis."
-    },
-
-    profileLoaded: {
-      type: "final",
-      description: "Profile loaded successfully."
-    },
-
-    profileLoadFailed: {
-      type: "final",
-      description: "Profile load failed."
-    },
-
+    // final states
     accountBlocked: {
-      type: "final"
+      type: "final",
+      description: "Account is blocked.",
+      tags: "error"
     },
-  }
+    changeError: {
+      type: "final",
+      description: "Error changing profile.",
+      tags: "error"
+    },
+    loadError: {
+      type: "final",
+      description: "Error loading profile.",
+      tags: "error"
+    },
+    unauthorizedProfileChange: {
+      entry: send({ type: "RETRY", feedback: "unauthorizedProfileChange" }),
+      on: {
+        RETRY: "enteringProfileChangePin"
+      },
+    },
+    unauthorizedProfileView: {
+      entry: send({ type: "RETRY", feedback: "unauthorizedProfileView" }),
+      on: {
+        RETRY: "enteringProfileViewPin"
+      },
+      description: "Displays an error message and asks the user to try again.",
+      tags: "error"
+    },
+    displayingProfile: {
+      type: "final",
+      description: "Displays the profile.",
+      tags: "resolved"
+    },
+    profileChangeSuccess: {
+      type: "final",
+      description: "Profile change successful.",
+      tags: "resolved"
+    }
+
+  }}, {
+    guards: {
+      isOption1,
+      isOption2,
+      isOption3,
+      isOption4,
+      isOption5,
+      isOption6,
+      genderAbsent,
+      YOBAbsent,
+      locationAbsent,
+      isValidName,
+      isValidGender,
+      isValidYOB,
+      isValidLocation,
+      succeeded,
+      isBlocked,
+      isError: (context, event: any) => {
+        const x = event.data?.code
+        console.log(`STACK TRACE: ${event.data?.stack}`)
+        return x === ProfileErrors.CHANGE_ERROR
+      }
+    },
+    actions: {
+      saveGivenNames,
+      saveFamilyName,
+      saveGender,
+      saveYOB,
+      saveLocation,
+      updateErrorMessages,
+    },
+    services: {
+      initiateProfileChange,
+      loadPersonalInformation,
+    }
 })
 
+async function initiateProfileChange(context: ProfileContext, event: any) {
+  const { resources: { graphql, p_redis }, user: { account: { address, password }, graph: { id: graphUserId }} } = context
+  const { input } = event
+
+  // check that pin has valid format.
+  const isValidPin = /^\d{4}$/.test(input)
+  if (isValidPin === false) {
+    await updateAttempts(context)
+    throw new MachineError(ProfileErrors.INVALID_PIN, "PIN is invalid.")
+  }
+
+  // check that pin is correct.
+  const isAuthorized = await bcrypt.compare(input, password)
+  if (isAuthorized === false) {
+    await updateAttempts(context)
+    throw new MachineError(ProfileErrors.UNAUTHORIZED, "PIN is incorrect.")
+  }
+
+  try {
+    let updatedProfile: Partial<PersonalInformation> = {};
+    if (context.data.givenNames) {
+      updatedProfile["given_names"] = context.data.givenNames
+    }
+    if (context.data.familyName) {
+      updatedProfile["family_name"] = context.data.familyName
+    }
+    if (context.data.gender) {
+      updatedProfile["gender"] = context.data.gender
+    }
+    if (context.data.yearOfBirth) {
+      updatedProfile["year_of_birth"] = context.data.yearOfBirth
+    }
+    if (context.data.locationName) {
+      updatedProfile["location_name"] = context.data.locationName
+    }
+    updatedProfile["user_identifier"] = graphUserId
+    upsertPersonalInformation(address, graphql, updatedProfile, p_redis)
+    return { success: true }
+  } catch (error) {
+    throw new MachineError(ProfileErrors.CHANGE_ERROR, `${error.message}`)
+  }
+}
+
 function isValidName(context: ProfileContext , event: any) {
-  return /^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/.test(event.data)
+  return /^[A-Z][a-z]+([][A-Z][a-z]+)?$/.test(event.input)
 }
 
 function saveFamilyName(context: ProfileContext , event: any) {
-  return context.data.familyName = event.data
+  context.data.familyName = event.input
+  return context
 }
 
-function saveGivenName(context: ProfileContext , event: any) {
-  return context.data.givenNames = event.data
+function saveGivenNames(context: ProfileContext , event: any) {
+  context.data.givenNames = event.input
+  return context
 }
 
 function isValidGender(context: ProfileContext , event: any) {
-  return event.data === "1" || event.data === "2"
+  return event.input === "1" || event.input === "2"
 }
 
 function saveGender(context: ProfileContext , event: any) {
-  return context.data.gender = event.data === "1" ? Gender.MALE : Gender.FEMALE
+  context.data.gender = event.input === "1" ? Gender.MALE : Gender.FEMALE
+  return context
 }
 
 function isValidYOB(context: ProfileContext , event: any) {
@@ -383,70 +349,104 @@ function isValidYOB(context: ProfileContext , event: any) {
 }
 
 function saveYOB(context: ProfileContext , event: any) {
-  return context.data.yearOfBirth = parseInt(event.data)
+  context.data.yearOfBirth = parseInt(event.input)
+  return context
 }
 
 function isValidLocation(context: ProfileContext , event: any) {
-  return /^[a-zA-Z\s]*$/.test(event.data)
+  return /^[a-zA-Z\s]*$/.test(event.input)
 }
 
 function saveLocation(context: ProfileContext , event: any) {
-  context.data.locationName = event.data
+  context.data.locationName = event.input
+  return context
 }
 
 function genderAbsent(context: ProfileContext) {
-  return context.data.hasOwnProperty("gender")
+  const { user } = context
+  return user.graph?.personal_information?.gender === null || user.graph?.personal_information?.gender === undefined
 }
 
 function YOBAbsent(context: ProfileContext) {
-  return context.data.hasOwnProperty("yearOfBirth")
+  const { user } = context
+  return user.graph?.personal_information?.year_of_birth === null || user.graph?.personal_information?.year_of_birth === undefined
 }
 
 function locationAbsent(context: ProfileContext) {
-  return context.data.hasOwnProperty("locationName")
+  const { user } = context
+  return user.graph?.personal_information?.location_name === null || user.graph?.personal_information?.location_name === undefined
 }
 
-function isCompleteProfileEdit(context: ProfileContext) {
-  return context.data.hasOwnProperty("givenNames") && context.data.hasOwnProperty("familyName") && genderAbsent(context) && !YOBAbsent(context)
+async function loadPersonalInformation(context: ProfileContext, event: any) {
+  const {user: { account: {password } } } = context;
+  const { input } = event
+
+    // check that pin has valid format.
+    const isValidPin = /^\d{4}$/.test(input)
+    if (isValidPin === false) {
+      await updateAttempts(context)
+      throw new MachineError(ProfileErrors.INVALID_PIN, "PIN is invalid.")
+    }
+
+    // check that pin is correct.
+    const isAuthorized = await bcrypt.compare(input, password)
+    if (isAuthorized === false) {
+      await updateAttempts(context)
+      throw new MachineError(ProfileErrors.UNAUTHORIZED, "PIN is incorrect.")
+    }
+
+    return { success: true }
+
 }
 
-async function initiateNameChange(context: ProfileContext) {
-  const { resources: { graphql }, data: { givenNames, familyName } } = context;
-  return await updatePI(graphql, { given_names: givenNames, family_name: familyName });
+export async function profileTranslations(context: ProfileContext, state: string, translator: any) {
+  const { language } = context.user.account;
+  const { personal_information } = context.user.graph;
+  const { balance, symbol } = context.user.activeVoucher;
+
+  if (state === "mainMenu") {
+    return await translate(state, translator, { balance, symbol });
+  }
+
+  if (state === "displayingProfile") {
+    const translations = {
+      name: {
+        input: {
+          key: "name",
+          value: `${personal_information?.given_names} ${personal_information?.family_name}`,
+        },
+        language,
+      },
+      gender: {
+        input: {
+          key: "gender",
+          value: personal_information?.gender,
+        },
+        language,
+      },
+      age: {
+        input: {
+          key: "age",
+          value:
+            personal_information?.year_of_birth !== null
+              ? new Date().getFullYear() - personal_information?.year_of_birth
+              : null,
+        },
+        language,
+      },
+      location: {
+        input: {
+          key: "location",
+          value: personal_information?.location_name,
+        },
+        language,
+      },
+    };
+
+    return await translate(state, translator, translations);
+  }
+
+  return await translate(state, translator);
 }
 
-async function initiateGenderChange(context: ProfileContext) {
-  const { resources: { graphql }, data: { gender } } = context;
-  return await updatePI(graphql, { gender: gender });
-}
-
-async function initiateYOBChange(context: ProfileContext) {
-  const { resources: { graphql }, data: { yearOfBirth } } = context;
-  return await updatePI(graphql, { year_of_birth: yearOfBirth });
-}
-
-async function initiateLocationChange(context: ProfileContext) {
-  const { resources: { graphql }, data: { locationName } } = context;
-  return await updatePI(graphql, { location_name: locationName });
-}
-
-async function initiateProfileChange(context: ProfileContext) {
-  const { resources: { graphql }, data: { familyName, gender, givenNames, locationName, yearOfBirth } } = context
-  return await upsertPI(graphql, {
-    family_name: familyName,
-    gender: gender,
-    given_names: givenNames,
-    location_name: locationName,
-    year_of_birth: yearOfBirth
-  })
-}
-
-async function loadProfile(context: ProfileContext) {
-  const { resources: { redis }, user: { account: { address } } } = context;
-  return await getAccountMetadata(address, redis, AccountMetadata.PROFILE)
-}
-
-function updateProfile(context: ProfileContext, event: any) {
-  context.data = event.data
-}
 

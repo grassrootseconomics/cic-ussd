@@ -1,43 +1,39 @@
-import { PostgresDb } from "@fastify/postgres";
-import { GraphQLClient } from "graphql-request";
-import { Provider } from "ethers";
-import { Redis as RedisClient } from "ioredis";
-import { CountryCode } from "libphonenumber-js";
-import { ActiveVoucher } from "@lib/ussd/voucher";
-import { Account, AccountStatus } from "@db/models/account";
-import { interpret } from "xstate";
-import { registrationMachine, RegistrationContext } from "@src/machines/registration";
-import { TransferContext, transferMachine } from "@src/machines/transfer";
-import { AuthContext, authMachine } from "@src/machines/auth";
-import { VoucherContext, voucherMachine } from "@src/machines/voucher";
-import { mainMenuMachine, accountManagementMachine } from "@src/machines/intermediate";
-import { profileMachine, ProfileContext } from "@src/machines/profile";
-import { LanguagesContext, languagesMachine } from "@src/machines/language";
-import { BalancesContext, balancesMachine } from "@src/machines/balances";
-import { StatementContext, statementMachine } from "@src/machines/statement";
-import { PinContext, pinManagementMachine } from "@src/machines/pins";
-import { Session } from "@lib/ussd/session";
+import {PostgresDb} from "@fastify/postgres";
+import {GraphQLClient} from "graphql-request";
+import {Provider} from "ethers";
+import {Redis as RedisClient} from "ioredis";
+import {CountryCode} from "libphonenumber-js";
+import {ActiveVoucher} from "@lib/ussd/voucher";
+import {Account} from "@db/models/account";
+import {Session} from "@lib/ussd/session";
+import {supportedLanguages} from "@lib/ussd/utils";
+import {GraphUser} from "@lib/graph/user";
+import {tHelpers} from "@src/i18n/translator";
 
 export interface BaseContext {
-  data?: Record<string, unknown>,
+  data?: Record<string, any>,
   errorMessages?: string[],
   resources?: Resources,
   session?: Session,
   user?: User,
-  ussd?: Ussd,
-  state?: string,
+  ussd?: Ussd
 }
 export interface Resources {
   db: PostgresDb
+  e_redis: RedisClient
   graphql: GraphQLClient
+  p_redis: RedisClient
   provider: Provider
-  redis: RedisClient
 
 }
+
 export interface User {
-  activeVoucher: ActiveVoucher,
   account?: Account,
+  activeVoucher: ActiveVoucher,
+  graph?: Partial<GraphUser>
+  transactionTag?: string
 }
+
 export interface Ussd {
   countryCode?: CountryCode,
   input: string,
@@ -49,102 +45,73 @@ export interface Ussd {
 
 export type BaseEvent =
   | { type: "BACK" }
-  | { type: "RETRY", data: { message: string }}
-  | { type: "TRANSIT", data: { input: string } }
+  | { type: "RETRY", feedback: string }
+  | { type: "TRANSIT", input: string }
 
-export function clearErrorMessages (ctx) {
+export function clearErrorMessages (context: BaseContext, event: any) {
   return {
-    ...ctx,
+    ...context,
     errorMessages: []
+  }
+}
+
+export function isOption (expected: string, input: string) {
+  return input === expected
+}
+function generateOptionChecker(expectedValue: string) {
+  return function (context: BaseContext, event: any) {
+    return isOption(expectedValue, event.input);
+  };
+}
+
+export const isOption0 = generateOptionChecker('0');
+export const isOption1 = generateOptionChecker('1');
+export const isOption2 = generateOptionChecker('2');
+export const isOption3 = generateOptionChecker('3');
+export const isOption4 = generateOptionChecker('4');
+export const isOption5 = generateOptionChecker('5');
+export const isOption6 = generateOptionChecker('6');
+export const isOption9 = generateOptionChecker('9');
+export const isOption00 = generateOptionChecker('00');
+export const isOption11 = generateOptionChecker('11');
+export const isOption22 = generateOptionChecker('22');
+
+export async function languageOptions () {
+  const languagesList = Object.values(supportedLanguages)
+    .filter((obj) => Object.keys(obj)[0] !== 'fb')
+    .map((obj, index) => `${index + 1}. ${Object.values(obj)[0]}`)
+  const placeholder = tHelpers("noMoreLanguages", Object.values(supportedLanguages.fallback)[0])
+  return await menuPages(languagesList, placeholder)
+}
+
+export async function menuPages (list: string[], placeholder: string) {
+  const pages = []
+  for (let i = 0; i < list.length; i += 3) {
+    pages.push(list.slice(i, i + 3))
+  }
+  return pages.map(group => {
+    if (group.length === 0){
+      return placeholder
+    } else {
+      return group.join('\n')
+    }
+  })
+}
+
+export async function translate(state: string, translator:any, data?: Record<string, any>){
+  if (data) {
+    return translator[state](data)
+  } else {
+    return translator[state]()
   }
 }
 export function updateErrorMessages (context: BaseContext, event: any) {
   const errorMessages = context.errorMessages || []
-  errorMessages.push(event.data.message)
+  const { message } = event.data
+  console.error(`State machine error occurred: ${JSON.stringify(message)}.`)
+  errorMessages.push(message)
   context.errorMessages = errorMessages
   return context
-}
-function isOption (expected: string, input: string) {
-  return input === expected
-}
-export function isOption0(context: BaseContext) {
-  return isOption('0', context.ussd.input);
-}
-
-export function isOption1(context: BaseContext) {
-  return isOption('1', context.ussd.input);
-}
-
-export function isOption2(context: BaseContext) {
-  return isOption('2', context.ussd.input);
-}
-
-export function isOption3(context: BaseContext) {
-  return isOption('3', context.ussd.input);
-}
-
-export function isOption4(context: BaseContext) {
-  return isOption('4', context.ussd.input);
-}
-
-export function isOption5(context: BaseContext) {
-  return isOption('5', context.ussd.input);
-}
-
-export function isOption6(context: BaseContext) {
-  return isOption('6', context.ussd.input);
-}
-
-export function isOption9(context: BaseContext) {
-  return isOption('9', context.ussd.input);
-}
-
-export function isOption00(context: BaseContext) {
-  return isOption('00', context.ussd.input);
-}
-
-function isOption11(context: any) {
-  return isOption('11', context.ussd.input);
-}
-
-export function isOption22(context: BaseContext) {
-  return isOption('22', context.ussd.input);
-}
-
-export async function loadMachine(context: AuthContext | BalancesContext | BaseContext | LanguagesContext | PinContext | ProfileContext | StatementContext | TransferContext | VoucherContext) {
-  const { user } = context;
-
-  switch (user.account?.status) {
-    case AccountStatus.PENDING:
-      return interpret(authMachine.withContext(context as AuthContext))
-
-    case AccountStatus.ACTIVE:
-      return handleMachines(context);
-
-    default:
-      return interpret(registrationMachine.withContext(context as RegistrationContext))
-  }
-}
-
-export async function handleMachines(context: BalancesContext | BaseContext | LanguagesContext | PinContext | ProfileContext | StatementContext | TransferContext | VoucherContext) {
-  const { state } = context;
-  const machines = {
-    transfer: transferMachine,
-    voucher: voucherMachine,
-    accountManagement: accountManagementMachine,
-    profile: profileMachine,
-    language: languagesMachine,
-    balances: balancesMachine,
-    statement: statementMachine,
-    pin: pinManagementMachine,
-  };
-  if (!state) {
-    return interpret(mainMenuMachine.withContext(context as BaseContext))
-  }
-  if (state in machines) {
-    const machine = machines[state];
-    return interpret(machine.withContext(context))
-  }
 }
 
 

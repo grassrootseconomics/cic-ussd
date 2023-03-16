@@ -1,4 +1,4 @@
-import { PostgresDb } from '@fastify/postgres'
+import {PostgresDb} from '@fastify/postgres'
 
 export enum CustodialTaskType {
   REGISTER = 'REGISTER',

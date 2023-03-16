@@ -1,151 +1,203 @@
-import L from "@lib/i18n/i18n-node";
+import {BaseContext, translate} from "@machines/utils";
+import {transferMachine, transferTranslations} from "@machines/transfer";
+import {voucherMachine, voucherTranslations} from "@machines/voucher";
+import {mainMenuMachine, mainMenuTranslations, settingsMachine, settingsTranslations} from "@machines/intermediate";
+import {profileMachine, profileTranslations} from "@machines/profile";
+import {languagesMachine, languageTranslations} from "@machines/language";
+import {balancesMachine, balancesTranslations} from "@machines/balances";
+import {statementMachine, statementTranslations} from "@machines/statement";
+import {pinManagementMachine, pinTranslations} from "@machines/pin";
+import {Account, AccountStatus} from "@db/models/account";
+import {authMachine, authTranslations} from "@machines/auth";
+import {registrationMachine, registrationTranslations} from "@machines/registration";
+import {supportedLanguages} from "@lib/ussd/utils";
+import {createSession, getSessionById, updateSession} from "@lib/ussd/session";
+import {interpret, Interpreter, StateValue} from "xstate";
+import L from "@src/i18n/i18n-node";
+import {waitFor} from "xstate/lib/waitFor";
+import {socialRecoveryMachine} from "@machines/socialRecovery";
 
-import { Redis } from "ioredis";
-import { Interpreter, StateValue } from "xstate";
-import { BaseContext, loadMachine } from "@src/machines/utils";
-import { supportedLanguages } from "@lib/ussd/utils";
-import { getSessionById, updateSession, Session, createSession } from "@lib/ussd/session";
+const machines = {
+  balances: balancesMachine,
+  language: languagesMachine,
+  pin: pinManagementMachine,
+  profile: profileMachine,
+  statement: statementMachine,
+  transfer: transferMachine,
+  settings: settingsMachine,
+  voucher: voucherMachine
+};
 
-/**
- * Processes an incoming USSD request and returns a response.
- * If an active session exists for the USSD session ID, the state machine is resumed from the last state stored in the session data.
- * If an active session does not exist for the USSD session ID, a new session is created with the initial state of the state machine.
- * @param context
- * @param {Redis} redis - The Redis client instance.
- * @returns {Promise<string>} - The USSD response.
- */
-export async function machineService (context: BaseContext, redis: Redis) {
-  const session = await getSessionById(redis, context.ussd?.requestId) as Session
-  const baseMachine = await loadMachine(context)
-  console.log(`Machine id: ${baseMachine.id}`)
-  if (session === null) {
-    const x = baseMachine.start()
-    const s = x.getSnapshot().value
-    await createSession(context, redis, s)
-    return s
-  } else {
+
+export async function machineService(context: BaseContext) {
+  const { resources: { e_redis }, user: { account }, ussd: { input, requestId } } = context
+
+  const session = await getSessionById(e_redis, requestId)
+  let machine
+  if (session) {
     context.data = session.data || {}
     context.session = session
-    const t = await baseMachine.start(session.machineState)
-    console.log(`USER INPUT AT ENTRY: ${context.ussd.input}`)
-    return await transition(context.ussd.input, t, redis)
+    const { machineId, state } = session
+    machine = await resolveMachine(account, input, machineId, state)
+  } else {
+    machine = await resolveMachine(account, input)
+  }
+
+  // check for machine jumps if the last machine id is present and start in the next machine's initial state
+  const service = (session && session.machineId === machine.id)
+  ?interpret(machine.withContext(context)).start(session.state)
+  :interpret(machine.withContext(context)).start()
+
+  // if a machine jump is detected, update the session and return the response
+  let updatedContext, machineId, nextState;
+  if (session && session.machineId !== machine.id) {
+    await updateSession(context, machine.id, service.getSnapshot().value)
+    updatedContext = context
+    machineId = machine.id
+    nextState = service.getSnapshot().value.toString()
+  } else{
+    [ updatedContext, machineId, nextState ] = session
+    ? await transition(input, service)
+    : await newSession(service)
+  }
+
+  return await response(updatedContext, machineId, nextState)
+
+}
+
+async function newSession(service: Interpreter<BaseContext, any, any, any>): Promise<[BaseContext, string, string]> {
+  const { context, machine: { id }, value } = service.getSnapshot()
+  const { resources: { e_redis } } = context
+
+  await createSession(context, id, e_redis, value)
+  return [context, id, value.toString()]
+}
+
+async function transition(input: string, service: Interpreter<BaseContext, any, any, any>): Promise<[BaseContext, string, string]> {
+
+  // check if current state can transition to the next state
+  if (!service.getSnapshot().can({ type: "TRANSIT", input: input })){
+    const { context, machine: { id }, value } = service.getSnapshot()
+    return [context, id, value.toString()]
+  }
+
+  // attempt to transition to the next state
+  service.send({ type: "TRANSIT", input: input })
+
+  // get a snapshot of the current state
+  let snapshot = service.getSnapshot()
+
+  // get current state value
+  let state = snapshot.value.toString()
+
+  // check if the resultant state is an invoked service
+  if (snapshot.hasTag("invoked")) {
+
+    // wait for the invoked service to finish
+    const resolvedState = await waitFor(service, (state) => {
+      return state.hasTag("resolved") || state.hasTag("error") || state.hasTag("done")
+    });
+
+    // get state value from the resolved state
+    state = resolvedState.value.toString()
+  }
+
+  // parse updated context, machine id and next state
+  const { context, machine: { id } } = snapshot
+
+  // update the session with the new state
+  await updateSession(context, id, state)
+  return [context, id, state]
+}
+
+async function resolveMachine(account: Account | null, input?: string, machineId?: string, state?: StateValue) {
+
+  if (!account) {
+    return registrationMachine;
+  }
+
+  if (account.status === AccountStatus.PENDING || account.status === AccountStatus.BLOCKED) {
+    return authMachine;
+  }
+
+  if (account.status === AccountStatus.ACTIVE) {
+    return await activeMachine(input, machineId, state)
   }
 }
 
-/**
- * Describes the possible invoke states of interest in the state machine.
- */
-const invokeStates = ['validatingRecipient']
-
-/**
- * Describes states to transition to after an invoke state is done.
- */
-const onDoneStates = {
-  accountActivationSuccess: 'mainMenu',
-  accountActivationError: 'machineError',
-  accountVouchersLoaded: 'enteringVoucher',
-  accountVouchersLoadError: 'machineError',
-  voucherSetSuccess: 'activeVoucherSet',
-  voucherSetError: 'machineError',
-  recipientValidationSuccess: 'enteringAmount',
-  recipientValidationError: 'invalidRecipient'
-}
-
-/**
- * Transitions the state machine to the next state and returns a response.
- * @param {Interpreter<BaseContext, any, machineEvent>} msvc - The state machine interpreter.
- * @param {Redis} redis - The Redis client instance.
- * @returns {Promise<string>} - The USSD response.
- */
-async function transition (input: string, msvc: any, redis: Redis) {
-  if (msvc.getSnapshot().can({ type: 'TRANSIT' })) {
-    msvc.send({ type: 'TRANSIT', input})
-    const state = msvc.getSnapshot().value
-    if (shouldWait(state)) {
-      return await respOnDone(msvc, redis)
-    } else {
-      await updateSession(msvc.getSnapshot().context, redis, state)
-      return state
-    }
+async function activeMachine(input?: string, id?: string, state?: StateValue){
+  if (state === undefined || state === "mainMenu") {
+    return await mainMenu(input)
+  } else if (state === "settingsMenu") {
+    return await settingsMenu(input)
+  } else if (state === "pinManagementMenu") {
+    return await pinManagementMenu(input)
+  } else {
+    return machines[id]
   }
-  return 'Invalid input'
+
 }
 
-/**
- * Checks if the current state is an invoke state.
- * @param {StateValue} state - The current state of the state machine.
- */
-function shouldWait (state: StateValue) {
-  return invokeStates.includes(state as string)
-}
-
-/**
- * Returns a promise that resolves when the state machine is done.
- * @param {Interpreter<BaseContext, any, machineEvent>} msvc - The state machine interpreter.
- * @param {Redis} redis - The Redis client instance.
- * @returns {Promise<string>} - The USSD response.
- */
-async function respOnDone (msvc: Interpreter<any, any, any>, redis: Redis) {
-  return await new Promise((resolve) => {
-    msvc.onDone(async () => {
-      const state = msvc.getSnapshot()
-      const finalState = onDoneStates[state.value.toString()]
-      await updateSession(state.context, redis, finalState)
-      resolve(translate(state.context, finalState))
-    })
-  })
-}
-
-/**
- * Builds a localized response object based on the provided context, language, state and feedback.
- * @param {BaseContext} ctx - The context object.
- * @param {StateValue} state - The current state of the state machine.
- * @param {string} [feedback] - The feedback to be included in the response.
- * @returns {string} - The localized response.
- */
-function translate (context: BaseContext, state: StateValue, feedback?: string) {
-  return state
-}
-
-export interface LocalizedResponse {
-  [key: string]: string | number | boolean
-}
-
-/**
- * Builds a localized response object with feedback.
- * @param {StateValue} state - The current state of the state machine.
- * @param {string} lang - The language to use for the response.
- * @param {string} [feedback] - The feedback to be included in the response.
- * @param {Record<string, string | number>} [data] - The data to be included in the response.
- * @returns {LocalizedResponse} The localized response object.
- */
-function stateWithFeedback (
-  state: StateValue,
-  lang: string,
-  feedback?: string,
-  data?: Record<string, string | number>
-): LocalizedResponse {
-  const response: LocalizedResponse = {}
-  if (feedback) {
-    response.feedback = feedback
+async function mainMenu(input){
+  const menu = {
+    "1": transferMachine,
+    "2": voucherMachine,
+    "3": settingsMachine
   }
-  if (data) {
-    Object.assign(response, data)
-  }
-  return L[lang][state](response)
+  return menu[input] || mainMenuMachine
 }
 
-function langOpts () {
-  // Filter the supported languages to exclude the fallback object and extract the language names into an array
-  const languagesList = Object.values(supportedLanguages)
-    .filter((obj) => Object.keys(obj)[0] !== 'fb')
-    .map((obj, index) => `${index + 1}. ${Object.values(obj)[0]}`)
+async function settingsMenu(input){
+  const menu = {
+    "1": profileMachine,
+    "2": languagesMachine,
+    "3": balancesMachine,
+    "4": statementMachine,
+    "5": pinManagementMachine
+  }
+  return menu[input] || profileMachine
+}
 
-  // Split the array into three sub-arrays, each containing up to three elements
-  const ls1 = languagesList.slice(0, 3)
-  const ls2 = languagesList.slice(3, 6)
-  const ls3 = languagesList.slice(6, 9)
+async function pinManagementMenu(input){
+  const menu = {
+    "3": socialRecoveryMachine
+  }
+  return menu[input] || pinManagementMachine
+}
 
-  // Join the sub-arrays into a single string, with each sub-array on a new line
-  return [ls1, ls2, ls3].map((ls) => ls.join('\n'))
+async function response(context: any, machineId: string, state: string) {
+  const { data, user } = context
+  let language
+  if (state === "changeSuccess"){
+    language = data?.language
+  } else {
+    language = user?.account?.language  || Object.values(supportedLanguages.fallback)[0]
+  }
+  const translator = L[language][machineId]
+  switch (machineId) {
+    case "registration":
+        return await registrationTranslations(state, translator)
+    case "auth":
+      return await authTranslations(user.activeVoucher, state, translator)
+    case "main":
+      return await mainMenuTranslations(user.activeVoucher, state, translator)
+    case "transfer":
+      return await transferTranslations(context, state, translator)
+    case "voucher":
+      return await voucherTranslations(context, state, translator)
+    case "settings":
+      return await settingsTranslations(context, state, translator)
+    case "profile":
+      return await profileTranslations(context, state, translator)
+    case "language":
+      return await languageTranslations(context, state, translator)
+    case "balances":
+      return await balancesTranslations(context, state, translator)
+    case "statement":
+      return await statementTranslations(context, state, translator)
+    case "pin":
+      return await pinTranslations(context, state, translator)
+    default:
+        return await translate(state, translator)
+  }
 }

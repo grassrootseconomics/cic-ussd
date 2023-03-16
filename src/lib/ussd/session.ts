@@ -1,225 +1,118 @@
-import { upsertSession } from "@db/models/session";
-import { PostgresDb } from "@fastify/postgres";
-import { config } from "@src/config";
-import { Cache } from "@utils/redis";
+import {insertSession, setSession} from "@db/models/session";
+import {PostgresDb} from "@fastify/postgres";
+import {Cache} from "@utils/redis";
 
 import Redis from "ioredis";
-import { StateValue } from "xstate";
-import { BaseContext } from "@src/machines/utils";
+import {StateValue} from "xstate";
+import {BaseContext} from "@src/machines/utils";
 import {createHash} from "crypto";
+import {Address, Symbol} from "@lib/ussd/utils";
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:46:51 AM
- *
- * @typedef {SessionData}
- */
+
 type SessionData = any
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:46:51 AM
- *
- * @export
- * @interface History
- * @typedef {History}
- */
 export interface History {
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:51 AM
-   *
-   * @type {string[]}
-   */
   inputs: string[]
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:51 AM
-   *
-   * @type {StateValue[]}
-   */
+  machines: string[]
   responses: StateValue[]
 }
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:46:51 AM
- *
- * @export
- * @interface SessionInterface
- * @typedef {SessionInterface}
- */
 export interface SessionInterface {
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:51 AM
-   *
-   * @type {string}
-   */
-  actorInput: string
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:50 AM
-   *
-   * @type {?SessionData}
-   */
   data?: SessionData
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:50 AM
-   *
-   * @type {?History}
-   */
   history?: History
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:50 AM
-   *
-   * @type {string}
-   */
   id: string
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:50 AM
-   *
-   * @type {StateValue}
-   */
-  machineState: StateValue
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:50 AM
-   *
-   * @type {string}
-   */
+  input: string
+  machineId: string
   phoneNumber: string
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:50 AM
-   *
-   * @type {string}
-   */
   serviceCode: string
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:46:50 AM
-   *
-   * @type {?number}
-   */
+  state: StateValue
   version?: number
 }
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:46:49 AM
- *
- * @export
- * @class Session
- * @typedef {Session}
- * @extends {Cache}
- * @implements {SessionInterface}
- */
-export class Session extends Cache implements SessionInterface {
-  /**
-   * The user's input for the current session.
-   * @type {string}
-   */
-  actorInput: string
-  /**
-   * Additional data associated with the session.
-   * @type {SessionData}
-   */
+export class Session extends Cache<SessionInterface> implements SessionInterface {
+  input: string
   data?: SessionData
-  /**
-   * History of the session's states.
-   * @type {History}
-   */
   history?: History
-  /**
-   * The ID of the session.
-   * @type {string}
-   */
   id: string
-  /**
-   * The current state of the session's state machine.
-   * @type {StateValue}
-   */
-  machineState: StateValue
-  /**
-   * The phone number associated with the session.
-   * @type {string}
-   */
+  state: StateValue
+  machineId: string
   phoneNumber: string
-  /**
-   * The service code associated with the session.
-   * @type {string}
-   */
   serviceCode: string
-  /**
-   * The version number of the session.
-   * @type {number}
-   */
   version: number
 
-  /**
-   * Creates an instance of Session.
-   * @date 3/3/2023 - 10:46:49 AM
-   *
-   * @constructor
-   * @param {Redis} redis
-   * @param {SessionInterface} session
-   */
   constructor (redis: Redis, session: SessionInterface) {
-    redis.select(config.REDIS.EPHEMERAL_DATABASE)
     super(redis, session.id)
-    const { actorInput, data, history, id, machineState, phoneNumber, serviceCode, version = 1 } = session
-    this.actorInput = actorInput
+    const { input, data, history, id, machineId, phoneNumber, serviceCode, state, version = 1 } = session
+    this.input = input
     this.data = data
     this.history = history
     this.id = id
-    this.machineState = machineState
+    this.machineId = machineId
     this.phoneNumber = phoneNumber
     this.serviceCode = serviceCode
+    this.state = state
     this.version = version
   }
 
-  async create (): Promise<Session> {
+  async create (db: PostgresDb): Promise<Session> {
     await this.setJSON(this.toJson(), 180)
+    await insertSession(db, {
+        input: this.input,
+        data: this.data,
+        history: this.history,
+        id: this.id,
+        phoneNumber: this.phoneNumber,
+        serviceCode: this.serviceCode,
+        state: this.state,
+        version: this.version
+    })
     return this
   }
 
-  async update (data: unknown, db: PostgresDb): Promise<void> {
+  async update (data: Partial<SessionData>, db: PostgresDb): Promise<void> {
     await this.updateJSON(data)
     // TODO[Philip]: For now we're just updating the session in Postgres, however this generates a lot of db traffic.
     // Ideally we would maintain a threshold value above the the session's TLL and only update the session in Postgres
     // when the threshold is reached. However, this creates a lot of complexity and is not worth the effort at this point.
     // We can revisit this later.
-    await upsertSession(db, this.toJson())
+    await setSession(db, {
+      history: {
+        inputs: data.history?.inputs,
+        machines: data.history?.machines,
+        responses: data.history?.responses
+      },
+      id: this.id,
+      state: data.state,
+      version: data.version
+    })
   }
 
 
   toJson (): SessionInterface {
-    const { actorInput, data, history, id, machineState, phoneNumber, serviceCode, version } = this
-    return { actorInput, data, history, id, machineState, phoneNumber, serviceCode, version }
+    const { input, data, history, id, machineId, phoneNumber, serviceCode, state, version } = this
+    return { input, data, history, id, machineId, phoneNumber, serviceCode, state, version }
   }
 }
 
 
-export async function createSession (context: BaseContext, redis: Redis, state: StateValue) {
-  const { ussd: { phoneNumber, requestId, serviceCode } } = context
+export async function createSession (context: BaseContext, machineId: string, redis: Redis, state: StateValue) {
+  const { resources: { db }, ussd: { phoneNumber, requestId, serviceCode } } = context
   const history: History = {
     inputs: [context.ussd.input],
+    machines: [machineId],
     responses: [state]
   }
   // create new session
   return await new Session(redis, {
-    actorInput: context.ussd.input,
+    input: context.ussd.input,
     data: context.data,
     history,
     id: requestId,
-    machineState: state,
+    machineId: machineId,
     phoneNumber: phoneNumber,
-    serviceCode: serviceCode
-  }).create()
+    serviceCode: serviceCode,
+    state: state
+  }).create(db)
 }
 
 export async function getSessionById (
@@ -242,25 +135,29 @@ export function updateHistory (history: History, update: History) {
   return {
     ...history,
     inputs: [...history.inputs, ...update.inputs],
+    machines: [...history.machines, ...update.machines],
     responses: [...history.responses, ...update.responses]
   }
 }
 
-export async function updateSession (context: BaseContext, redis: Redis, state: StateValue) {
-  const session = context.session
-  const history = updateHistory(session.history, { inputs: [context.ussd.input], responses: [state] })
-  const data = updateData(session.data, context.data)
+export async function updateSession (context: BaseContext, machineId: string, state: StateValue) {
+  const { data, resources: { db }, session, ussd: { input } } = context
+
+
+  const updatedData = updateData(session.data || {}, data || {})
+  const updatedHistory = updateHistory(session.history || { inputs: [], machines: [], responses: [] }, { inputs: [input], machines: [machineId], responses: [state] })
   await session.update({
-    actorInput: context.ussd.input,
-    data,
-    history,
-    machineState: state,
+    input: input,
+    data: updatedData,
+    history: updatedHistory,
+    machineId: machineId,
+    state: state,
     version: session.version + 1
-  }, context.resources.db)
+  }, db)
 }
 
 
-export function pointer (identifier: string | string[]): string {
+export function pointer (identifier: Address | Symbol | string[]): string {
   const hashBuilder = createHash('sha256')
   if (Array.isArray(identifier)) {
     const concatenated = identifier.join('')

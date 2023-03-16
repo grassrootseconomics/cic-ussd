@@ -1,10 +1,10 @@
-import { Redis as RedisClient } from "ioredis";
+import {Redis as RedisClient} from "ioredis";
 import JSONCache from "redis-json";
 
 /**
  * A class for accessing a Redis cache and performing common cache operations.
  */
-export class Cache {
+export class Cache<T> {
   /**
    * The Redis client instance to use for cache operations.
    */
@@ -32,7 +32,7 @@ export class Cache {
    * @param {number} expiration - The number of seconds to cache the data for.
    * @returns {Promise<void>} A promise that resolves when the data has been successfully cached.
    */
-  async set (data: string | number, expiration?: number): Promise<void> {
+  async set (data: any, expiration?: number): Promise<void> {
     if (expiration) {
       await this.client.set(this.key, data, 'EX', expiration)
     } else {
@@ -44,7 +44,7 @@ export class Cache {
    * Retrieves data from the cache.
    * @returns {Promise<string | null>} A promise that resolves to the data in cache associated with the cache key.
    */
-  async get (): Promise<string | null> {
+  async get (): Promise<any | null> {
     return this.client.get(this.key);
   }
 
@@ -71,12 +71,8 @@ export class Cache {
     }
   }
 
-  /**
-   * Retrieves JSON data from the cache.
-   * @param {string[]} [keys] - An array of keys to retrieve from the JSON object in cache. If not provided, the entire JSON object will be returned.
-   * @returns {Promise<unknown>} A promise that resolves to the JSON data in cache associated with the cache key.
-   */
-  async getJSON (keys?: string[]): Promise<unknown> {
+
+  async getJSON<T> (keys?: string[]){
     const cache = new JSONCache(this.client)
     if (keys) {
       return await cache.get(this.key, ...keys)
