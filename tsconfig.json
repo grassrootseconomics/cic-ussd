@@ -21,6 +21,7 @@
       "@db/*": ["./src/db/*"],
       "@dev/*": ["./dev/*"],
       "@lib/*": ["./src/lib/*"],
+      "@machines/*": ["./src/machines/*"],
       "@plugins/*": ["./src/plugins/*"],
       "@routes/*": ["./src/routes/*"],
       "@services/*": ["./src/services/*"],
