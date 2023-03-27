@@ -1,12 +1,12 @@
-import {NamespaceStatementTranslation} from "../../i18n-types";
+import { NamespaceStatementTranslation } from '../../i18n-types';
+import sw from '..'
+const { accountBlocked, exit } = sw
 
 const sw_statement = {
-  accountBlocked:
-    "END Akaunti yako imefungwa. Kwa usaidizi, tafadhali piga simu kwa: {supportPhone}.",
+  accountBlocked: accountBlocked,
   enteringPin:
     "CON Weka PIN kuona taarifa ya akaunti yako:\n0. Rudi",
-  exit:
-    "END Asante kwa kutumia huduma ya Sarafu.",
+  exit: exit,
   firstTransactionSet:
     "CON {transactions}\n\n11.Mbele\n00. Ondoka",
   loadError:

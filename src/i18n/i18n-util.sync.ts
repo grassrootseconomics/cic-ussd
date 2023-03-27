@@ -12,9 +12,9 @@ import en_auth from './en/auth'
 import en_balances from './en/balances'
 import en_feedback from './en/feedback'
 import en_helpers from './en/helpers'
-import en_language from './en/language'
+import en_languages from './en/languages'
 import en_main from './en/main'
-import en_pin from './en/pin'
+import en_pins from './en/pins'
 import en_profile from './en/profile'
 import en_registration from './en/registration'
 import en_settings from './en/settings'
@@ -26,9 +26,9 @@ import sw_auth from './sw/auth'
 import sw_balances from './sw/balances'
 import sw_feedback from './sw/feedback'
 import sw_helpers from './sw/helpers'
-import sw_language from './sw/language'
+import sw_languages from './sw/languages'
 import sw_main from './sw/main'
-import sw_pin from './sw/pin'
+import sw_pins from './sw/pins'
 import sw_profile from './sw/profile'
 import sw_registration from './sw/registration'
 import sw_settings from './sw/settings'
@@ -44,9 +44,9 @@ const localeTranslations = {
 		balances: en_balances,
 		feedback: en_feedback,
 		helpers: en_helpers,
-		language: en_language,
+		languages: en_languages,
 		main: en_main,
-		pin: en_pin,
+		pins: en_pins,
 		profile: en_profile,
 		registration: en_registration,
 		settings: en_settings,
@@ -61,9 +61,9 @@ const localeTranslations = {
 		balances: sw_balances,
 		feedback: sw_feedback,
 		helpers: sw_helpers,
-		language: sw_language,
+		languages: sw_languages,
 		main: sw_main,
-		pin: sw_pin,
+		pins: sw_pins,
 		profile: sw_profile,
 		registration: sw_registration,
 		settings: sw_settings,

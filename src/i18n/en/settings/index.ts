@@ -1,4 +1,4 @@
-import type { NamespaceSettingsTranslation } from '../../i18n-types'
+import type { NamespaceSettingsTranslation } from '../../i18n-types';
 
 const en_settings = {
   settingsMenu:

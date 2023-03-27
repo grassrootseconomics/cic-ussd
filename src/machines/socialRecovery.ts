@@ -1,262 +1,314 @@
-import {createMachine, send} from "xstate";
-import {BaseContext, BaseEvent, isOption1, isOption2, isOption3, isOption9, menuPages} from "@machines/utils";
-import {sanitizePhoneNumber} from "@utils/phoneNumber";
-import {isBlocked, isValidPin, updateAttempts} from "@machines/auth";
-import {MachineError} from "@lib/errors";
-import bcrypt from "bcrypt";
-import {addGuardian, removeGuardian} from "@db/models/guardian";
-import {Cache} from "@utils/redis";
-import {tHelpers} from "@src/i18n/translator";
-import {Redis as RedisClient} from "ioredis";
-import {Account} from "@db/models/account";
+import { createMachine, raise } from 'xstate';
+import {
+  BaseContext,
+  BaseEvent,
+  isOption00,
+  isOption1,
+  isOption11,
+  isOption2,
+  isOption22,
+  isOption3,
+  isOption9,
+  isSuccess,
+  MachineId,
+  menuPages,
+  translate,
+  updateErrorMessages,
+  validateTargetUser
+} from '@machines/utils';
+import { sanitizePhoneNumber } from '@utils/phoneNumber';
+import { isBlocked, isValidPin, validatePin } from '@machines/auth';
+import { MachineError } from '@lib/errors';
+import { addGuardian, removeGuardian } from '@db/models/guardian';
+import { Cache } from '@utils/redis';
+import { tHelpers } from '@src/i18n/translator';
+import { Redis as RedisClient } from 'ioredis';
+import { getTag } from '@lib/ussd/utils';
 
 
-interface SocialRecoveryContext extends BaseContext {
-  data?: {
-    loadedGuardians?: string[];
-    validatedToAdd?: string;
-    validatedToRemove?: string;
-    guardianToAdd?: string;
-    guardianToRemove?: string;
-  }
-}
-
-type SocialRecoveryEvent = BaseEvent
-
-enum SocialRecoveryErrors {
+enum SocialRecoveryError {
+  ALREADY_ADDED = "ALREADY_ADDED",
   GUARDIAN_ADDITION_ERROR = "GUARDIAN_ADDITION_ERROR",
   GUARDIAN_REMOVAL_ERROR = "GUARDIAN_REMOVAL_ERROR",
-  INVALID_PIN = "INVALID_PIN",
-  LOADED_ERROR = "LOADED_ERROR",
-  UNAUTHORIZED = "UNAUTHORIZED",
-  SELF_REMOVAL = "SELF_REMOVAL",
-  SELF_ADDITION = "SELF_ADDITION",
-  INVALID_PHONE = "INVALID_PHONE",
-  INVALID_GUARDIAN = "INVALID_GUARDIAN",
-  NOT_GUARDIAN = "NOT_GUARDIAN",
-  ALREADY_ADDED = "ALREADY_ADDED",
+  LOAD_ERROR = "LOAD_ERROR",
+  NOT_ADDED = "NOT_ADDED",
 }
 
 
-export const socialRecoveryMachine = createMachine<SocialRecoveryContext, SocialRecoveryEvent>({
-  /** @xstate-layout N4IgpgJg5mDOIC5SwPYGMCWBDANgJTDRQDcwAnATwDpVNcCjTKBZMAOwFcBiAIQEEAwgGkA2gAYAuolAAHFLAwAXDCjbSQAD0QBGAJwBWbVQDM+3cYAsAJmPHtFgGwWLAGhAUdF3QHYqF7-oOABxi2rYOThYAvlFutNj4hCTk1PH0SUwUrJxcACp4fAByAMoAkrniUkggcgrKqupaCHqGJmaWNnaOzm4ezfr+VD6BujZiPqExcegJDMmUNDPpjCnZ3PlFZRXaVbLySipq1U0tRqbm1rb2kb06VhZGVgEO2lZvug5WelMgaYkrCz+c0yazyBRK5REVl2NX29SOoBOBjO7UuXRu7h0HSoT0Cxgc+iC2gcBmisV+S3+82o7EU5AwbCghTAAHcAOIcLBkCDYNi8QSiSTqWoHBrHRBfbS+bxiYzjfEfIIfYy3fq6IJ+AIy5xBfTeYzeMnTOhUzJUWn0xnM9mc7m8sGbSFC6oi+GNCXjBxUMSOIJeCxBP2B-Sqt5PKh+n0WPUkqx64w-IEZFJUYi4DAQLDKRkcrk8rBsXIoPgQCBcCCqMBUBnEFAAayraZwGazDKgubtBaLJYglWFcMO7uaT10fj9piJhO0gVD2m0Ym9uh9xnV3gMhMTlOBKabLez7dt+cLxdLXHIZBQZCoMhwWYAZpeALap9OZ-cdo-d0t9l0DsWIu41zHCwJ2nScHFDUwF3GH1DAMJxLG8TcTW3BYLTINsAAUGT4Nl+WEH89jqQdxWaZE2guTprh6TEECscYNQ+AZCQsMQHFCbRkNmZM0LYOkMMZbC2Fwh0IQqZ0iNFBFNE8BxjCoQ1dB8bwrCJKxPhVWjtF1CwI1Y1T9VsXR7CCLjlmpKgsA4RQAAtLwwAAvNsP15HspPLStqzYWsG0s6y7Iwpyc0PVzSykwjYWI-8ZIQaN5LEBKEv0MxWN0aMQy0kkjH0J41wMoIIjEKwzNNFMrNs+ygoPPNQp5eEzzIC8rxve8nz8irAuckKCzc+EItdEiANi-R4sSsRkrS8Z0tDNijBg6xvBCdSQgcErUOocqAscrqap6sL6vPS9r1vRQHzIZ9NsqnbO2E-bDhEHZ+yi6Smji70xom1Lpq05S9NlJ47Ho9S1p4jb-Ku4LdtuurDgaprjta872q2qqXL2mHVChGEBui16RvexLPqm5LVTCOUcTUuM5PMUkQYBaga1fISRLwABRfIAE1+r-F7ANHAMQKnIWINo+izCoMwfVy2Ucs48kk3p80+MtaqbqLAhH2SfDBWxnmh0laVZXlElgmVUmrGMhTnnuVjAkJVb5a3UGlf467PxQDWtY2MTuee-XPW9X1-UDANdVVFd5K8JS5LlAwlTpizdzfN3eXVsBNdIDy2CrGt60bV9W0htWPfT5JfakodXiAgXQOF0MAgUqO9QedUlQd41uMVpPC9V93Pczw7mpOs7n2799uuPfuwHLt1SKr-nxyF8DVUMfRG+jtKPm8CJdATs10Kwhk8Dw-gCIkyKK7n8jzg6K5ulcUWnCoT5-RlEbDFMfQ95TA-BKPvDvZbBnoNGK1x5KKWUqpV4GlVREglmNIqsp77FUdihZ2l1OpFyPP3XAWcc7eTzsjCGvdeQ4JwMA3GiA3oIKJmlEmtF2IanGvRYyU5HAJlQZ3CyGDtpYNIaXJscMjotVOm1HhqMJ5kIobzYao1CYpWJhlPobwvQQLiiBUINhv4LHESnAsZChFD0RhdcGmCSH6IEbgB6us-akWoR9BRdClGIBlEYOc0ZRivH8PibRYMOq8PMWwAxg8EaiKRrovhFiM5WOhE9S+Q17HyMmk482QQrAKTUmECIxJvDb18V5JOQlj5cDZpzaRlcRzAVrsvUWcYcRR2jPcYwupVJGgpGgxWv8oBCQAGonwFOU0iBsFJG3MCbNumk+hhFGFbQIAYtT6hQR3cy+9lYCW6QyPpokgHnxxjI+iPpn7eG0slAMDhXHaFgeNHE+gEovBsDYIIuT8kRKgD0jArI0ZsFgHggphDXnvM+RPWAgyhrzyqUvacIspliBlH4YIMpjkWwGO3dpXCzQAo+TaKGPyQkiJHkQsxgLsU3RBbsvWc9Kk10hTOWiBgFy3MSnJY55gRovNMQE4lXzcWNWEcPMRHKqpcuBdYuJs8wVUsXpOGpfRghejjAlL4jSzDJXZf4oVWLuWGNCQSzFQKcVYzFSAk4krBbSqhaTYk8kRqvFhecqBu9OErJTIzZsEBel4VKXgLm5LbFguvqiKi99VSbwJncp4uUzD5KgBPXqhxigcDQGgOAPzT46yNZQ4c1cpVgQtVpZwo4bU2GJKpOMbSFYWRjVDONqgE1JpTdsp0Nj4mgNNdUvNUyWU4jjMc8a+oAgbidaVBYVabpkLrcm2AqaBm+pbSa7NZrc20tlaYBSjLxhPAJISUyQ71pUFHdgyxOAJ0NsAU2jNMjwXUvNcuxAeJ6lKSJP4HU0Z8kyAZNygAMigLAEBIDa1BTFYZMpY4KlNnJUmzg14hCXFKYIrE0lvo-cC79v7-1nvEs28VQGRoaicH2v0ERjAW0mZ4A0Ckqa5Nue0Z5Pw2AoD-fAaoFbMgXqHAAWmhYgTjYbYVvGI7C+wjrlnDuoO+tgzACxYBgI+Wkaw2NDNaYHeD1hCTbylJBj4FG9Q+leEEZpgZ8ksdWOwDgCmwXHPkl4j47ERrEdI80Zw6TFp6f1H6PU9x8ldOtF88zQGlM+hU3GJ5LxvCQXxDcmUS5mlrjYvkseejjw9j800AqGpqVU1Yi8ZxdEWgmFYmc0YJJjJebWYfYSbIUs6BUrpKUTFQ7sQeEEGaSl4XJVCIaHKI0kK7vQYKxLNbpJ7KHNYUmaT0mWCKoi8aSlpz5NdRmZmlXfx+pikpBc1htKNbMHJJwM0IuSwNHYNc+mnClddpEyeAiwBVbogFoOqmQsaa0puoY1h0rJUMP4L+vWu4F3HlDNOGcbsrbnYgNLELMuzRy-iBcSklKOGCMSAk+pzsqyKctyS2GTg1aoHVgkDXdPNcfmvazxH2JRcM797h-XLtkNu6N2iKUTC2DsMZA005Frze8kzf+t31t+C+AVWCyo9uiyKjcplFsTKqTR+sj1t23h+mU36R76mwtaQNKOFSgQvjrYJDukTe69UkqPExrHxrwfBEh3M6HIawhDHh23HUOVUXGYWAt91mzMcX2x9ViL+OzAWw3WEEN6kw3nIE1luWRvnYHtqlJE9U7+eGgyZEYIAMP6k0syYGCKiwJnep2aeP6MpKs15WQW7TzI6Lyh9l0mwwJZLhI5t8wxHo2SKPUn83vvLcIB8PJAk851J8cMg-WVFsIys6+HYAqEQfux8ViXoJR7y9NSr-qG3+H68MPVBGJwyU0mWAQhwxfFlxNfp-X+iAiuLajhsKSbeTz1Ia6mSBDUbxAhyRmzlSw+ScBX5r6Xi3ZSgO7WaFR2Y2CqjBDyTw6ri663Ky5F5lRJooAcB8Q8AAFoANg36g5+7NA57gG2a2BQFaRmC+A+DsSzZKhhCvBeYaBKCK7bxegEifBFTqis7bzZ5sRDDPCBDjjH47oxBAA */
-  id: "socialRecovery",
+export const socialRecoveryMachine = createMachine<BaseContext, BaseEvent>({
+  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOnQFcAXbAewCdcAvAqAcXPTol3XwEEI3Srhr4AxBFFgSBAG40A1tIrV6TFu07deAoSPwBtAAwBdRKAAONWLmGjzIAB6IALAE4AzCSM+jAJiMANgCAwIAOFwAaEABPRABGIxc-EjcwzzSwvwj4j0CAX3zotCw8QlIVWgZmfDYOLh5+QVt9MTA6OnoSCwAbdEoAM3pUMioq9VrNBp1mu0NTBysbOYdnBHcvX38gkKCI6LiEeICAdhI-eIBWNKNLv0vAtIKikBKcAmJR1WqNeu0mvSiNodLq9fpDOgjSpqGp1LSNXQtUQGeJmJAgJZI-CrVyeby+UK7cJRWIJDwnS4kE4eDKJS7uQJGMKFYoYd7lL7jWFTf6IubAzp0bp9QbDTkw37wmaAwx+NGWaxYnHrPFbQnbYkHBLhM7UtwuLIuW7pQKXFmvNllT7Qn6TP6NABKYFQNFk6B6EikMnw8iU4ttcOm+CdLrdPWM8oxipW6LWfhciRINNuJ1T8ROfguJy1CA8Hhc3jyeaNHni6UzLnNbytFTGErtUuDztd7oFoJFEKhdYDPMdzbDEcW0f0yvjieTl1TJ3TmfTOcSYTObkCjPTl3puVuVctH1r3wmgf+IZbHvaguF4LFNoPvd4x4HqKHyxHscQY6MSbcKbTGazObH3hhB4fh5vq-ggYElYvNWu7+je9p3v2rZnu2l6QnB3IIU2obugYcpPkqr4IO+n7ftOv5zqSRzAfiPjxFc06BPETFQaypSwdesIAGq4GAADut74LAnqEN6vrKN2B48fxgmwIO6KYjGoBrBstEakS+xUQE64kGE1zMamWSlqa27sRynEsNJAlYcJKFCmCoroRZtRWbJ8kKs+9hEapao7BqmmHMc9JUlcX6QeEQHuKZ7LWpJ3G8dZja2SC9kdlecWWQlbmPgpw5ecpuKbASfmhAFb7MR+iRuBVwThCB0U1hhmUyTZbapWhXb7vFLVJXhkaKS+BUqkVPjqqVJKHH4wRhCQVUBEYuSeGWZrQTuHJgPglDtJKQYACo0PeYBiAAQnwADCADS7lRp52JEX4JyQSQBouAaIEeEYH2BPOn1nC4K6fek9HAYEJwNbBG1bQwDZ7Qd-ZHbtDp8AAcgAygAkrt10DflThvicRokIy+r6h4RmXPEE2IBmBYgfqLgE8EZN+OD62bdttTIz1QYnedV0LLlt2jo9BYvW9eafUE84Gmc9JuFNJxuNObiXMyq1mZ8kMc1AXOJTziMoxjWMCx5hFDQ9hPE+4LjMx4FNU0ci5nBcLHxG48vHG4rOa+z0NQAACgQfCsLzl3Y3ld3mwmH4TlOM5-lR6b0c9K70aajzvWD6sxaQWt+4H-AhwbaOY+HQtEWulIPCBBMJgEbvzpcNIhdcYSgwEealt7ue+ywBcOiHp1hybN1m3jRwM2cE5ky41z-Q9OaMl4Br6qrlNGDcHjdyQed9wQA9iMXRtl2PayU6mpFNxEc-BNmVH5vERPTYu67kiBK1sTnO+97UBdcYPfMT5KXHg9J6YsjIfS+v+ZIbgSCqyYgEBMj0VxZ0-o1Xev8CD-0PkjEuxt+oR1HKaSq04gKlgpKDKWWkDQfiZIye4wQrgmWzo1KAWE+T6FRuQTAmA4DCSHvzAh5chrnynl+K+s99S32lmTFuYQsjrkeKFbebDGwcNEFwnhfCcGG1LiPHGkdx6iMvjPG+C8qLrhSGkfUit3BhHTMwtBsFVFBnvO6TRvDYD8MAfowh90RbPQiOLSBVDDjJECKkdIDMmQ2wWnmD+FoNakBcUeJCPQPHaKPnooRp9EB5mnGpfMdiLhuBzAmR+K9Xr2PXCcW4W8WGwTkO6XAEAC7BzEA6AAoojAAmkAwaRjJ4mOvlI8xgVakzWXExZiDx5b5m3k0noLT+4hy6b0-puM4wUinscG28j5F+CmTmexz13bu2CBvO2Ss1ZOI5Is5ZWDVndIdH03xwijFKwLBOScG9alXH-JBWB8TIofSmg8beFgCCyQADI0HQBASAodBEEWAWfIZ08RnzzvoFFe5xQr5kCGTYIs8IVQpsrC+FiKsn4JRQMtFF8MWSKxf+DeH5qrVQuPGYkD1t6wBoJgHgPQnSYFdO0GIABZDa5AkUbMMXGaOl844UWxWSNucD3DMTJkyekRhUGJK-nygV7phWiroBKqVOi8GytHAq2OP5ZwqonuSbw7gLiqy-PGTwvL+WCpNbIMVkr8DSupSiHJqK3y2vEUqh1OYnipFNE8LIy4yz1NuZ8Q1vqwAiv9WawNwbcHH3woLXJxFI1kXjpRSa5JYHao9rPexMtt5hhaf0Ha-x9q6BEtIOQihpDNogK2mG7aaC6GtRXdF4jTGjMdWuWB-16HpmpLkbITbmkDuEEOxoHbBBtQvI5EY-bB2Hi3SOwQY6RETrqZi6Rid3ZLgBqvMCJw26rqWeuttJ7DpdrEr2kgh6N3Ht4PtQ657x4+WKhc8aOZVZWKiZcJIrc7gswaRyf9H6gNw1DEdOye7Ox-rXUewSwH4agZUqqCDGkHZBMiaTUGQFn1QRePgGgCL4DohguUWlmzEAAFpvpUR45SM5wmRP0e3lgEV5BNrHR6PypQEAuNyrfIuGtvgrhtyCCg+cZYUjTlbm7FWIF0ziYypu6UY8DHKmSPOFi6r6Y-OAsxVi+rGrOUA9hE8inlRuwJpfH5SsFqXH-HiOuel5YXGvvMlDsUurNT1v8Njptw3rD8P+dcBZ2WaptiuGe28MHueI1hrz90VNqXU4yFcoNjmvRTtccLQQ6vOY4z7KGLBdaCWK+bUrWxyuaaq4ncIsDGK-SyIuY4eWf4ByDqwTrID-BVwetkexZYjT8cCoNkKS9n3ZGnMhtNPdWuYODDN4tyX6IUl0j4aci0vzVTCNB64VIaSz0sc+q+E3DtTfwP-WbcZutqfgX1x18YKaFmmeEBNoQ8uOFsL9vJ1wY6M38ISg0jxoOHJo9E1uG94gqPYbMfQnSUpw4QCrGO4i3ZZDdokB2uRqTxrnjtzwuq9XNeSfjmUGSvEk-opTOB8jiw0nloS1LickgpH+tcek9xjiHLx42NxPQieChJ0zsrgPKvA+bh9a5k5II-OpPL1xaSueJdHslw5jJUjJAJh9BjekcxkyG895IekjQC6a2tT49zWnTZJ2Ty+lOSk05s1b+dC1QH0UXJ7pJYk10rNV-9uiGutNUSyLpRIzEIj+DJm3VNLnGk+nj48nnl6JFmOB4yD8QFrjbffpTfPbOSCyfhcr+g-v4OB7SMHpI-51NJjtrt2eacVakvwDCuFCKFOnbpQkeiNamEgXuDA+7WlbiUniYrFcr1fpj-FbwdAMBUCQzzYnxW6uNOa-nEWOzVx3AxMsd6o1Qqs2mvNUG1XiQPyPXS3pMIOwVZpY7gqR3Z7hMxMw9IghX0W0AMiNT1p8ktZ8jgkhH4Jx0wgJ5Z1xV9JopovAa9ttO4kgvVotSA0MzN8BCtRUSdrMqJts5EhdztHgVpCggA */
+  id: MachineId.SOCIAL_RECOVERY,
   initial: "socialRecoveryMenu",
   predictableActionArguments: true,
   preserveActionOrder: true,
   states: {
-    pinManagementMenu: {
-      type: "final"
+    accountBlocked: {
+      description: 'Account is blocked.',
+      tags: 'error',
+      type: 'final'
     },
-    socialRecoveryMenu: {
+    authorizingGuardianAddition: {
+      description: 'Invoked service that adds a guardian.',
+      invoke: {
+        id: 'authorizingGuardianAddition',
+        src: 'initiateGuardianAddition',
+        onDone: { target: 'guardianAdditionSuccess', cond: 'isSuccess' },
+        onError: [
+          { target: 'accountBlocked', cond: 'isBlocked' },
+          { target: 'guardianAdditionError', cond: 'isAdditionError', actions: 'updateErrorMessages' },
+          { target: 'invalidPinAG', actions: 'updateErrorMessages' }
+        ]
+      },
+      tags: 'invoked'
+    },
+    authorizingGuardianRemoval: {
+      description: 'Invoked service that removes a guardian.',
+      invoke: {
+        id: 'authorizingGuardianRemoval',
+        src: 'initiateGuardianRemoval',
+        onDone: { target: 'guardianRemovalSuccess', cond: 'isSuccess' },
+        onError: [
+          { target: 'accountBlocked', cond: 'isBlocked' },
+          { target: 'guardianRemovalError', cond: 'isRemovalError', actions: 'updateErrorMessages' },
+          { target: 'invalidPinRG', actions: 'updateErrorMessages' }
+        ]
+      },
+      tags: 'invoked'
+    },
+    authorizingViewGuardians: {
+      description: 'Invoked service that loads the guardians.',
+      invoke: {
+        id: 'authorizingViewGuardians',
+        src: 'loadPinGuardians',
+        onDone: { target: 'firstGuardiansSet', cond: 'isSuccess', actions: 'saveLoadedGuardians' },
+        onError: [
+          { target: 'accountBlocked', cond: 'isBlocked' },
+          { target: 'loadError', cond: 'isLoadError', actions: 'updateErrorMessages' },
+          { target: 'invalidPinVG', actions: 'updateErrorMessages' }
+        ]
+      },
+      tags: 'invoked'
+    },
+    enteringGuardianToRemove: {
+      description: 'Expects valid guardian entry.',
       on: {
-        BACK: "pinManagementMenu",
+        BACK: 'socialRecoveryMenu',
         TRANSIT: [
-          {target: "enteringNewGuardian", cond: "isOption1"},
-          {target: "enteringGuardianToRemove", cond: "isOption2"},
-          {target: "enteringPinVG", cond: "isOption3"},
+          { target: 'validatingGuardianToRemove', actions: 'saveGuardianToRemoveEntry' }
+        ]
+      },
+      tags: 'error'
+    },
+    enteringNewGuardian: {
+      description: 'Expects valid guardian entry.',
+      on: {
+        BACK: 'socialRecoveryMenu',
+        TRANSIT: [
+          { target: 'validatingGuardianToAdd', actions: 'saveGuardianToAddEntry' }
+        ]
+      },
+      tags: 'error'
+    },
+    enteringPinAG: {
+      description: 'Expects valid pin entry.',
+      on: {
+        BACK: 'enteringNewGuardian',
+        TRANSIT: [
+          { target: 'authorizingGuardianAddition', cond: 'isValidPin' }
+        ]
+      },
+      tags: ['encryptInput', 'error']
+    },
+    enteringPinRG: {
+      description: 'Expects valid pin entry.',
+      on: {
+        BACK: 'enteringGuardianToRemove',
+        TRANSIT: [
+          { target: 'authorizingGuardianRemoval', cond: 'isValidPin' }
+        ]
+      },
+      tags: ['encryptInput', 'error']
+    },
+    enteringPinVG: {
+      description: 'Expects valid pin entry.',
+      on: {
+        BACK: 'socialRecoveryMenu',
+        TRANSIT: [
+          { target: 'authorizingViewGuardians', cond: 'isValidPin' }
+        ]
+      },
+      tags: ['encryptInput', 'error']
+    },
+    exit: {
+      description: 'Terminates USSD session.',
+      type: 'final'
+    },
+    firstGuardiansSet: {
+      description: 'Displays guardians in first guardian set.',
+      on: {
+        BACK: 'socialRecoveryMenu',
+        TRANSIT: [
+          { target: 'secondGuardiansSet', cond: 'isOption11' },
+          { target: 'exit', cond: 'isOption00' }
+        ]
+      },
+      tags: 'resolved'
+    },
+    guardianAdditionError: {
+      description: 'Guardian addition failed.',
+      tags: 'error',
+      type: 'final'
+    },
+    guardianAdditionSuccess: {
+      description: 'Guardian addition successful.',
+      on: {
+        BACK: 'socialRecoveryMenu',
+        TRANSIT: [
+          { target: 'exit', cond: 'isOption9' }
+        ]
+      },
+      tags: 'resolved'
+    },
+    guardianRemovalError: {
+      description: 'Guardian removal failed.',
+      tags: 'error',
+      type: 'final'
+    },
+    guardianRemovalSuccess: {
+      description: 'Guardian removal successful.',
+      on: {
+        BACK: 'socialRecoveryMenu',
+        TRANSIT: [
+          { target: 'exit', cond: 'isOption9' }
+        ]
+      },
+      tags: 'resolved'
+    },
+    invalidPinAG: {
+      description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
+      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      on: {
+        RETRY: 'enteringPinAG'
+      }
+    },
+    invalidPinRG: {
+      description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
+      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      on: {
+        RETRY: 'enteringPinRG'
+      }
+    },
+    invalidPinVG: {
+      description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
+      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      on: {
+        RETRY: 'enteringPinVG'
+      }
+    },
+    loadError: {
+      description: 'Guardian loading failed.',
+      tags: 'error',
+      type: 'final'
+    },
+    pinManagementMenu: {
+      description: 'Displays PIN management menu.',
+      type: 'final'
+    },
+    secondGuardiansSet: {
+      description: 'Displays guardians in second guardian set.',
+      on: {
+        TRANSIT: [
+          { target: 'thirdGuardiansSet', cond: 'isOption11' },
+          { target: 'firstGuardiansSet', cond: 'isOption22' },
+          { target: 'exit', cond: 'isOption00' }
         ]
       }
     },
-
-    // add guardian
-    enteringNewGuardian: {
+    socialRecoveryMenu: {
+      description: 'Displays social recovery menu.',
       on: {
-        BACK: "socialRecoveryMenu",
+        BACK: 'pinManagementMenu',
         TRANSIT: [
-          {target: "validatingGuardianToAdd"},
+          { target: 'enteringNewGuardian', cond: 'isOption1' },
+          { target: 'enteringGuardianToRemove', cond: 'isOption2' },
+          { target: 'enteringPinVG', cond: 'isOption3' }
+        ]
+      }
+    },
+    thirdGuardiansSet: {
+      description: 'Displays guardians in third  guardian set.',
+      on: {
+        TRANSIT: [
+          { target: 'secondGuardiansSet', cond: 'isOption22' },
+          { target: 'exit', cond: 'isOption00' }
         ]
       }
     },
     validatingGuardianToAdd: {
+      description: 'Invoked service that validates the guardian to add.',
       invoke: {
-        id: "validatingGuardianToAdd",
-        src: "validateGuardianToAdd",
-        onDone: {target: "enteringPinAG", cond: "succeeded"},
-        onError: "enteringNewGuardian"
+        id: 'validatingGuardianToAdd',
+        src: 'validateGuardianToAdd',
+        onDone: { target: 'enteringPinAG', cond: 'isSuccess', actions: 'saveValidatedGuardianToAdd' },
+        onError: { target: 'enteringNewGuardian', actions: 'updateErrorMessages' }
       },
-      tags: "invoked"
-    },
-    enteringPinAG: {
-      on: {
-        BACK: "enteringNewGuardian",
-        TRANSIT: [
-          {target: "authorizingGuardianAddition", cond: "isValidPin"},
-        ]
-      },
-      tags: "resolved"
-    },
-    authorizingGuardianAddition: {
-      invoke: {
-        id: "authorizingGuardianAddition",
-        src: "initiateGuardianAddition",
-        onDone: {target: "guardianAdditionSuccess", cond: "succeeded", actions: "saveValidatedGuardianToAdd"},
-        onError: [
-          {target: "invalidPinAG", cond: "isInvalidPin"},
-          {target: "guardianAdditionError", cond: "isError"},
-          {target: "accountBlocked", cond: "isBlocked"}
-        ]
-      },
-      tags: "invoked"
-    },
-    invalidPinAG: {
-      entry: send({type: "RETRY", feedback: "invalidPin"}),
-      on: {
-        RETRY: "enteringPinAG",
-      }
-    },
-
-    // remove guardian
-    enteringGuardianToRemove: {
-      on: {
-        BACK: "socialRecoveryMenu",
-        TRANSIT: [
-          {target: "validatingGuardianToRemove"}
-        ]
-      }
+      tags: 'invoked'
     },
     validatingGuardianToRemove: {
+      description: 'Invoked service that validates the guardian to remove.',
       invoke: {
-        id: "validatingGuardianToRemove",
-        src: "validateGuardianToRemove",
-        onDone: {target: "enteringPinRG", cond: "succeeded"},
-        onError: "enteringGuardianToRemove"
+        id: 'validatingGuardianToRemove',
+        src: 'validateGuardianToRemove',
+        onDone: { target: 'enteringPinRG', cond: 'isSuccess', actions: 'saveValidatedGuardianToRemove' },
+        onError: { target: 'enteringGuardianToRemove', actions: 'updateErrorMessages' }
       },
-      tags: "invoked"
-    },
-    enteringPinRG: {
-      on: {
-        BACK: "enteringGuardianToRemove",
-        TRANSIT: [
-          {target: "authorizingGuardianRemoval", cond: "isValidPin"},
-        ]
-      }
-    },
-    authorizingGuardianRemoval: {
-      invoke: {
-        id: "authorizingGuardianRemoval",
-        src: "initiateGuardianRemoval",
-        onDone: {target: "guardianRemovalSuccess", cond: "succeeded", actions: "saveValidatedGuardianToRemove"},
-        onError: [
-          {target: "invalidPinRG", cond: "isInvalidPin"},
-          {target: "guardianRemovalError", cond: "isError"},
-          {target: "accountBlocked", cond: "isBlocked"}
-        ]
-      },
-      tags: "invoked"
-    },
-    invalidPinRG: {
-      entry: send({type: "RETRY", feedback: "invalidPin"}),
-      on: {
-        RETRY: "enteringPinRG",
-      }
-    },
-
-    // view guardians
-    enteringPinVG: {
-      on: {
-        BACK: "socialRecoveryMenu",
-        TRANSIT: [
-          {target: "authorizingViewGuardians", cond: "isValidPin"},
-        ]
-      }
-    },
-    authorizingViewGuardians: {
-      invoke: {
-        id: "authorizingViewGuardians",
-        src: "loadPinGuardians",
-        onDone: {target: "pinGuardiansLoaded", cond: "succeeded", actions: "saveLoadedGuardians"},
-        onError: [
-          {target: "invalidPinVG", cond: "isInvalidPin"},
-          {target: "loadError", cond: "isError"},
-          {target: "accountBlocked", cond: "isBlocked"}
-        ]
-      },
-      tags: "invoked"
-    },
-    invalidPinVG: {
-      entry: send({type: "RETRY", feedback: "invalidPin"}),
-      on: {
-        RETRY: "enteringPinVG",
-      }
-    },
-
-    // final states
-    guardianAdditionSuccess: {
-      on: {
-        BACK: "socialRecoveryMenu",
-        TRANSIT: [
-          {target: "exit", cond: "isOption9"},
-        ]
-      },
-      tags: "resolved"
-    },
-    guardianAdditionError: {
-      type: "final",
-      tags: "error"
-    },
-    guardianRemovalSuccess: {
-      on: {
-        BACK: "socialRecoveryMenu",
-        TRANSIT: [
-          {target: "exit", cond: "isOption9"}
-        ]
-      },
-      tags: "resolved"
-    },
-    guardianRemovalError: {
-      type: "final",
-      tags: "error"
-    },
-    pinGuardiansLoaded: {
-      on: {
-        BACK: "socialRecoveryMenu",
-        TRANSIT: [
-          {target: "exit", cond: "isOption9"}
-        ]
-      },
-      tags: "resolved"
-    },
-    loadError: {
-      type: "final",
-      tags: "error"
-    },
-    accountBlocked: {
-      type: "final",
-      tags: "error"
-    },
-    exit: {
-      type: "final"
+      tags: 'invoked'
     }
   }
 }, {
   actions: {
     saveLoadedGuardians,
     saveValidatedGuardianToAdd,
-    saveValidatedGuardianToRemove
+    saveValidatedGuardianToRemove,
+    saveGuardianToAddEntry,
+    saveGuardianToRemoveEntry,
+    updateErrorMessages
   },
   guards: {
+    isAdditionError,
     isBlocked,
-    isError,
-    isInvalidPin,
+    isLoadError,
     isOption1,
     isOption2,
     isOption3,
     isOption9,
+    isOption00,
+    isOption11,
+    isOption22,
+    isRemovalError,
+    isSuccess,
     isValidPhoneNumber,
-    isValidPin,
+    isValidPin
   },
   services: {
     initiateGuardianAddition,
     initiateGuardianRemoval,
-    loadPinGuardians
+    loadPinGuardians,
+    validateGuardianToAdd,
+    validateGuardianToRemove
   }
 })
 
-function isError(context: BaseContext, event: any) {
-  return event.data.code === SocialRecoveryErrors.LOADED_ERROR
-    || event.data.code === SocialRecoveryErrors.GUARDIAN_ADDITION_ERROR
-    || event.data.code === SocialRecoveryErrors.GUARDIAN_REMOVAL_ERROR
+function isLoadError(context: BaseContext, event: any) {
+  return event.data.code === SocialRecoveryError.LOAD_ERROR;
+}
+
+function isAdditionError(context: BaseContext, event: any) {
+  return event.data.code === SocialRecoveryError.GUARDIAN_ADDITION_ERROR;
+}
+
+function isRemovalError(context: BaseContext, event: any) {
+  return event.data.code === SocialRecoveryError.GUARDIAN_REMOVAL_ERROR;
 }
 
 function isValidPhoneNumber(context: BaseContext, event: any) {
@@ -269,96 +321,114 @@ function isValidPhoneNumber(context: BaseContext, event: any) {
   }
 }
 
-function isInvalidPin(context: SocialRecoveryContext, event: any) {
-  return event.data.code === SocialRecoveryErrors.INVALID_PIN || event.data.code === SocialRecoveryErrors.UNAUTHORIZED
-}
-
-function saveValidatedGuardianToAdd(context: SocialRecoveryContext, event: any) {
-  context.data.validatedToAdd = event.data.guardian;
+function saveValidatedGuardianToAdd(context: BaseContext, event: any) {
+  context.data = {
+    ...(context.data || {}),
+    guardians: {
+      ...(context.data?.guardians || {}),
+      validated: {
+        ...(context.data?.guardians?.validated || {}),
+        toAdd: event.data.guardian
+      }
+    }
+  }
   return context;
 }
 
-function saveValidatedGuardianToRemove(context: SocialRecoveryContext, event: any) {
-  context.data.validatedToRemove = event.data.guardian;
+function saveValidatedGuardianToRemove(context: BaseContext, event: any) {
+  context.data = {
+    ...(context.data || {}),
+    guardians: {
+      ...(context.data?.guardians || {}),
+      validated: {
+        ...(context.data?.guardians?.validated || {}),
+        toRemove: event.data.guardian
+      }
+    }
+  }
   return context;
 }
 
-function saveLoadedGuardians(context: SocialRecoveryContext, event: any) {
-  context.data.loadedGuardians = event.data;
+function saveLoadedGuardians(context: BaseContext, event: any) {
+  context.data = {
+    ...(context.data || {}),
+    guardians: {
+      ...(context.data?.guardians || {}),
+      loaded: event.data.guardians
+    }
+  }
   return context;
 }
 
-async function initiateGuardianAddition(context: SocialRecoveryContext, event: any) {
-  const { data: { validatedToAdd }, resources: { db, p_redis }, user: { account: { password, phone_number } } } = context
+function saveGuardianToAddEntry(context: BaseContext, event: any) {
+  context.data = {
+    ...(context.data || {}),
+    guardians: {
+      ...(context.data?.guardians || {}),
+      entry: {
+        ...(context.data?.guardians?.entry || {}),
+        toAdd: event.input
+      }
+    }
+  }
+  return context;
+}
+
+function saveGuardianToRemoveEntry(context: BaseContext, event: any) {
+  context.data = {
+    ...(context.data || {}),
+    guardians: {
+      ...(context.data?.guardians || {}),
+      entry: {
+        ...(context.data?.guardians?.entry || {}),
+        toRemove: event.input
+      }
+    }
+  }
+  return context;
+}
+
+async function initiateGuardianAddition(context: BaseContext, event: any) {
+  const {
+    data: { guardians: { validated: { toAdd } } },
+    resources: { db, p_redis },
+    user: { account: { phone_number } } } = context
   const { input } = event
 
-  // check that pin has valid format.
-  const isValidPin = /^\d{4}$/.test(input)
-  if (!isValidPin) {
-    await updateAttempts(context)
-    throw new MachineError(SocialRecoveryErrors.INVALID_PIN, "PIN is invalid.")
-  }
-
-  // check that pin is correct.
-  const isAuthorized = await bcrypt.compare(input, password)
-  if (!isAuthorized) {
-    await updateAttempts(context)
-    throw new MachineError(SocialRecoveryErrors.UNAUTHORIZED, "PIN is incorrect.")
-  }
+  await validatePin(context, input)
 
   // add guardian to db and redis.
   try {
-    await addGuardian(db, validatedToAdd, p_redis, phone_number)
+    await addGuardian(db, toAdd, p_redis, phone_number)
     return { success: true }
   } catch (error) {
-    throw new MachineError(SocialRecoveryErrors.GUARDIAN_ADDITION_ERROR, error.message)
+    throw new MachineError(SocialRecoveryError.GUARDIAN_ADDITION_ERROR, error.message)
   }
 }
 
-async function initiateGuardianRemoval(context: SocialRecoveryContext, event: any) {
-  const { data: { validatedToRemove }, resources: { db, p_redis }, user: { account: { password, phone_number } } } = context
+async function initiateGuardianRemoval(context: BaseContext, event: any) {
+  const {
+    data: { guardians: { validated: { toRemove } } },
+    resources: { db, p_redis },
+    user: { account: { phone_number } } } = context
   const { input } = event
 
-  // check that pin has valid format.
-  const isValidPin = /^\d{4}$/.test(input)
-  if (!isValidPin) {
-    await updateAttempts(context)
-    throw new MachineError(SocialRecoveryErrors.INVALID_PIN, "PIN is invalid.")
-  }
-
-  // check that pin is correct.
-  const isAuthorized = await bcrypt.compare(input, password)
-  if (!isAuthorized) {
-    await updateAttempts(context)
-    throw new MachineError(SocialRecoveryErrors.UNAUTHORIZED, "PIN is incorrect.")
-  }
+  await validatePin(context, input)
 
   // remove guardian from db and redis.
   try {
-    await removeGuardian(db, validatedToRemove, p_redis, phone_number)
+    await removeGuardian(db, toRemove, p_redis, phone_number)
     return { success: true }
   } catch (error) {
-    throw new MachineError(SocialRecoveryErrors.GUARDIAN_REMOVAL_ERROR, error.message)
+    throw new MachineError(SocialRecoveryError.GUARDIAN_REMOVAL_ERROR, error.message)
   }
 }
 
-async function loadPinGuardians(context: SocialRecoveryContext, event: any) {
-  const { resources: { p_redis }, user: { account: { language, password, phone_number } } } = context
+async function loadPinGuardians(context: BaseContext, event: any) {
+  const { resources: { p_redis }, user: { account: { language, phone_number } } } = context
   const { input } = event
 
-  // check that pin has valid format.
-  const isValidPin = /^\d{4}$/.test(input)
-  if (!isValidPin) {
-    await updateAttempts(context)
-    throw new MachineError(SocialRecoveryErrors.INVALID_PIN, "PIN is invalid.")
-  }
-
-  // check that pin is correct.
-  const isAuthorized = await bcrypt.compare(input, password)
-  if (!isAuthorized) {
-    await updateAttempts(context)
-    throw new MachineError(SocialRecoveryErrors.UNAUTHORIZED, "PIN is incorrect.")
-  }
+  await validatePin(context, input)
 
   // load guardians from redis.
   try {
@@ -368,87 +438,82 @@ async function loadPinGuardians(context: SocialRecoveryContext, event: any) {
     const formattedGuardians = await formatGuardians(guardians, language, p_redis)
     return { guardians: formattedGuardians, success: true }
   } catch (error) {
-    throw new MachineError(SocialRecoveryErrors.LOADED_ERROR, error.message)
+    throw new MachineError(SocialRecoveryError.LOAD_ERROR, error.message)
   }
 
 }
 
 async function formatGuardians(guardians: string[], language: string, redis: RedisClient) {
   const placeholder = tHelpers("noMoreGuardians", language)
-  if (guardians.length === 0) {
-    return [placeholder]
+  const formattedGuardians = []
+  for (const guardian of guardians) {
+    const tag = await getTag(guardian, redis)
+    formattedGuardians.push(tag.tag)
   }
-  return await menuPages(guardians, placeholder)
+  return await menuPages(formattedGuardians, placeholder)
 }
 
-async function validateGuardianToAdd(context: SocialRecoveryContext, event: any) {
-  const { resources: { p_redis }, user: { account: { address, guardians } }, ussd: { countryCode } } = context
+async function validateGuardianToAdd(context: BaseContext, event: any) {
   const { input } = event
 
-  let guardian: string, guardianAccount: Account;
-
-  // check that phone number is valid
-  try{
-    guardian = sanitizePhoneNumber(input, countryCode)
-  } catch (error) {
-    throw new MachineError(SocialRecoveryErrors.INVALID_PHONE, error.message)
-  }
-
-  // check that account is known to the system.
-  const cache = new Cache<Account>(p_redis, guardian)
-  guardianAccount = await cache.getJSON()
-  if (!guardianAccount) {
-    throw new MachineError(SocialRecoveryErrors.INVALID_GUARDIAN, "Unrecognized recipient")
-  }
-
-  // check that account is not same with user.
-  if (guardianAccount.address === address) {
-    throw new MachineError(SocialRecoveryErrors.SELF_ADDITION, "Cannot reset your own PIN")
-  }
-
-  // check that user is not already a guardian.
+  const guardianUser = await validateTargetUser(context, input)
+  const { account: guardianAccount } = guardianUser
+  const guardian = guardianAccount.phone_number
+  const guardians = context.user.guardians || [];
   if (guardians.includes(guardian)) {
-    throw new MachineError(SocialRecoveryErrors.ALREADY_ADDED, "Already a guardian")
+    throw new MachineError(SocialRecoveryError.ALREADY_ADDED, "Already a guardian.")
   }
-
   return { guardian: guardian, success: true }
-
 }
 
-async function validateGuardianToRemove(context: SocialRecoveryContext, event: any) {
-  const { resources: { p_redis }, user: { account: { address, guardians } }, ussd: { countryCode } } = context
+async function validateGuardianToRemove(context: BaseContext, event: any) {
   const { input } = event
 
-  let guardian: string, guardianAccount: Account;
-
-  // check that phone number is valid
-  try{
-    guardian = sanitizePhoneNumber(input, countryCode)
-  } catch (error) {
-    throw new MachineError(SocialRecoveryErrors.INVALID_PHONE, error.message)
-  }
-
-  // check that account is known to the system.
-  const cache = new Cache<Account>(p_redis, guardian)
-  guardianAccount = await cache.getJSON()
-  if (!guardianAccount) {
-    throw new MachineError(SocialRecoveryErrors.INVALID_GUARDIAN, "Unrecognized recipient")
-  }
-
-  // check that account is not same with user.
-  if (guardianAccount.address === address) {
-    throw new MachineError(SocialRecoveryErrors.SELF_REMOVAL, "Cannot remove yourself")
-  }
-
-  // check that user is not already a guardian.
+  const guardianUser = await validateTargetUser(context, input)
+  const { account: guardianAccount } = guardianUser
+  const guardian = guardianAccount.phone_number
+  const guardians = context.user.guardians || [];
   if (!guardians.includes(guardian)) {
-    throw new MachineError(SocialRecoveryErrors.NOT_GUARDIAN, "Not a guardian")
+    throw new MachineError(SocialRecoveryError.NOT_ADDED, "Not a guardian.")
   }
-
   return { guardian: guardian, success: true }
-
 }
 
 export async function socialRecoveryTranslations(context: BaseContext, state: string, translator: any){
+  const { resources: { p_redis } } = context
 
+  switch (state) {
+    case 'guardianAdditionSuccess': {
+      const { data: { guardians: { validated: { toAdd } } } } = context;
+      const tag = await getTag(toAdd, p_redis);
+      return await translate(state, translator, { guardian: tag.tag });
+    }
+    case 'guardianAdditionError': {
+      const { data: { guardians: { entry: { toAdd } } } } = context;
+      return await translate(state, translator, { guardian: toAdd });
+    }
+    case 'guardianRemovalSuccess': {
+      const { data: { guardians: { validated: { toRemove } } } } = context;
+      const tag = await getTag(toRemove, p_redis);
+      return await translate(state, translator, { guardian: tag.tag });
+    }
+    case 'guardianRemovalError': {
+      const { data: { guardians: { entry: { toRemove } } } } = context;
+      return await translate(state, translator, { guardian: toRemove });
+    }
+    case "firstGuardiansSet": {
+      const { data: { guardians: { loaded } } } = context;
+      return await translate(state, translator, { guardians: loaded[0] });
+    }
+    case "secondGuardiansSet": {
+      const { data: { guardians: { loaded } } } = context;
+      return await translate(state, translator, { guardians: loaded[1] });
+    }
+    case "thirdGuardiansSet": {
+      const { data: { guardians: { loaded } } } = context;
+      return await translate(state, translator, { guardians: loaded[2] });
+    }
+    default:
+      return await translate(state, translator)
+  }
 }

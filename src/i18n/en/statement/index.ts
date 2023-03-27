@@ -1,12 +1,12 @@
-import type { NamespaceStatementTranslation } from '../../i18n-types'
+import type { NamespaceStatementTranslation } from '../../i18n-types';
+import en from '..'
+const { accountBlocked, exit } = en
 
 const en_statement = {
-  accountBlocked:
-    "END Your account is blocked. For assistance, please call: {supportPhone}.",
+  accountBlocked: accountBlocked,
   enteringPin:
     "CON Enter your PIN to view your account statement:\n0. Back",
-  exit:
-    "END Thank you for using Sarafu.",
+  exit: exit,
   firstTransactionSet:
     "CON {transactions}\n\n11.Next\n00. Exit",
   loadError:

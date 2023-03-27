@@ -1,4 +1,4 @@
-import {BaseTranslation} from "../../i18n-types"
+import { BaseTranslation } from '../../i18n-types';
 
 const sw_auth = {
     accountBlocked:

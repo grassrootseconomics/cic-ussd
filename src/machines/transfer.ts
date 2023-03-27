@@ -1,150 +1,148 @@
-import {createMachine, send} from "xstate";
-import {BaseContext, BaseEvent, isOption1, isOption9, translate, updateErrorMessages} from "@src/machines/utils";
-import {sanitizePhoneNumber} from "@utils/phoneNumber";
-import {Account} from "@db/models/account";
-import {cashRounding} from "@lib/ussd/utils";
-import {isBlocked, isValidPin, updateAttempts} from "@src/machines/auth";
-import {custodialTransfer} from "@lib/custodail";
-import {createTracker, CustodialTaskType} from "@db/models/custodailTasks";
-import bcrypt from "bcrypt";
-import {isValidPhoneNumber} from "@machines/pin";
-import {MachineError} from "@lib/errors";
-import {Cache} from "@utils/redis";
+import { createMachine, raise } from 'xstate';
+import {
+  BaseContext,
+  BaseEvent,
+  isOption1,
+  isOption9,
+  isSuccess,
+  isValidPhoneNumber,
+  MachineId,
+  translate,
+  updateErrorMessages,
+  validatePhoneNumber,
+  validateTargetUser
+} from '@src/machines/utils';
+import { cashRounding } from '@lib/ussd/utils';
+import { isBlocked, isValidPin, validatePin } from '@src/machines/auth';
+import { custodialTransfer } from '@lib/custodail';
+import { createTracker, CustodialTaskType } from '@db/models/custodailTasks';
+import { MachineError } from '@lib/errors';
 
-export interface TransferContext extends BaseContext {
-  data: {
-    amount?: number;
-    entry?: string;
-    recipientAddress?: string;
-  };
-}
-
-type TransferEvent =
-  BaseEvent
-
-
-enum TransferErrors {
-  INVALID_PIN = "INVALID_PIN",
-  INVALID_PHONE = "INVALID_PHONE",
-  INVALID_RECIPIENT = "INVALID_RECIPIENT",
-  SELF_TRANSFER = "SELF_TRANSFER",
-  TRANSFER_FAILED = "TRANSFER_FAILED",
-  UNAUTHORIZED = "UNAUTHORIZED",
+enum TransferError {
+  INVITE_ERROR = 'INVITE_ERROR',
+  TRANSFER_ERROR = "TRANSFER_ERROR",
 }
 
 
 export const transferMachine = createMachine<BaseContext, BaseEvent>({
-    /** @xstate-layout N4IgpgJg5mDOIC5QBcBOBDAdrAZmVAdGJsvgJaZQBKYAxmQA5nHIDEAQgIIDCA0gNoAGALqJQDAPawyyMhMxiQAD0QBWAEwAWAgE5VAZgCM6gByrVANkOqTAdgA0IAJ6JDJ7ZvUWrtrYc0mhr4AvsGOaFi4+EQk5JQ09EwsrAAqVJwAcgDKAJIpQqJIIJLSsvKKKgga2npGpuZWNg7Oarb6BBbqOhZmloLqhjq2oeEY2HiEAG7oADZkEOiy8XSMzCSsEPJgBBSTEgDW29NzC0vUK0kkBYolMnIKRZWGhoKqBOqC+oImeqqamhZ9KpHC4EAFBB1bBZLHoTCZBK8TBYRiAIuNosd5osKOdEms2PhUBJCAwZoscMSALYETGnHEJVYsa5FW5lB6gJ4vN4fL4-cz-QHAloIbw6Ag2UyCAKmX6GFFoqKEXazeYMy5sNKZXL5EQ3KR3cqPVxc96fb6-AVAkGtdqdbpDdSqbqvZFhVFjRU7TC0tX41LpbJ5fiGQrifVsiqueEQ2xuCx6QZS-R2a0inSGDqeeMWf6aJ39eUeiZen0XP2awP5dSh4rh+6RhBuBEEWNIhM6JMp4U2CwEfxeXzxhF5wuRYu7O7LPHJTaYba7A7z72T3GMq66ll1w0cxCOnPvbpI3OaWw6fSpiyCDM-dS2V5Op2A-Sj9FK5dnX3JQnEgik8lUksV0-dca1ZesjQQPdtC6Hoc1zU9z2FO9bAIfQdFvV4EzaWMX09Fg4igThKQkABXdYuD4Zkw1KcCd0bL5tD+HpNGeOwzChVNNC+PsoXMdxAgRHQdFw4t8NQHEiNI9YK21Kjaxo7dlGNTwCABOwBiRWw70BVNbzeWxVARfQrGhV59ChETojEiTiLIjUA1kkM9QU9klMbaMWzjdtO2aUFNDPAgjP8WxPECFigUst9aUkuzWCoABRNIAE05LAxTKgGQxex6ELs0CHThX+dRxU+QxjP0TK8wBSKYlIcTKAABQoDgeAEDdqINVzOVeU1eQtAErWFcyxQsXiT3MzQr00GrrMa5qZKDdr5M6htnh6nlzX5AahVBdRHXeQz+kMmxXlsOwavQEjkAAC2JMgAC8cRSIt8A2LYS0XAhLpuu7HsoZ6x3wVKty6qNm1beNVETLiu12rwW0OgdBEBNwNAuq7bvEv6oAB19WG-EkyWQClUGpb7MYep6XtQYGXNWjyIe8mHfNcfRtG8bw-kEM7+QMdGfqxqnAdQfHUCJQn-1Jr6Md+oXX2DUCQfp8GvKhjtmdTfQKoOhE2jMbogTZmqyPJ37ICazA4sSqgUqWtLQcg55srsAVTHqWHEECEqESmwI0J0FjQjdTAJAgOBFAVCZnJWiCAFoLFTePAp9lPU64mbYnq1d1WjiMIM8TjvlUrxLDKr5zKfGraWxKc12QXPaLcu8TBbNmugCDt3C0VNzBQy9OjzR11bcGrlROYD683OmIOsW8CHhAFS8+SazovMwWy8fpTwHVQLLdSPognD8yxYBv0t3PaW4mvQoXQoTjIvHpMwHLv+x0EwM7qmypMnjq87o-wQI+xaG6N4NoJ5bycXMAjIwLxzKBC0sJfe1MSwqggDFEgZ8HZ7VMKhEKN94xdDPAnQqlhxRHiMOCaEOZP4EQtlghso0r5OgqumEw5UKq6W8LoLwnQ4R7XMAHVQ-MKbY1xoqBhM9PBimRloOEvgXYmF0v0HWutl4-BCsbTApssbmwoJIuiOCr74N3oQ++JDQTdBbP5PQ79AgnRwsg4WX1aC0B-uwGYEhaCHAgAYtyRi8H+VMXfYhmtuYIwRH8NwJgBgsVdKMZxYAlAyD8RlS+gSCEhIft2QEfYsxnWRpYSwo93xgHimLYkqTdxaTeIIM8BkhwVXUGvYqN47zdFPN8AyJTJgyDAFkEiri4DwCnjHQxNTAr1JhJ8PaPctKoXQu0iqWsyrDCca+AglJ0AUAALLEBIlUkUuTubwjvs3QIhhUxZQzFmEyUI2hCThDVA+qAciYDuIsSAhyAnX2CUQ7Ju0VGOh9neNmGjqpByAA */
-    id: "transfer",
+    id: MachineId.TRANSFER,
     initial: "enteringRecipient",
     predictableActionArguments: true,
     preserveActionOrder: true,
     states: {
-      enteringRecipient: {
-        on: {
-          BACK: "mainMenu",
-          TRANSIT: [
-            { target: "validatingRecipient", actions: "saveEntry" }
-          ]
-        },
-        description: "Expects a valid phone number entry of the form (+254)|(0)7XXXXXXXX"
-      },
-      validatingRecipient: {
-        invoke: {
-          id: "validatingRecipient",
-          src: "validateRecipient",
-          onDone: { target: "enteringAmount", actions: "saveValidatedRecipient" },
-          onError: { target: "invalidRecipient", actions: "updateErrorMessages" }
-        },
-        description: "Validates the recipient's phone number",
-        tags: "invoked"
-      },
-      invalidRecipient: {
-        on: {
-          TRANSIT: [
-            { target: "validatingRecipient", cond: "isValidPhoneNumber", actions: "saveEntry" },
-            { target: "invitingRecipient", cond: "isOption1" },
-            { target: "exit", cond: "isOption9" }
-          ]
-        },
-        tags: "resolved"
-      },
-      invitingRecipient: {
-        invoke: {
-          id: "invitingRecipient",
-          src: "inviteRecipient",
-          onDone: { target: "inviteSuccess" },
-          onError: { target: "inviteError" }
-        }
-      },
-      enteringAmount: {
-        on: {
-          BACK: "enteringRecipient",
-          TRANSIT: [
-            { target: "enteringPin", cond: "isValidAmount", actions: "saveAmount" },
-            { target: "invalidAmount" }
-          ]
-        },
-        description: "Expects a valid amount entry. > 0 and <= balance",
-        tags: "resolved"
-      },
-      invalidAmount: {
-        entry: send( { type: "RETRY", feedback: "invalidAmount" } ),
-        on: {
-          RETRY: "enteringAmount"
-        }
-      },
-      enteringPin: {
-        on: {
-          BACK: "enteringAmount",
-          TRANSIT: "authorizingTransfer",
-        },
-        description: "Expects a valid pin entry. 4 digits && matches account's pin."
+      accountBlocked: {
+        description: 'Account is blocked.',
+        type: 'final'
       },
       authorizingTransfer: {
+        description: 'Invoked service that authorizes the transfer.',
         invoke: {
-          id: "authorizingTransfer",
-          src: "authorizeTransfer",
-          onDone: { target:  "transferInitiated", cond: "isInitiated" },
+          id: 'authorizingTransfer',
+          src: 'authorizeTransfer',
+          onDone: { target: 'transferInitiated', cond: 'isSuccess' },
           onError: [
-            { target: "unauthorizedPin", cond: "isNotBlocked" },
-            { target: "accountBlocked", cond: "attemptsExhausted" }
+            { target: 'accountBlocked', cond: 'isBlocked' },
+            { target: 'invalidPin' },
           ]
         },
-        description: "Authorizes the transfer by validating the pin.",
-        tags: "invoked"
+        tags: 'invoked'
       },
-      unauthorizedPin: {
-        entry: send( { type: "RETRY", feedback: "unauthorizedPin" } ),
+      enteringAmount: {
+        description: 'Expects a valid amount entry. > 0 and <= balance',
         on: {
-          RETRY: "enteringPin"
+          BACK: 'enteringRecipient',
+          TRANSIT: [
+            { target: 'enteringPin', cond: 'isValidAmount', actions: 'saveAmount' },
+            { target: 'invalidAmount' }
+          ]
         },
-        tags: "error"
+        tags: 'resolved'
       },
-      accountBlocked: {
-        type: "final",
-        description: "Account is blocked."
+      enteringPin: {
+        description: 'Expects a valid pin entry.',
+        on: {
+          BACK: 'enteringAmount',
+          TRANSIT: 'authorizingTransfer'
+        },
+        tags: ['encryptInput', 'error']
+      },
+      enteringRecipient: {
+        description: 'Expects a valid phone number entry of the form (+254)|(0)7XXXXXXXX',
+        on: {
+          BACK: 'mainMenu',
+          TRANSIT: [
+            { target: 'validatingRecipient', actions: 'saveEntry' }
+          ]
+        }
       },
       exit: {
-        type: "final",
-        description: "Terminates USSD session."
+        description: 'Terminates USSD session.',
+        type: 'final'
+      },
+      invalidAmount: {
+        description: 'Entered amount is invalid. Raise RETRY event to prompt user to re-enter amount.',
+        entry: raise({ type: 'RETRY', feedback: 'invalidAmount' }),
+        on: {
+          RETRY: 'enteringAmount'
+        }
+      },
+      invalidRecipient: {
+        description: 'Entered phone number is invalid.',
+        on: {
+          TRANSIT: [
+            { target: 'exit', cond: 'isOption9' },
+            { target: 'invitingRecipient', cond: 'isOption1' },
+            { target: 'validatingRecipient', cond: 'isValidPhoneNumber', actions: 'saveEntry' },
+          ]
+        },
+        tags: 'error'
       },
       inviteError: {
-        type: "final",
-        description: "Invite failed."
+        description: 'Invite failed.',
+        type: 'final',
+        tags: 'error'
       },
       inviteSuccess: {
-        type: "final",
-        description: "Invite was sent successfully."
+        description: 'Invite was sent successfully.',
+        type: 'final',
+        tags: 'resolved'
+      },
+      invitingRecipient: {
+        description: 'Invoked service that sends an invite to the recipient.',
+        invoke: {
+          id: 'invitingRecipient',
+          src: 'initiateInvite',
+          onDone: { target: 'inviteSuccess', cond: 'isSuccess' },
+          onError: { target: 'inviteError', cond: 'isInviteError' }
+        },
+        tags: 'invoked'
       },
       mainMenu: {
-        type: "final",
-        description: "User exited the transfer flow and jumps to main menu machine."
+        description: 'Transitions to main menu.',
+        type: 'final'
       },
       transferInitiated: {
-        type: "final",
-        description: "Transfer was initiated successfully.",
-        tags: "resolved"
+        description: 'Transfer was initiated successfully.',
+        tags: 'resolved',
+        type: 'final'
+      },
+      invalidPin: {
+        description: 'Entered pin is invalid. Raise RETRY event to prompt user to re-enter pin.',
+        entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+        on: {
+          RETRY: 'enteringPin'
+        },
+        tags: 'error'
+      },
+      validatingRecipient: {
+        description: 'Invoked service that validates the recipient.',
+        invoke: {
+          id: 'validatingRecipient',
+          src: 'validateRecipient',
+          onDone: { target: 'enteringAmount', actions: 'saveValidatedRecipient' },
+          onError: { target: 'invalidRecipient', actions: 'updateErrorMessages' }
+        },
+        tags: 'invoked'
       }
     }
   },
@@ -153,17 +151,12 @@ export const transferMachine = createMachine<BaseContext, BaseEvent>({
       saveAmount,
       saveEntry,
       saveValidatedRecipient,
-      updateAttempts,
       updateErrorMessages
     },
     guards: {
-      attemptsExhausted,
-      isAuthorized: (_, event: any) => {
-        return event.id === "authorized"
-      },
       isBlocked,
-      isInitiated,
-      isNotBlocked: (context: TransferContext) => !isBlocked(context),
+      isInviteError,
+      isSuccess,
       isOption1,
       isOption9,
       isValidAmount,
@@ -179,63 +172,47 @@ export const transferMachine = createMachine<BaseContext, BaseEvent>({
   });
 
 
-function attemptsExhausted(context: TransferContext){
-  const { user: { account: { pin_attempts } } } = context
-  return pin_attempts == 3
-}
-
 async function authorizeTransfer(context, event: any) {
-  const { user: { account: { password } } } = context
   const { input } = event
 
-  // check that pin has valid format.
-  const isValidPin = /^\d{4}$/.test(input)
-  if (!isValidPin) {
-    await updateAttempts(context)
-    throw new MachineError(TransferErrors.INVALID_PIN, "PIN is invalid.")
-  }
+  await validatePin(context, input)
 
-  // check that pin is correct.
-  const isAuthorized = await bcrypt.compare(input, password)
-  if (!isAuthorized) {
-    await updateAttempts(context)
-    throw new MachineError(TransferErrors.UNAUTHORIZED, "PIN is incorrect.")
-  }
-
-  // attempt to initiate transfer.
   try{
     await initiateTransfer(context)
-    return { message: "initiated" }
+    return { success: true }
   } catch (error) {
-    throw new MachineError(TransferErrors.TRANSFER_FAILED, error.message)
+    throw new MachineError(TransferError.TRANSFER_ERROR, error.message)
   }
 }
 
-async function initiateInvite(context: TransferContext) {
-  const { data: { entry }, user: { account: { phone_number } }, ussd: { countryCode } } = context
-  let recipient;
-  try {
-    recipient = sanitizePhoneNumber(entry, countryCode)
-  } catch (error) {
-    throw new MachineError(TransferErrors.INVALID_PHONE, error.message)
-  }
-
-  // initiate invite
-  console.debug(`Initiating invite to ${recipient} from ${phone_number}`)
-  return { message: "initiated" }
-
-}
-
-async function initiateTransfer(context: TransferContext) {
+async function initiateInvite(context: BaseContext) {
   const {
-    data: {amount, recipientAddress},
-    user: {account: {address}, activeVoucher: {address: voucherAddress}}
+    data: { transfer: { recipient: { entry } } },
+    user: { account: { phone_number } },
+    ussd: { countryCode } } = context
+  const invitee = validatePhoneNumber(countryCode, entry)
+  try {
+    console.debug(`Initiating invite to ${invitee} from ${phone_number}`)
+    return { success: true }
+  } catch (error) {
+    throw new MachineError(TransferError.INVITE_ERROR, error.message)
+  }
+}
+
+function isInviteError(error: any) {
+  return error.data.code === TransferError.INVITE_ERROR
+}
+
+async function initiateTransfer(context: BaseContext) {
+  const {
+    data: { transfer: { amount, recipient: { validated } } },
+    user: {account: {address}, vouchers: { active: {address: voucherAddress}}}
   } = context
   try {
     const response = await custodialTransfer({
       amount: amount * 1000000,
       from: address,
-      to: recipientAddress,
+      to: validated,
       voucherAddress: voucherAddress
     })
 
@@ -250,91 +227,78 @@ async function initiateTransfer(context: TransferContext) {
   }
 }
 
-function isInitiated(_, event: any){
-  return event.data.message === "initiated"
-}
-
-function isValidAmount(context: TransferContext, event: any) {
+function isValidAmount(context: BaseContext, event: any) {
   const amount = Number(event.input)
-  const isANumber = !isNaN(amount)
-  const isGreaterThanZero = amount > 0
-  const isLessThanBalance = amount <= context.user.activeVoucher.balance
-  return isANumber && isGreaterThanZero && isLessThanBalance
+  return !isNaN(amount) && amount > 0 && amount <= context.user.vouchers.active.balance
 }
 
-function saveAmount(context: TransferContext, event: any) {
-  context.data.amount = cashRounding(event.input)
+function saveAmount(context: BaseContext, event: any) {
+  context.data.transfer = {
+    ...(context.data.transfer || {}),
+    amount: cashRounding(event.input)
+  }
   return context
 }
 
-function saveEntry(context: TransferContext, event: any) {
-  context.data.entry = event.input
+function saveEntry(context: BaseContext, event: any) {
+  context.data = {
+    ...(context.data || {}),
+    transfer: {
+      ...(context.data.transfer || {}),
+      recipient: {
+        ...(context.data.transfer?.recipient || {}),
+        entry: event.input
+      }
+    }
+  }
   return context
 }
 
-function saveValidatedRecipient(context: TransferContext, event: any) {
-  context.data.recipientAddress = event.data
+function saveValidatedRecipient(context: BaseContext, event: any) {
+  context.data.transfer = {
+    recipient: {
+      ...(context.data.transfer?.recipient || {}),
+      tag : event.data.tag,
+      validated: event.data.address
+    }
+  }
   return context
 }
 
-async function validateRecipient(context: TransferContext) {
-  const { data: { entry }, resources: { p_redis }, user: { account: { address } }, ussd: { countryCode } } = context
-  let recipient: string, account: Account;
-
-  // attempt to sanitize the phone number.
-  try{
-    recipient = sanitizePhoneNumber(entry, countryCode)
-  } catch (error) {
-    throw new MachineError(TransferErrors.INVALID_PHONE, error.message)
-  }
-
-  // check if the recipient is known to the system.
-  const cache = new Cache<Account>(p_redis, recipient)
-  account = await cache.getJSON()
-  if (!account) {
-    throw new MachineError(TransferErrors.INVALID_RECIPIENT, "Unrecognized recipient")
-  }
-
-  // check if the recipient is the same as the sender.
-  if (account.address === address) {
-    throw new MachineError(TransferErrors.SELF_TRANSFER, "You cannot transfer to yourself")
-  }
-
-  return account.address
+async function validateRecipient(context: BaseContext, event: any) {
+  const { input } = event
+  const recipient = await validateTargetUser(context, input)
+  return { address: recipient.account.address , tag: recipient.tag }
 }
 
-export async function transferTranslations(context: TransferContext, state: string, translator: any) {
+export async function transferTranslations(context: BaseContext, state: string, translator: any) {
   const {
     data,
     user: {
-      account: {phone_number},
-      activeVoucher: {balance, symbol},
+      tag,
+      vouchers: { active: { balance, symbol } }
     },
   } = context;
 
-  const amount = data.amount || null;
-  const recipient = data.entry || null;
-
-  const translations = {
-    mainMenu: {balance: balance, symbol: symbol},
-    enteringPin: {
-      amount: amount,
-      recipient: recipient,
-      sender: phone_number,
-      symbol: symbol,
-    },
-    enteringAmount: {spendable: balance, symbol: symbol},
-    inviteError: {invitee: recipient},
-    invalidRecipient: {recipient: recipient},
-    inviteSuccess: {invitee: recipient},
-    transferInitiated: {
-      amount: amount,
-      recipient: recipient,
-      sender: phone_number,
-      symbol: symbol,
-    }
-  };
-
-  const translation = translations[state];
-  return await translate(state, translator, translation);
+  switch (state) {
+    case 'mainMenu':
+      return await translate(state, translator, { balance, symbol });
+    case 'enteringAmount':
+      return await translate(state, translator, { spendable: balance, symbol });
+    case 'enteringPin':
+    case 'transferInitiated':
+      return await translate(state, translator, {
+        amount: data.transfer.amount,
+        recipient: data.transfer.recipient.tag,
+        sender: tag,
+        symbol: symbol,
+      });
+    case 'invalidRecipient':
+      return await translate(state, translator, { recipient: data.transfer.recipient.entry });
+    case 'inviteError':
+    case 'inviteSuccess':
+      return await translate(state, translator, { invitee: data.transfer.recipient.entry });
+    default:
+      return await translate(state, translator);
+  }
 }

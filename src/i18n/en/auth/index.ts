@@ -1,4 +1,4 @@
-import type {NamespaceAuthTranslation} from '../../i18n-types'
+import type { NamespaceAuthTranslation } from '../../i18n-types';
 
 const en_auth = {
     accountBlocked:

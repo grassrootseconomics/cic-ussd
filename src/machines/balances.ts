@@ -4,150 +4,142 @@ import {
   isOption1,
   isOption2,
   isOption9,
+  isSuccess,
+  MachineId,
   translate,
   updateErrorMessages
-} from "@src/machines/utils";
-import {createMachine, send} from "xstate";
-import {retrieveWalletBalance} from "@lib/ussd/account";
-import {Cache} from "@utils/redis";
-import {Voucher} from "@lib/graph/voucher";
-import {isBlocked, updateAttempts} from "@machines/auth";
-import {succeeded} from "@machines/voucher";
-import {MachineError} from "@lib/errors";
-import bcrypt from "bcrypt";
+} from '@src/machines/utils';
+import { createMachine, raise } from 'xstate';
+import { retrieveWalletBalance } from '@lib/ussd/account';
+import { Cache } from '@utils/redis';
+import { Voucher } from '@lib/graph/voucher';
+import { isBlocked, validatePin } from '@machines/auth';
+import { MachineError } from '@lib/errors';
 
-export interface BalancesContext extends BaseContext {
-  data: {
-    communityBalance?: number;
-  };
-}
 
-type BalancesEvent =
-  BaseEvent
-
-enum BalancesErrors {
-  INVALID_PIN = "INVALID_PIN",
-  UNAUTHORIZED = "UNAUTHORIZED",
+enum BalancesError {
   FETCH_ERROR = "FETCH_ERROR",
+  LOAD_ERROR = "LOAD_ERROR",
 }
 
-export const balancesMachine = createMachine<BalancesContext, BalancesEvent>({
-  /** @xstate-layout N4IgpgJg5mDOIC5QCMCGAbVA7AxmAsqjgBYCWWYAdGprnPmFgK4DEAQgIIDCA0gNoAGALqJQABwD2sUgBdSErKJAAPRAGYAnAEZKAJi0AOAOwBWADQgAnogAsJm5Rs2NL1241qAvp4s1seQhJyKj86WAZmFgAVACUOADkAZQBJKMERJBBJaTkFJVUETR19Y3MrRBMTA0oANnd6jW9fDH8CIjIKahawiNZYhJS0rQzxKVl5RUyCor1DUwtrBF0TXT0TDQMNKrUdneWmkFCA9uDKVCYZYgkAJ1IAL3IoDhwcCSYsGTZuvAA1UjAAO7ROJJVLpJTZcZ5KaILRaGwCSgCIwGLTLBYVAQmJHrTbbXZqXQ1A5HNpBTrnS43e6PZ6vd6fb5gP6A4EDMHDCFjXKTUAFOEIpEotFlRY1LQ1SgNeokpmBDpUSlXW4PLBPF5vD5fWi-f5A-qgtK6EZZbkTfKw+GI5Go9HlQobSibQm6bQ1d0e2U6skKyjvJXUu6QOmaxnellAmIAUViAE1wZlITyLQh4Vpsa6aqUMQgTO7HNK3F7WvLTugJKgILSNQzta0WBAFFRyAA3CQAaxCcpOnXLler9K1TIQrYkOFQPPSCdGOXNMNTBnsjhK83tJgEakoBO3uyJxbopd7FarapDtaZLDA12uN0oYkwMgAZjcALZdb2Hqh9k-qwdh1ojlgbbjpOwjTqas7QnysKLg4NgrqK6gaEYTo7tue4+Ic3bkoqFzKjSapcBIL4vu8siWHWdARmyhrgUmc7QamVpCraiFLDUqyVBsWwGOhxKYaSn5nHhgaPERJFkTIFFMtRBqDHwnKJmaUEqJago2iKOZaGoOiFm4Nj7scOHCVSKpicRpFYORlG6qyclgsaXKQbyqlMepwp2osag2NUmgum6HruoZPqnP6IkqpA4mWdZMl6iw0ZxnRykufyNjpnoGhZquiyopQJjBUJ37mRJVlSTZYANk2lCjp274lj2X7HsV0VlcOo4gRMU7CE5UIpTBS7wXMbHptiaF8QVDWUEVhEWZJ0nepe163veE7Ptcb6CZN01QFFc3lYBwETp1YHdUpzkpoYA0ITmRKIrxY17PxmFYBIEBwEom04T1ybzgAtDUOb-RNxkvqg5C9N9DGue6qyDdm9o2DpjjOHpwO+qS4SMEwkMqQU8E5ojqx1HpHho6cAZmaeNZDuGeo431CA1EYKECJl8OLCYaiShoKOFmTnRhaZ9zBtT-5UXTZ29RdKzcwYiPZYgNQblurN4vdBL841-ZU3+5X09LVROhoAgcWxNj5moqs8eNAnYb6RC60yAAyx6QPr876AI1RbDpnmYjoXFqzbzQfpNDuhuVLuVgAYmD6Bu5LP2MZ73uc5p9qaJKWLcfiu78SH9XGRTBE7bNpXza0Ebu4xMPLkNN2W3lVu53s+W26HxmC-hQYQLt5flVXidQ-yMtSnLagK0xvnN+rj2a1NTUzSVMXetXrnpubtTinYs+7DduibgYM-B1hHe+q8y+td6UdvRAa8FCnUpp37qac3luLWwSGEFwek0Xy1Fc6A31jqQeOd8h640QI-H26dFjLA0DiHOu9v6n0LvbUWbByw4E7OAmcUt5zpiJGPeWbEuZ3WPl-J6nggA */
-  id: "balances",
+export const balancesMachine = createMachine<BaseContext, BaseEvent>({
+  /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOnQFcAXbAewCdcAvAqAIXQBt19MwA1XGADuAQQDEEGoRIEAbjQDWYMlVoNm+Np268BwkQG0ADAF1EoAA41YuSrinmQAD0QAWAOwBGEp4BMrgE53dyMAZl9fIPcAVgAaEABPRHcANl8SfwCAzxSAoyMU0PcAX2L4tCw8QlIKanomFnYuHn5BUTEwOjp6EgsuSgAzelQVOvVG7Ra9UWMzJBArGzsHeZcED28-QOCwiKi4xMRPV1dvLKyU0+j3V1yADlLyjBwCYlG1Bs0mnVb9Dq6en10INhu96hotM1dG1DJ45pZrLZ7PhHGsNj5MjtwpFggckgg7ikUiRAgE7q5fClPHd3GSSmUQBUXtUweMvpNoX9Ot06L1+kM6CNah8Id8pjCDL54QtEcsUas3F4MdsQtj9vF8Z5PO47iTzkYdXcaXdor5HoznlU3sLwRMob8hABhCRSZRyRTKG1syE-aaO2aORZIlagNFKrZRXY4mIaxApaIBDLRfKeUIm7UU81Mq01VS29n2v3-Hl84ECoV571izlOgPzINy1GKzaY1V7XGxgneZP5Iw5W7+A0BLOW165safH3i4TO7mA-mgr2T6sO-1wwOy5FN9bh1tR9WHBDRY8kXv5AIJ1x3UKmkeVMes5cc1fF+dlxeVp+Ftr+qUbpZbgqO4tiq+4doeFKuKevYRISN4BFcd7Mm8ABGz6wAAsmA+DkGIrAiI6ADSdYIgBIbOEc5K6q4BRGKangIXcZK+J2fhBCQNxZEYQS3GSoSeEhOYkGh9qYdhuEACoAEoiAAcgAygAkhJJEymR8qhpRV4krR9GMcxnZ3H4p7XqEQ40seNyCQ+Ik-GJOFiNJclKSp671pu5FrNS2k0SkdG+AxV4GYeZneDEKapIEoSnNZLLYZQnQsAACgQ4j4URqkNoBmkIL4fbRKeAQ3q4xV+f4LGHoS6TRKZnjJn5+QmrFbzxYlmgpfg4hOQpymZR5GkUblrjRGcpo0nxRR3P4nbDUYPhEiEOoIaEVIpM1pCtQw7WpY5Mk9a50pZZ5lHBCQRQeEVgQ5FNoSsfk7gcYETEre44Rma460kJtyUEM66XEaY-7BgNax5XVhXFaVRjlZ2vgjUmKZ0akRpktEn3fdt+DOt1Ll9ep27+PDF6+ONpk6tNh4ROk4V9iaK1hMmH0MtmD4Y1AHXY3tuNuaRwPbtSp3nbS0XZCkN2w-kHE9gzRgnGm7hmszo4sgMYCUDg8nkJgvCwLAeEEQDh39fzoQISQAQBTE2y5NxKSdrSD2nES-GRMx8afar6vYJr2twHrOO9YD7n40BqZmxb2rRNbeQBHbh6XKE5s5ESRoMfxYufXInC4BAHXiFJACi0kAJp43zoem1BEdW0ENux6x2rEuceRpJ4BrXPSTz3iyWccDnHNiIXJdl42Ffh5bUe1zHcf4hS1UwVqJrRESUefRwNDoBAPs63r-0j9lg1h1XE-R7bhkeEnzvXgrvjBGtSvd286+b9vfu7c5gdGyHOVH+bJ9T2fQ8Nwm7J3KrfIo0RQilAZPgGgEA4COBZtUIGo8coAFoZ6IAwZ9LAmAaDkHwJQVg69MBKAgCgg+oMvBzQjgmPIdVY5TXPj4UkZItQW1lgUHBn5RTPmmCIChx0EB+QxMmY4k80xpgqviC8iZWF+FSDcOiw4H7IXHCKO0vofyCJBm4aRiAihhWlm3NuK0EKfVsi0ey5AdH8ypFBSIKQQjxhFhse2eQzqhHCEZW4yjobo0IW1dmqVbFAQCoEEgflsiQJCCYmMEESYkmTkZF6lc0aqKEmzDmoScrhMTFEuqRQ+x9nifiPKNDm7lJbg7dGThbA5MPvYjIsdnGQMCG4+OK1oL5FgkVAolwPZqxwAXAEdAGlrCYukCOdxoZ5GvCcdwnZIFzWlkUOGRUGICQyQ+T2GstY73GUcXYZ0ZlbFSLkCknhOyFAKs3E0lwnEeEVl3NRMh8CyGzrnEJwdy45UmX-aksyjDzI8A3RJpImIK24sNe+LyhK937r9Q5BILYApmZEYF0VQUhRuN0vsAVySUhGmvDeEARk8mRf86ZQKQWLMqqcc2WRaQZmGmsklL99l+2RW3bSlw6LJljseEqt0gGmzxcNYI-FwidwtI-UgsA1Z2E0NY5FeTIncUKbEkpeIji3ygpxQk-KDTtOgcUIAA */
+  id: MachineId.BALANCES,
   initial: "balancesMenu",
   predictableActionArguments: true,
   states: {
-    mainMenu: {
-      type: "final",
-      description: "User is returned to the main menu."
-    },
-    balancesMenu: {
-      on: {
-        BACK: "mainMenu",
-        TRANSIT: [
-          { target: "enteringPinA", cond: "isOption1" },
-          { target: "enteringPinC", cond: "isOption2" },
-        ]
-      },
-      description: "User is prompted to select which balance to view."
-    },
-    enteringPinA: {
-      on: {
-        BACK: "balancesMenu",
-        TRANSIT: [
-          { target: "authorizingBalanceViewA", cond: "isNotBlocked" },
-          { target: "accountBlocked" }
-        ]
-      }
+    accountBlocked: {
+      description: 'Account is blocked.',
+      tags: 'error',
+      type: 'final'
     },
     authorizingBalanceViewA: {
+      description: 'Invoked service that authorizes viewing account balance.',
       invoke: {
-        id: "authorizingBalanceViewA",
-        src: "fetchAccountBalance",
-        onDone: { target: "loadedASuccess", cond: "succeeded" },
+        id: 'authorizingBalanceViewA',
+        src: 'loadAccountBalance',
+        onDone: { target: 'loadSuccess', cond: 'isSuccess' },
         onError: [
-          { target: "invalidPinA", cond: "isInvalidPin" },
-          { target: "loadAError", cond: "isFetchError" },
-          { target: "accountBlocked", cond: "isBlocked"}
+          { target: 'accountBlocked', cond: 'isBlocked' },
+          { target: 'loadError', cond: 'isLoadError', actions: 'updateErrorMessages' },
+          { target: 'invalidPinA' }
         ]
       },
-      tags: "invoked"
+      tags: 'invoked'
     },
-    invalidPinA: {
-      entry: send( { type: "RETRY", feedback: "invalidPin" } ),
-      on: {
-        RETRY: "enteringPinA"
+    authorizingBalanceViewC: {
+      description: 'Invoked service that authorizes viewing community balance.',
+      invoke: {
+        id: 'authorizingBalanceViewC',
+        src: 'fetchCommunityBalance',
+        onDone: { target: 'fetchSuccess', cond: 'isSuccess', actions: 'saveCommunityBalance' },
+        onError: [
+          { target: 'accountBlocked', cond: 'isBlocked' },
+          { target: 'fetchError', cond: 'isFetchError', actions: 'updateErrorMessages' },
+          { target: 'invalidPinC' }
+        ]
       },
-      description: "User is prompted to re-enter their PIN.",
-      tags: "error"
+      tags: 'invoked'
     },
-
-    enteringPinC: {
+    balancesMenu: {
+      description: 'Displays the balances menu.',
       on: {
-        BACK: "balancesMenu",
+        BACK: 'settingsMenu',
         TRANSIT: [
-          { target: "authorizingBalanceViewC", cond: "isNotBlocked" },
-          { target: "accountBlocked" }
+          { target: 'enteringPinA', cond: 'isOption1' },
+          { target: 'enteringPinC', cond: 'isOption2' }
         ]
       }
     },
-    authorizingBalanceViewC: {
-      invoke: {
-        id: "authorizingBalanceViewC",
-        src: "fetchCommunityBalance",
-        onDone: { target: "loadedCSuccess", cond: "succeeded" },
-        onError: [
-          { target: "invalidPinC", cond: "isInvalidPin" },
-          { target: "loadCError", cond: "isFetchError" },
-          { target: "accountBlocked", cond: "isBlocked"}
+    enteringPinA: {
+      description: 'Expects valid PIN matching account\'s PIN.',
+      on: {
+        BACK: 'balancesMenu',
+        TRANSIT: [
+          { target: 'accountBlocked', cond: 'isBlocked' },
+          { target: 'authorizingBalanceViewA' }
         ]
       },
-      tags: "invoked"
+      tags: ['encryptInput', 'error']
     },
-    invalidPinC: {
-      entry: send( { type: "RETRY", feedback: "invalidPin" } ),
+    enteringPinC: {
+      description: 'Expects valid PIN matching account\'s PIN.',
       on: {
-        RETRY: "enteringPinA"
+        BACK: 'balancesMenu',
+        TRANSIT: [
+          { target: 'accountBlocked', cond: 'isBlocked' },
+          { target: 'authorizingBalanceViewC' }
+        ]
       },
-      description: "User is prompted to re-enter their PIN.",
-      tags: "error"
-    },
-
-    // final states
-    loadedASuccess: {
-      on: {
-        BACK: "balancesMenu",
-        TRANSIT: { target: "exit", cond: "isOption9" }
-      },
-      description: "User is informed that their account balance has been loaded.",
-      tags: "resolved"
-    },
-    loadedCSuccess: {
-      on: {
-        BACK: "balancesMenu",
-        TRANSIT: { target: "exit", cond: "isOption9" }
-      },
-      description: "User is informed that their community balance has been loaded.",
-      tags: "resolved"
-    },
-    loadAError: {
-      type: "final",
-      description: "An error occurred while loading the account balance.",
-      tags: "error"
-    },
-    loadCError: {
-      type: "final",
-      description: "An error occurred while loading the community balance.",
-      tags: "error"
-    },
-    accountBlocked: {
-      type: "final",
-      description: "User is informed that their account is blocked.",
-      tags: "error"
+      tags: ['encryptInput', 'error']
     },
     exit: {
-      type: "final",
-      description: "User is returned to the main menu.",
+      description: 'Terminates USSD session.',
+      type: 'final'
+    },
+    fetchError: {
+      description: 'An error occurred while fetching the community balance.',
+      tags: 'error',
+      type: 'final'
+    },
+    fetchSuccess: {
+      description: 'Community balance has been fetched.',
+      on: {
+        BACK: 'balancesMenu',
+        TRANSIT: { target: 'exit', cond: 'isOption9' }
+      },
+      tags: 'resolved'
+    },
+    invalidPinA: {
+      description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry pin entry.',
+      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      on: {
+        RETRY: 'enteringPinA'
+      }
+    },
+    invalidPinC: {
+      description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry pin entry.',
+      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      on: {
+        RETRY: 'enteringPinA'
+      }
+    },
+    loadError: {
+      description: 'An error occurred while loading the account balance.',
+      tags: 'error',
+      type: 'final'
+    },
+    loadSuccess: {
+      description: 'Account balance has been loaded.',
+      on: {
+        BACK: 'balancesMenu',
+        TRANSIT: { target: 'exit', cond: 'isOption9' }
+      },
+      tags: 'resolved'
+    },
+    settingsMenu: {
+      description: 'Transitions to the settings menu.',
+      type: 'final'
     }
   }
 }, {
@@ -158,94 +150,73 @@ export const balancesMachine = createMachine<BalancesContext, BalancesEvent>({
   guards: {
     isBlocked,
     isFetchError,
-    isNotBlocked: (context: BalancesContext) => !isBlocked(context),
-    isInvalidPin,
+    isLoadError,
     isOption1,
     isOption2,
     isOption9,
-    succeeded: (context: BalancesContext, event: any) => event.data.success
+    isSuccess,
   },
   services: {
-    fetchAccountBalance,
+    loadAccountBalance,
     fetchCommunityBalance,
   }
 })
 
-async function fetchAccountBalance(context: BalancesContext, event: any) {
-  const { resources: { provider }, user: {  account: { address, password }, activeVoucher: { address: voucherAddress } } } = context;
+async function loadAccountBalance(context: BaseContext, event: any) {
+  const { user: { vouchers: { active: { balance } } } } = context;
   const { input } = event;
 
-  // check that pin has valid format.
-  const isValidPin = /^\d{4}$/.test(input)
-  if (!isValidPin) {
-    await updateAttempts(context)
-    throw new MachineError(BalancesErrors.INVALID_PIN, "PIN is invalid.")
-  }
+  // validate pin.
+  await validatePin(context, input)
 
-  // check that pin is correct.
-  const isAuthorized = await bcrypt.compare(input, password)
-  if (!isAuthorized) {
-    await updateAttempts(context)
-    throw new MachineError(BalancesErrors.UNAUTHORIZED, "PIN is incorrect.")
-  }
-
-  // retrieve balance.
+  // load balance from context object.
   try {
-    const balance = await retrieveWalletBalance(address, voucherAddress, provider);
     return { balance, success: true }
   } catch (error) {
-    throw new MachineError(BalancesErrors.FETCH_ERROR, "PIN is incorrect.")
+    throw new MachineError(BalancesError.LOAD_ERROR, error.message)
   }
 }
 
-async function fetchCommunityBalance(context: BalancesContext, event: any) {
-  const { resources: { provider, p_redis }, user: { account: { password }, activeVoucher: { address: voucherAddress, symbol } } } = context;
+async function fetchCommunityBalance(context: BaseContext, event: any) {
+  const {  resources: { provider, p_redis }, user: { vouchers: { active: { address: contractAddress } } } } = context;
   const { input } = event;
 
-  // check that pin has valid format.
-  const isValidPin = /^\d{4}$/.test(input)
-  if (!isValidPin) {
-    await updateAttempts(context)
-    throw new MachineError(BalancesErrors.INVALID_PIN, "PIN is invalid.")
-  }
+  // validate pin.
+  await validatePin(context, input)
 
-  // check that pin is correct.
-  const isAuthorized = await bcrypt.compare(input, password)
-  if (!isAuthorized) {
-    await updateAttempts(context)
-    throw new MachineError(BalancesErrors.UNAUTHORIZED, "PIN is incorrect.")
-  }
-
+  // fetch community balance from chain.
   try {
-    const cache = new Cache(p_redis, symbol);
-    const voucher = await cache.getJSON() as Voucher;
-    const balance = await retrieveWalletBalance(voucher.sink_address, voucherAddress, provider);
+    const cache = new Cache<Voucher>(p_redis, contractAddress);
+    const voucher = await cache.getJSON();
+    const balance = await retrieveWalletBalance(voucher.sink_address, contractAddress, provider);
     return { balance, success: true }
   } catch (error) {
-    throw new MachineError(BalancesErrors.FETCH_ERROR, "PIN is incorrect.")
+    throw new MachineError(BalancesError.FETCH_ERROR, error.message)
   }
 }
 
-function saveCommunityBalance(context:BalancesContext, event: any) {
-  context.data.communityBalance = event.data;
+function saveCommunityBalance(context:BaseContext, event: any) {
+  context.data = {
+    ...(context.data || {}),
+    communityBalance: event.data.balance
+  }
   return context;
 }
 
-function isFetchError(context: BalancesContext, event: any) {
-  return event.data.code === BalancesErrors.FETCH_ERROR;
+function isFetchError(_, event: any) {
+  return event.data.code === BalancesError.FETCH_ERROR;
 }
 
-function isInvalidPin(context: BalancesContext, event: any) {
-  return event.data.code === BalancesErrors.INVALID_PIN || event.data.code === BalancesErrors.UNAUTHORIZED
+function isLoadError(_, event: any) {
+  return event.data.code === BalancesError.LOAD_ERROR;
 }
 
-export async function balancesTranslations(context: BalancesContext, state: string, translator: any) {
-  const { data, user: { activeVoucher: { balance, symbol } } } = context;
+export async function balancesTranslations(context: BaseContext, state: string, translator: any) {
+  const { data, user: { vouchers: { active: { balance, symbol } } } } = context;
   switch (state) {
-    case "mainMenu":
-    case "loadedASuccess":
+    case "loadSuccess":
       return translate(state, translator, { balance, symbol });
-    case "loadedCSuccess":
+    case "fetchSuccess":
       return translate(state, translator, { balance: data.communityBalance, symbol });
     default:
       return translate(state, translator);

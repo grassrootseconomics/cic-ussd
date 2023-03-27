@@ -1,8 +1,9 @@
-import type { NamespacePinTranslation } from '../../i18n-types'
+import type { NamespacePinsTranslation } from '../../i18n-types';
+import en from '..'
+const { accountBlocked, exit } = en
 
-const en_pin = {
-  accountBlocked:
-    "END Your PIN has been blocked. For assistance please call: {supportPhone}.",
+const en_pins = {
+  accountBlocked: accountBlocked,
   changeError:
     "END There was an error changing your PIN. Please try again later.",
   confirmNewPin:
@@ -15,6 +16,7 @@ const en_pin = {
     "CON Enter your PIN to initiate reset:\n0. Back",
   enteringWard:
     "CON Enter ward's phone number:\n0. Back",
+  exit: exit,
   pinManagementMenu:
     "CON PIN Management:\n1. Change PIN\n2. Reset ward's PIN\n3. Guard my PIN\n0. Back",
   socialRecoveryMenu:
@@ -29,6 +31,6 @@ const en_pin = {
     "END There was an error changing your PIN. Please try again later.",
 
 
-} satisfies NamespacePinTranslation
+} satisfies NamespacePinsTranslation
 
-export default en_pin
+export default en_pins

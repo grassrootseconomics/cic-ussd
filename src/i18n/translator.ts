@@ -1,4 +1,4 @@
-import { L } from './i18n-node'
+import { L } from './i18n-node';
 
 export function tHelpers(key: string, language: string, data?: any) {
   if (data){

@@ -1,7 +1,7 @@
-import app from "./app";
-import {config} from "./config";
-import {FastifyInstance} from "fastify";
-import {loadSystemVouchers} from "@lib/ussd/utils";
+import app from './app';
+import { config } from './config';
+import { FastifyInstance } from 'fastify';
+import { loadSystemVouchers } from '@lib/ussd/utils';
 
 /**
  * Description placeholder

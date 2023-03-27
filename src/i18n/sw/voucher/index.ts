@@ -1,26 +1,26 @@
-import {NamespaceVoucherTranslation} from "../../i18n-types";
+import { NamespaceVoucherTranslation } from '../../i18n-types';
+import sw from '..'
+const { accountBlocked, exit } = sw
 
 const sw_voucher = {
-  voucherMenu:
-    "CON Sarafu yangu\n1. Chagua Sarafu\n2. Maelezo ya Sarafu\n0. Rudi",
-  selectingVoucher:
-    "CON Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n0. Rudi\n11. Mbele\n00. Ondoka",
-  secondSet:
-    "CON Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n11. Mbele\n22. Rudi\n00. Ondoka",
-  thirdSet:
-    "CON Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n22. Rudi\n00. Ondoka",
+  accountBlocked: accountBlocked,
+  displayVoucherInfo:
+    'CON {symbol} {name}\n{contact} {location}\n{description}\n\n0. Rudi',
   enteringPin:
-    "CON Weka PIN ili kuthibitisha chaguo:\n{symbol} {name}\n{contact} {location}\n{description}\n\n0. Rudi\n00. Ondoka",
-  setSuccess:
-    "CON Hongera! {symbol} ni Sarafu inayotumika sasa.\n0. Rudi \n9. Ondoka",
+    'CON Weka PIN ili kuthibitisha chaguo:\n{symbol} {name}\n{contact} {location}\n{description}\n\n0. Rudi\n00. Ondoka',
+  exit: exit,
+  firstVoucherSet:
+    'CON Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n0. Rudi\n11. Mbele\n00. Ondoka',
+  secondVoucherSet:
+    'CON Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n11. Mbele\n22. Rudi\n00. Ondoka',
   setError:
-    "END Kulikuwa na tatizo kwa kuchagua Sarafu. Jaribu tena baadaye.",
-  voucherDetails:
-    "CON {symbol} {name}\n{contact} {location}\n{description}\n\n0. Rudi",
-  accountBlocked:
-    "END PIN yako imefungwa. Kwa usaidizi tafadhali piga simu kwa: {supportPhone}.",
-  exit:
-    "END Asante kwa kutumia huduma ya Sarafu. Kwaheri.",
+    'END Kulikuwa na tatizo kwa kuchagua Sarafu. Jaribu tena baadaye.',
+  setSuccess:
+    'CON Hongera! {symbol} ni Sarafu inayotumika sasa.\n0. Rudi \n9. Ondoka',
+  thirdVoucherSet:
+    'CON Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n\n22. Rudi\n00. Ondoka',
+  voucherMenu:
+    'CON Sarafu yangu\n1. Chagua Sarafu\n2. Maelezo ya Sarafu\n0. Rudi'
 
 
 } satisfies NamespaceVoucherTranslation

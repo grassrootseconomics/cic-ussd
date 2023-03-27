@@ -1,8 +1,9 @@
-import {NamespacePinTranslation} from "../../i18n-types";
+import { NamespacePinsTranslation } from '../../i18n-types';
+import sw from '..'
+const { accountBlocked, exit } = sw
 
-const sw_pin = {
-  accountBlocked:
-    "END PIN yako imefungwa. Kwa usaidizi tafadhali piga: {supportPhone}.",
+const sw_pins = {
+  accountBlocked: accountBlocked,
   changeError:
     "END Kulikuwa na tatizo la kubadili PIN yako. Tafadhali jaribu tena baadaye.",
   confirmNewPin:
@@ -15,6 +16,7 @@ const sw_pin = {
     "CON Weka PIN yako ili uanze kubadili:\n0. Rudi",
   enteringWard:
     "CON Weka nambari ya simu ya mwenzio:\n0. Rudi",
+  exit: exit,
   pinManagementMenu:
     "CON Mipangilio ya PIN:\n1. Badili PIN\n2. Badili PIN ya mwenzio\n3. Linda PIN yangu\n0. Rudi",
   socialRecoveryMenu:
@@ -29,6 +31,6 @@ const sw_pin = {
     "END Kulikuwa na tatizo la kubadili PIN yako. Tafadhali jaribu tena baadaye."
 
 
-} satisfies NamespacePinTranslation;
+} satisfies NamespacePinsTranslation;
 
-export default sw_pin;
+export default sw_pins;

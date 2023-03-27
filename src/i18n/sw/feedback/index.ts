@@ -1,4 +1,4 @@
-import {NamespaceFeedbackTranslation} from "../../i18n-types";
+import { NamespaceFeedbackTranslation } from '../../i18n-types';
 
 export const sw_feedback = {
   invalidLanguageOption:

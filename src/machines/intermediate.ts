@@ -6,38 +6,39 @@ import {
   isOption3,
   isOption4,
   isOption5,
+  MachineId,
   translate
-} from "@src/machines/utils";
-import {createMachine} from "xstate";
-import {ActiveVoucher} from "@lib/ussd/voucher";
+} from '@src/machines/utils';
+import { createMachine } from 'xstate';
 
 export const mainMenuMachine = createMachine<BaseContext, BaseEvent>({
-  id: "main",
+  id: MachineId.MAIN,
   initial: "mainMenu",
   states: {
-    mainMenu: {
-        always: [
-            { target: "transfer", cond: "isOption1" },
-            { target: "voucher", cond: "isOption2" },
-            { target: "accountManagement", cond: "isOption3" },
-            { target: "help", cond: "isOption4" },
-        ]
-    },
-    transfer: {
-        type: "final",
-        description: "Transitions user to transfer machine"
-    },
-    voucher: {
-        type: "final",
-        description: "Transitions user to voucher machine"
-    },
     accountManagement: {
-        type: "final",
-        description: "Transitions user to profile machine"
+      description: 'Transitions to profile machine',
+      type: 'final'
     },
     help: {
-        type: "final",
-
+      type: 'final'
+    },
+    mainMenu: {
+      on: {
+        TRANSIT: [
+          { target: 'transfer', cond: 'isOption1' },
+          { target: 'voucher', cond: 'isOption2' },
+          { target: 'accountManagement', cond: 'isOption3' },
+          { target: 'help', cond: 'isOption4' }
+        ]
+      }
+    },
+    transfer: {
+      description: 'Transitions to transfer machine',
+      type: 'final'
+    },
+    voucher: {
+      description: 'Transitions to voucher machine',
+      type: 'final'
     }
   }
 }, {
@@ -49,8 +50,8 @@ export const mainMenuMachine = createMachine<BaseContext, BaseEvent>({
     }
 })
 
-export async function mainMenuTranslations(voucher: ActiveVoucher, state: string, translator: any) {
-  const { balance, symbol } = voucher
+export async function mainMenuTranslations(context: BaseContext, state: string, translator: any) {
+  const { user: { vouchers: { active: { balance, symbol } } } } = context
   if (state === "mainMenu"){
     return await translate(state, translator, { balance: balance, symbol: symbol })
   } else {
@@ -59,45 +60,45 @@ export async function mainMenuTranslations(voucher: ActiveVoucher, state: string
 }
 
 export const settingsMachine = createMachine<BaseContext, BaseEvent>({
-    id: "settings",
+    id: MachineId.SETTINGS,
     initial: "settingsMenu",
     states: {
-        mainMenu: {
-          type: "final",
-            description: "Transitions user to main menu machine"
-        },
-        settingsMenu: {
-            on: {
-                BACK: "mainMenu",
-                TRANSIT:[
-                    { target: "profile", cond: "isOption1" },
-                    { target: "language", cond: "isOption2" },
-                    { target: "balances", cond: "isOption3" },
-                    { target: "statement", cond: "isOption4" },
-                    { target: "pinManagement", cond: "isOption5" },
-                ]
-            },
-            description: "Displays account management menu."
-        },
-        profile: {
-            type: "final",
-            description: "Transitions user to profile machine"
-        },
-        language: {
-            type: "final",
-            description: "Transitions user to language machine"
-        },
-        balances: {
-            type: "final",
-            description: "Transitions user to balances machine"
-        },
-        statement: {
-            type: "final",
-            description: "Transitions user to statement machine"
-        },
+      balances: {
+        description: 'Transitions to balances machine',
+        type: 'final'
+      },
+      language: {
+        description: 'Transitions to language machine',
+        type: 'final'
+      },
+      mainMenu: {
+        description: 'Transitions to main menu machine',
+        type: 'final'
+      },
       pinManagement: {
-        type: "final",
-        description: "Transitions user to pin management machine"
+        description: 'Transitions to pin management machine',
+        type: 'final'
+      },
+      profile: {
+        description: 'Transitions to profile machine',
+        type: 'final'
+      },
+      settingsMenu: {
+        description: 'Displays account management menu.',
+        on: {
+          BACK: 'mainMenu',
+          TRANSIT: [
+            { target: 'profile', cond: 'isOption1' },
+            { target: 'language', cond: 'isOption2' },
+            { target: 'balances', cond: 'isOption3' },
+            { target: 'statement', cond: 'isOption4' },
+            { target: 'pinManagement', cond: 'isOption5' }
+          ]
+        }
+      },
+      statement: {
+        description: 'Transitions to statement machine',
+        type: 'final'
       }
     }
 },{
@@ -110,8 +111,8 @@ export const settingsMachine = createMachine<BaseContext, BaseEvent>({
     }
 })
 
-export async function settingsTranslations(context: any, state: string, translator: any) {
-  const { balance, symbol } = context.user.activeVoucher
+export async function settingsTranslations(context: BaseContext, state: string, translator: any) {
+  const { user: { vouchers: { active: { balance, symbol } } } } = context
   if (state === "mainMenu"){
     return await translate(state, translator, { balance: balance, symbol: symbol })
   } else {

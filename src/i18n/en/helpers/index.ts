@@ -1,18 +1,17 @@
-import type { NamespaceHelpersTranslation } from '../../i18n-types'
+import type { NamespaceHelpersTranslation } from '../../i18n-types';
 
 const en_helpers = {
 	noMoreVouchers:
     "No more vouchers available.\n22. Back\n00. Exit",
-	gender: {
-    "MALE": "Gender: Male",
-    "FEMALE": "Gender: Female",
-  },
+	gender: "Gender:",
+	male: "Male",
+	female: "Female",
 	age: "Age:",
 	name: "Name:",
 	location: "Location:",
 	notProvided: "Not provided",
-	debit: "You sent {value|currency} {symbol} to {recipient} {time},  received by: {sender}.",
-	credit: "You received {value|currency} {symbol} from {sender} {time}, sent by: {recipient}.",
+	debit: "You sent {value|currency} {symbol} to {recipient} {time}.",
+	credit: "You received {value|currency} {symbol} from {sender} {time}.",
 	noMoreTransactions: "No more transactions.",
 	noMoreLanguageOptions: "No more language options.",
 	noMoreGuardians: "No more guardians.",
