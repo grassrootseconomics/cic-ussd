@@ -82,5 +82,6 @@ export const config = {
     HOST: process.env.SERVER_HOST ?? '192.168.0.100',
     PORT: parseInt(process.env.SERVER_PORT ?? '5000'),
     TRUST_PROXY_ENABLED: !process.env.TRUST_PROXY_ENABLED ?? true
-  }
+  },
+  TIMEZONE: process.env.TIMEZONE ?? 'Africa/Nairobi'
 }
