@@ -1,5 +1,5 @@
-import {PostgresDb} from '@fastify/postgres'
-import {SessionInterface} from '@lib/ussd/session'
+import { PostgresDb } from '@fastify/postgres';
+import { SessionInterface } from '@lib/ussd/session';
 
 export async function setSession (db: PostgresDb, session: Partial<SessionInterface>) {
   const client = await db.connect()

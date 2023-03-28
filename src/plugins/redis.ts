@@ -1,7 +1,7 @@
-import {FastifyPluginAsync} from "fastify";
-import fp from "fastify-plugin";
-import Redis from "ioredis";
-import {config} from "@src/config";
+import { FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
+import Redis from 'ioredis';
+import { config } from '@src/config';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -49,7 +49,7 @@ const redisPlugin: FastifyPluginAsync<RedisPluginOptions> = async (fastify, opts
   fastify.decorate('p_redis', persistentClient)
 
   // gracefully kill redis connection
-  fastify.addHook('onClose', async (instance) => {
+  fastify.addHook('onClose', async (_) => {
     ephemeralClient.quit()
     persistentClient.quit()
   })

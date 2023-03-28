@@ -1,9 +1,9 @@
-import {FastifyPluginAsync} from "fastify";
-import fp from "fastify-plugin";
-import {connect, ConnectionOptions, Msg, NatsError} from "nats";
-import {config} from "@src/config";
-import {natsConnectionDevOptions} from "@dev/debug";
-import {processMessage} from "@lib/natsHandler";
+import { FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
+import { connect, ConnectionOptions, Msg, NatsError } from 'nats';
+import { config } from '@src/config';
+import { natsConnectionDevOptions } from '@dev/debug';
+import { processMessage } from '@lib/natsHandler';
 
 
 interface NatsPluginOptions {
@@ -42,7 +42,7 @@ const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, option
     });
   }
 
-  fastify.addHook("onClose", async (instance) => {
+  fastify.addHook("onClose", async (_) => {
     await nc.drain();
     await nc.close();
   })

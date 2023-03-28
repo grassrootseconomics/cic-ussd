@@ -1,6 +1,7 @@
-import {PostgresDb} from "@fastify/postgres";
-import {Redis as RedisClient} from "ioredis";
-import {Cache} from "@utils/redis";
+import { PostgresDb } from '@fastify/postgres';
+import { Redis as RedisClient } from 'ioredis';
+import { Cache } from '@utils/redis';
+import { User } from '@machines/utils';
 
 export async function addWard(db: PostgresDb, phoneNumber: string,  wards: string[]){
   const client = await db.connect();
@@ -30,75 +31,52 @@ export async function getWard(db: PostgresDb, guardian: string, ward: string){
 
 export async function addGuardian(db: PostgresDb, guardian: string, redis: RedisClient, ward: string){
   const client = await db.connect();
-
-  const queryText = `
-    INSERT INTO guardians (account_phone_number, wards) 
-    VALUES ($1, ARRAY [$2]) 
-    ON CONFLICT (account_phone_number) DO UPDATE SET
-      wards = array_append(guardians.wards, $2)
-  `;
-  const queryValues = [guardian, ward];
-
+  const cache = new Cache(redis, ward)
   try {
-    await client.query("BEGIN");
-
-    await client.query(queryText, queryValues);
-
-    await client.query("COMMIT");
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
+    await Promise.all([
+      client.query(
+        `INSERT INTO guardians (account_phone_number, wards)
+         VALUES ($1, ARRAY[$2])
+         ON CONFLICT (account_phone_number) DO UPDATE SET wards = array_append(guardians.wards, $2::text)
+         RETURNING *`,
+        [guardian, ward]),
+      cache.getJSON<User>()
+        .then(user => {
+          const guardians = user.guardians || [];
+          if (!guardians.includes(guardian)) {
+            guardians.push(guardian);
+            return cache.updateJSON({guardians});
+          }
+        })
+    ]);
   } finally {
     client.release();
-  }
-
-  // update redis
-  const cache = new Cache(redis, ward);
-  const account = await cache.getJSON()
-  const guardians = account.guardians || [];
-
-  if (!guardians.includes(guardian)) {
-    guardians.push(guardian);
-    await cache.updateJSON({guardians});
   }
 }
 
+
 export async function removeGuardian(db: PostgresDb, guardian: string, redis: RedisClient, ward: string){
-  const cache = new Cache(redis, ward);
-  const account = await cache.getJSON()
-  const guardians = account.guardians
-
-  if(guardians.length === 0) {
-    console.debug("No guardians to remove")
-    return;
-  }
-
-  const index = guardians.indexOf(guardian);
-  if (index > -1) {
-    guardians.splice(index, 1);
-  } else {
-    console.debug("Guardian not found")
-    return;
-  }
-
-  await cache.updateJSON({guardians});
-
   const client = await db.connect();
-  const queryText = `
-    UPDATE guardians SET wards = $1 WHERE account_phone_number = $2
-  `;
-  const queryValues = [guardians, ward];
 
   try {
-    await client.query("BEGIN");
-
-    await client.query(queryText, queryValues);
-
-    await client.query("COMMIT");
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
+    await client.query(
+      `UPDATE guardians
+       SET wards = array_remove(guardians.wards, $2)
+       WHERE account_phone_number = $1
+       RETURNING *`,
+      [guardian, ward]
+    );
   } finally {
     client.release();
+  }
+
+  const cache = new Cache(redis, ward);
+  const user = await cache.getJSON<User>();
+  const guardians = user.guardians || [];
+
+  const index = guardians.indexOf(guardian);
+  if (index !== -1) {
+    guardians.splice(index, 1);
+    await cache.updateJSON({ guardians });
   }
 }

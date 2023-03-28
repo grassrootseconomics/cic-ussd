@@ -1,4 +1,4 @@
-import {config} from "@src/config";
+import { config } from '@src/config';
 
 interface RegistrationResponse {
   errorCode?: string
@@ -28,17 +28,6 @@ interface TransferResponse {
 }
 
 export async function createWallet(): Promise<RegistrationResponse> {
-  /*if(config.DEV){
-    return {
-      ok: true,
-      result: {
-        publicKey: randomBytes(21).toString('hex'),
-        trackingId: randomUUID().toString(),
-        custodialId: randomInt(10000000)
-      }
-    }
-  }*/
-
   const response = await fetch(config.CIC_CUSTODIAL.REGISTER_ENDPOINT, {
     method: 'POST'
   })

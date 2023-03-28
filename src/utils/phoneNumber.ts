@@ -1,4 +1,4 @@
-import {CountryCode, parsePhoneNumber} from 'libphonenumber-js'
+import { CountryCode, parsePhoneNumber } from 'libphonenumber-js';
 
 
 export function getCountryCodeFromPhoneNumber (phoneNumber: string) {

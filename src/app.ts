@@ -1,19 +1,19 @@
-import {fastifyServerDevOptions} from "@dev/debug";
-import fastifyCors from "@fastify/cors";
-import formBody from "@fastify/formbody";
-import fastifyPostgres from "@fastify/postgres";
-import fastifySensible from "@fastify/sensible";
-import ethPlugin from "@plugins/eth";
-import graphqlPlugin from "@plugins/graphql";
-import natsPlugin from "@plugins/nats";
-import redisPlugin from "@plugins/redis";
-import ussdRoutes from "@routes/ussd";
+import { fastifyServerDevOptions } from '@dev/debug';
+import fastifyCors from '@fastify/cors';
+import formBody from '@fastify/formbody';
+import fastifyPostgres from '@fastify/postgres';
+import fastifySensible from '@fastify/sensible';
+import ethPlugin from '@plugins/eth';
+import graphqlPlugin from '@plugins/graphql';
+import natsPlugin from '@plugins/nats';
+import redisPlugin from '@plugins/redis';
+import ussdRoutes from '@routes/ussd';
 
-import * as dotenv from "dotenv";
-import fastify, {FastifyServerOptions} from "fastify";
-import qs from "qs";
+import * as dotenv from 'dotenv';
+import fastify, { FastifyServerOptions } from 'fastify';
+import qs from 'qs';
 
-import {config} from "./config";
+import { config } from './config';
 
 // TODO: [Philip] - Whereas this shifts from convict to dotenv, is it ideal for externally defined variables like ones stored in vault?
 dotenv.config()

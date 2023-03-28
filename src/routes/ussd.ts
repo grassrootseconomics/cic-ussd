@@ -1,7 +1,7 @@
-import {ATOnRequestHook, ATPreHandlerHook, ATRequestBody} from '@src/services/africasTalking'
-import {sessionHandler} from '@src/services/session'
+import { ATOnRequestHook, ATPreHandlerHook, ATRequestBody } from '@src/services/africasTalking';
+import { sessionHandler } from '@src/services/session';
 
-import {FastifyInstance} from 'fastify'
+import { FastifyInstance } from 'fastify';
 
 /**
  * Description placeholder

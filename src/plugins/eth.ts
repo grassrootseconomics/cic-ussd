@@ -1,6 +1,6 @@
-import {ethers, Provider} from "ethers";
-import {FastifyPluginAsync} from "fastify";
-import fp from "fastify-plugin";
+import { ethers, Provider } from 'ethers';
+import { FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
 
 
 declare module 'fastify' {
@@ -42,8 +42,8 @@ const ethPlugin: FastifyPluginAsync<EthPluginOptions> = async (fastify, opts) =>
 
   fastify.decorate('provider', rpcProvider)
 
-  fastify.addHook('onClose', async (instance) => {
-    await rpcProvider.destroy()
+  fastify.addHook('onClose', async (_) => {
+    rpcProvider.destroy()
   })
 }
 

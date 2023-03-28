@@ -1,5 +1,5 @@
-import {Redis as RedisClient} from "ioredis";
-import JSONCache from "redis-json";
+import { Redis as RedisClient } from 'ioredis';
+import JSONCache from 'redis-json';
 
 /**
  * A class for accessing a Redis cache and performing common cache operations.

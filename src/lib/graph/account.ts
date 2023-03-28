@@ -1,5 +1,5 @@
-import {GraphQLClient} from "graphql-request";
-import {graphUserFields} from "@lib/graph/user";
+import { GraphQLClient } from 'graphql-request';
+import { graphUserFields } from '@lib/graph/user';
 
 export enum GraphAccountTypes {
   CUSTODIAL_PERSONAL = 'CUSTODIAL_PERSONAL',

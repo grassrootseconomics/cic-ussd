@@ -1,6 +1,6 @@
-import {FastifyPluginAsync} from "fastify";
-import fp from "fastify-plugin";
-import {GraphQLClient} from "graphql-request";
+import { FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
+import { GraphQLClient } from 'graphql-request';
 
 declare module 'fastify' {
   interface FastifyInstance {
