@@ -1,12 +1,12 @@
-import {insertSession, setSession} from "@db/models/session";
-import {PostgresDb} from "@fastify/postgres";
-import {Cache} from "@utils/redis";
+import { insertSession, setSession } from '@db/models/session';
+import { PostgresDb } from '@fastify/postgres';
+import { Cache } from '@utils/redis';
 
-import Redis from "ioredis";
-import {StateValue} from "xstate";
-import {BaseContext} from "@src/machines/utils";
-import {createHash} from "crypto";
-import {Address, Symbol} from "@lib/ussd/utils";
+import Redis from 'ioredis';
+import { StateValue } from 'xstate';
+import { BaseContext } from '@src/machines/utils';
+import { createHash } from 'crypto';
+import { Address, Symbol } from '@lib/ussd/utils';
 
 
 type SessionData = any
@@ -56,16 +56,20 @@ export class Session extends Cache<SessionInterface> implements SessionInterface
 
   async create (db: PostgresDb): Promise<Session> {
     await this.setJSON(this.toJson(), 180)
-    await insertSession(db, {
+    let session = {
         input: this.input,
-        data: this.data,
+
         history: this.history,
         id: this.id,
         phoneNumber: this.phoneNumber,
         serviceCode: this.serviceCode,
         state: this.state,
         version: this.version
-    })
+    }
+    if (this.data !== undefined) {
+      session["data"] = this.data
+    }
+    await insertSession(db, session)
     return this
   }
 
@@ -89,8 +93,12 @@ export class Session extends Cache<SessionInterface> implements SessionInterface
 
 
   toJson (): SessionInterface {
-    const { input, data, history, id, machineId, phoneNumber, serviceCode, state, version } = this
-    return { input, data, history, id, machineId, phoneNumber, serviceCode, state, version }
+    const { input, history, id, machineId, phoneNumber, serviceCode, state, version } = this
+    let session = { input, history, id, machineId, phoneNumber, serviceCode, state, version }
+    if (this.data !== undefined) {
+      session["data"] = this.data
+    }
+    return session
   }
 }
 
@@ -102,17 +110,22 @@ export async function createSession (context: BaseContext, machineId: string, re
     machines: [machineId],
     responses: [state]
   }
-  // create new session
-  return await new Session(redis, {
+
+  let session = {
     input: context.ussd.input,
-    data: context.data,
     history,
     id: requestId,
     machineId: machineId,
     phoneNumber: phoneNumber,
     serviceCode: serviceCode,
     state: state
-  }).create(db)
+  }
+  if (context.data !== undefined) {
+    session["data"] = context.data
+  }
+
+  // create new session
+  return await new Session(redis, session).create(db)
 }
 
 export async function getSessionById (
@@ -143,17 +156,19 @@ export function updateHistory (history: History, update: History) {
 export async function updateSession (context: BaseContext, machineId: string, state: StateValue) {
   const { data, resources: { db }, session, ussd: { input } } = context
 
-
-  const updatedData = updateData(session.data || {}, data || {})
   const updatedHistory = updateHistory(session.history || { inputs: [], machines: [], responses: [] }, { inputs: [input], machines: [machineId], responses: [state] })
-  await session.update({
+  let updatedSession = {
     input: input,
-    data: updatedData,
     history: updatedHistory,
     machineId: machineId,
     state: state,
     version: session.version + 1
-  }, db)
+  }
+
+  if(data) {
+    updatedSession['data'] = updateData(session.data || {}, data)
+  }
+  await session.update(updatedSession, db)
 }
 
 
