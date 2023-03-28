@@ -1,16 +1,5 @@
-import {GraphQLClient} from "graphql-request";
+import { GraphQLClient } from 'graphql-request';
 
-interface VoucherBackers {
-  backer: number,
-  account: {
-    user: {
-      personal_information: {
-        family_name: string,
-        given_names: string,
-      }
-    }
-  }
-}
 
 /**
  * Description placeholder
@@ -26,8 +15,7 @@ export interface Voucher {
   location_name: string
   sink_address: string
   symbol: Symbol
-  token_address: string
-  voucher_backers: VoucherBackers[]
+  voucher_address: string
   voucher_description: string
   voucher_name: string
 }
@@ -45,7 +33,6 @@ export interface Voucher {
  * @type {string}
  */
 export const voucherFields = `
-    active
     demurrage_rate
     geo
     id
@@ -53,20 +40,9 @@ export const voucherFields = `
     sink_address
     supply
     symbol
-    token_address
+    voucher_address
     voucher_description
-    voucher_name
-    voucher_backers {
-      backer
-      account {
-        user {
-          personal_information {
-            family_name
-            given_names
-          }
-        }
-      }
-    }`
+    voucher_name`
 
 
 /**
@@ -105,7 +81,7 @@ export async function getActiveVouchers(graphql: GraphQLClient): Promise<Voucher
  */
 export async function getVouchersByAddress(graphql: GraphQLClient, address: string): Promise<Voucher> {
   const query = `query getVouchersByAddress($address: String!) {
-    vouchers(where: {token_address: {_eq: $address}}) {
+    vouchers(where: {voucher_address: {_eq: $address}}) {
       ${voucherFields}
     }
   }`
