@@ -1,46 +1,47 @@
-import {BaseContext, translate} from "@machines/utils";
-import {transferMachine, transferTranslations} from "@machines/transfer";
-import {voucherMachine, voucherTranslations} from "@machines/voucher";
-import {mainMenuMachine, mainMenuTranslations, settingsMachine, settingsTranslations} from "@machines/intermediate";
-import {profileMachine, profileTranslations} from "@machines/profile";
-import {languagesMachine, languageTranslations} from "@machines/language";
-import {balancesMachine, balancesTranslations} from "@machines/balances";
-import {statementMachine, statementTranslations} from "@machines/statement";
-import {pinManagementMachine, pinTranslations} from "@machines/pin";
-import {Account, AccountStatus} from "@db/models/account";
-import {authMachine, authTranslations} from "@machines/auth";
-import {registrationMachine, registrationTranslations} from "@machines/registration";
-import {supportedLanguages} from "@lib/ussd/utils";
-import {createSession, getSessionById, updateSession} from "@lib/ussd/session";
-import {interpret, Interpreter, StateValue} from "xstate";
-import L from "@src/i18n/i18n-node";
-import {waitFor} from "xstate/lib/waitFor";
-import {socialRecoveryMachine} from "@machines/socialRecovery";
+import { BaseContext, MachineId, translate, User } from '@machines/utils';
+import { transferMachine, transferTranslations } from '@machines/transfer';
+import { voucherMachine, voucherTranslations } from '@machines/voucher';
+import { mainMenuMachine, mainMenuTranslations, settingsMachine, settingsTranslations } from '@machines/intermediate';
+import { profileMachine, profileTranslations } from '@machines/profile';
+import { languagesMachine, languagesTranslations } from '@machines/languages';
+import { balancesMachine, balancesTranslations } from '@machines/balances';
+import { statementMachine, statementTranslations } from '@machines/statement';
+import { pinManagementMachine, pinsTranslations } from '@machines/pins';
+import { AccountStatus } from '@db/models/account';
+import { authMachine, authTranslations, hashValue } from '@machines/auth';
+import { registrationMachine, registrationTranslations } from '@machines/registration';
+import { supportedLanguages } from '@lib/ussd/utils';
+import { createSession, getSessionById, updateSession } from '@lib/ussd/session';
+import { interpret, Interpreter, StateValue } from 'xstate';
+import L from '@src/i18n/i18n-node';
+import { waitFor } from 'xstate/lib/waitFor';
+import { socialRecoveryMachine, socialRecoveryTranslations } from '@machines/socialRecovery';
 
 const machines = {
   balances: balancesMachine,
-  language: languagesMachine,
-  pin: pinManagementMachine,
+  languages: languagesMachine,
+  pins: pinManagementMachine,
   profile: profileMachine,
   statement: statementMachine,
   transfer: transferMachine,
+  socialRecovery: socialRecoveryMachine,
   settings: settingsMachine,
   voucher: voucherMachine
 };
 
 
 export async function machineService(context: BaseContext) {
-  const { resources: { e_redis }, user: { account }, ussd: { input, requestId } } = context
+  const { resources: { e_redis }, user, ussd: { input, requestId } } = context
 
   const session = await getSessionById(e_redis, requestId)
   let machine
   if (session) {
-    context.data = session.data || {}
+    context.data = session.data
     context.session = session
     const { machineId, state } = session
-    machine = await resolveMachine(account, input, machineId, state)
+    machine = await resolveMachine(user, input, machineId, state)
   } else {
-    machine = await resolveMachine(account, input)
+    machine = await resolveMachine(user, input)
   }
 
   // check for machine jumps if the last machine id is present and start in the next machine's initial state
@@ -65,7 +66,7 @@ export async function machineService(context: BaseContext) {
 
 }
 
-async function newSession(service: Interpreter<BaseContext, any, any, any>): Promise<[BaseContext, string, string]> {
+async function newSession(service: Interpreter<any, any, any, any>): Promise<[BaseContext, string, string]> {
   const { context, machine: { id }, value } = service.getSnapshot()
   const { resources: { e_redis } } = context
 
@@ -73,49 +74,42 @@ async function newSession(service: Interpreter<BaseContext, any, any, any>): Pro
   return [context, id, value.toString()]
 }
 
-async function transition(input: string, service: Interpreter<BaseContext, any, any, any>): Promise<[BaseContext, string, string]> {
+async function transition(input: string, service: Interpreter<any, any, any, any>): Promise<[BaseContext, string, string]> {
+  const snapshot = service.getSnapshot();
+  const { context, machine: { id }, value: currentValue } = snapshot;
 
   // check if current state can transition to the next state
-  if (!service.getSnapshot().can({ type: "TRANSIT", input: input })){
-    const { context, machine: { id }, value } = service.getSnapshot()
-    return [context, id, value.toString()]
+  if (!snapshot.can({ type: "TRANSIT", input })) {
+    return [context, id, currentValue.toString()];
+  }
+
+  // check if input needs to be encrypted
+  if (snapshot.hasTag("encryptInput")) {
+    context.ussd.input = await hashValue(input);
   }
 
   // attempt to transition to the next state
-  service.send({ type: "TRANSIT", input: input })
+  service.send({ type: "TRANSIT", input });
 
-  // get a snapshot of the current state
-  let snapshot = service.getSnapshot()
-
-  // get current state value
-  let state = snapshot.value.toString()
-
-  // check if the resultant state is an invoked service
-  if (snapshot.hasTag("invoked")) {
-
-    // wait for the invoked service to finish
-    const resolvedState = await waitFor(service, (state) => {
-      return state.hasTag("resolved") || state.hasTag("error") || state.hasTag("done")
-    });
-
-    // get state value from the resolved state
-    state = resolvedState.value.toString()
+  // wait for the invoked service to finish, if applicable
+  let state = service.getSnapshot().value;
+  if (service.getSnapshot().hasTag("invoked")) {
+    const resolvedState = await waitFor(service, (state) => state.hasTag("resolved") || state.hasTag("error"));
+    state = resolvedState.value;
   }
-
-  // parse updated context, machine id and next state
-  const { context, machine: { id } } = snapshot
 
   // update the session with the new state
-  await updateSession(context, id, state)
-  return [context, id, state]
+  await updateSession(context, id, state.toString());
+  return [context, id, state.toString()];
 }
 
-async function resolveMachine(account: Account | null, input?: string, machineId?: string, state?: StateValue) {
 
-  if (!account) {
+async function resolveMachine(user: User | undefined, input?: string, machineId?: string, state?: StateValue) {
+
+  if (!user) {
     return registrationMachine;
   }
-
+  const { account } = user
   if (account.status === AccountStatus.PENDING || account.status === AccountStatus.BLOCKED) {
     return authMachine;
   }
@@ -165,38 +159,40 @@ async function pinManagementMenu(input){
   return menu[input] || pinManagementMachine
 }
 
-async function response(context: any, machineId: string, state: string) {
+async function response(context: BaseContext, machineId: string, state: string) {
   const { data, user } = context
   let language
-  if (state === "changeSuccess"){
-    language = data?.language
+  if (state === "changeSuccess" || state === "accountCreationSuccess") {
+    language = data?.languages.selected
   } else {
     language = user?.account?.language  || Object.values(supportedLanguages.fallback)[0]
   }
   const translator = L[language][machineId]
   switch (machineId) {
-    case "registration":
+    case MachineId.REGISTRATION:
         return await registrationTranslations(state, translator)
-    case "auth":
-      return await authTranslations(user.activeVoucher, state, translator)
-    case "main":
-      return await mainMenuTranslations(user.activeVoucher, state, translator)
-    case "transfer":
+    case MachineId.AUTH:
+      return await authTranslations(context, state, translator)
+    case MachineId.MAIN:
+      return await mainMenuTranslations(context, state, translator)
+    case MachineId.TRANSFER:
       return await transferTranslations(context, state, translator)
-    case "voucher":
+    case MachineId.VOUCHER:
       return await voucherTranslations(context, state, translator)
-    case "settings":
+    case MachineId.SETTINGS:
       return await settingsTranslations(context, state, translator)
-    case "profile":
+    case MachineId.PROFILE:
       return await profileTranslations(context, state, translator)
-    case "language":
-      return await languageTranslations(context, state, translator)
-    case "balances":
+    case MachineId.LANGUAGES:
+      return await languagesTranslations(context, state, translator)
+    case MachineId.BALANCES:
       return await balancesTranslations(context, state, translator)
-    case "statement":
+    case MachineId.STATEMENT:
       return await statementTranslations(context, state, translator)
-    case "pin":
-      return await pinTranslations(context, state, translator)
+    case MachineId.PINS:
+      return await pinsTranslations(context, state, translator)
+    case MachineId.SOCIAL_RECOVERY:
+      return await socialRecoveryTranslations(context, state, translator)
     default:
         return await translate(state, translator)
   }
