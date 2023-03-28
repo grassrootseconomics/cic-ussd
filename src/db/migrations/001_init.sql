@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS accounts (
     activated_on_chain BOOLEAN NOT NULL DEFAULT FALSE,
     activated_on_ussd BOOLEAN NOT NULL DEFAULT FALSE,
     language TEXT NOT NULL,
-    password TEXT,
     phone_number TEXT UNIQUE NOT NULL CHECK (phone_number <> '' AND char_length(phone_number) = 13),
+    pin TEXT,
     pin_attempts INT NOT NULL DEFAULT 0,
     status ACCOUNT_STATUS NOT NULL DEFAULT 'PENDING',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS "sessions" (
 --- guardians table
 CREATE TABLE IF NOT EXISTS guardians (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    account_phone_number TEXT NOT NULL REFERENCES accounts(phone_number),
+    account_phone_number TEXT UNIQUE NOT NULL REFERENCES accounts(phone_number),
     wards TEXT[] NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
