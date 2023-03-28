@@ -1,16 +1,18 @@
-import {config} from "@src/config";
-import {JSONCodec, Msg} from "nats";
-import {GraphQLClient} from "graphql-request";
-import {Redis as RedisClient} from "ioredis";
-import {getAddress, Provider} from "ethers";
-import {PostgresDb} from "@fastify/postgres";
-import {Cache} from "@utils/redis";
-import {ActiveVoucher, getVouchers, getVoucherSymbol, setVouchers, VoucherMetadata} from "@lib/ussd/voucher";
-import {AccountMetadata, getAccountMetadata, retrieveWalletBalance, setAccountMetadata} from "@lib/ussd/account";
-import {Transaction, TransactionType} from "@machines/statement";
-import {getVouchersByAddress} from "@lib/graph/voucher";
-import {activateOnChain} from "@db/models/account";
-import {Address, Symbol} from "@lib/ussd/utils";
+import { config } from '@src/config';
+import { JSONCodec, Msg } from 'nats';
+import { GraphQLClient } from 'graphql-request';
+import { Redis as RedisClient } from 'ioredis';
+import { getAddress, Provider } from 'ethers';
+import { PostgresDb } from '@fastify/postgres';
+import { Cache } from '@utils/redis';
+import { ActiveVoucher, getVoucherSymbol } from '@lib/ussd/voucher';
+import { retrieveWalletBalance } from '@lib/ussd/account';
+import { Transaction, TransactionType } from '@machines/statement';
+import { getVouchersByAddress } from '@lib/graph/voucher';
+import { activateOnChain } from '@db/models/account';
+import { Address, generateTag, getTag, Symbol } from '@lib/ussd/utils';
+import { User } from '@machines/utils';
+import { getPersonalInformation } from '@lib/graph/user';
 
 interface TransferEvent {
   block: number;
@@ -44,20 +46,21 @@ export async function processMessage (db: PostgresDb, graphql: GraphQLClient, ms
   }
 }
 
-async function updateHeldVouchers(address: Address, contractAddress: Address, redis: RedisClient, symbol: Symbol, balance: number): Promise<ActiveVoucher[]> {
-  const heldVouchers = await getVouchers<ActiveVoucher[]>(address, redis, VoucherMetadata.HELD) || []
+async function updateHeldVouchers(heldVouchers: ActiveVoucher[], voucher: ActiveVoucher): Promise<ActiveVoucher[]> {
+  const { address, balance, symbol } = voucher
   const updatedVoucherIndex = heldVouchers.findIndex(v => v.symbol === symbol)
 
   if (updatedVoucherIndex >= 0) {
-    const updatedVoucher = { ...heldVouchers[updatedVoucherIndex], balance }
+    const updatedVoucher = { ...heldVouchers[updatedVoucherIndex], balance}
     return [ ...heldVouchers.slice(0, updatedVoucherIndex), updatedVoucher, ...heldVouchers.slice(updatedVoucherIndex + 1) ]
   } else {
-    const newVoucher = { address: contractAddress, symbol, balance }
+    const newVoucher = { address: address, symbol, balance }
     return [ ...heldVouchers, newVoucher ]
   }
 }
+
 async function getSymbol(redis: RedisClient, graphql: GraphQLClient, contractAddress: string): Promise<Symbol> {
-  let cache = new Cache(redis, `address-symbol:${contractAddress}`)
+  let cache = new Cache(redis, `address-symbol-${contractAddress}`)
   let symbol = await cache.get()
 
   if (!symbol) {
@@ -73,58 +76,64 @@ async function getSymbol(redis: RedisClient, graphql: GraphQLClient, contractAdd
 
   return symbol
 }
-function updateStatements(statement: Transaction[], tx: Transaction): Transaction[] {
-  const updatedStatement = [...statement]
 
-  if (updatedStatement.length >= 9) {
-    updatedStatement.shift()
+async function updateTransactions(statement: Transaction[], transaction: Transaction): Promise<Transaction[]> {
+  const updatedTransaction = [...statement]
+
+  if (updatedTransaction.length >= 9) {
+    updatedTransaction.shift()
   }
 
-  updatedStatement.push(tx)
+  updatedTransaction.push(transaction)
 
-  return updatedStatement
+  return updatedTransaction
 }
+
 async function handleTransfer(db: PostgresDb, graphql: GraphQLClient, message: TransferEvent, provider: Provider, redis: RedisClient) {
   // parse message
-  const { block, success, transactionHash, value } = message
+  const { block, success, transactionHash, value } = message;
   const contractAddress = getAddress(message.contractAddress) as Address
   const from = getAddress(message.from) as Address
   const to = getAddress(message.to) as Address
 
-
   if (success) {
-    // get tx count from cache to know if this is the first tx
-    const cache = new Cache(redis, `address-tx-count:${to}`)
+    const cache = new Cache(redis, `address-tx-count-${to}`)
     const txCount = await cache.get()
     if (!txCount) {
       await handleRegistration(to, contractAddress, db, graphql, message, provider, redis)
-      // update tx count
       await cache.set(1)
     } else {
-      // get symbol from address-symbol mapping
       const symbol = await getSymbol(redis, graphql, contractAddress)
 
-      // update statements
-      const rStatement = await getAccountMetadata<Transaction[]>(to, redis, AccountMetadata.STATEMENT) || []
-      const sStatement = await getAccountMetadata<Transaction[]>(from, redis, AccountMetadata.STATEMENT) || []
-      const uRStatement = updateStatements(rStatement, {block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.CREDIT, value})
-      const uSStatement = updateStatements(sStatement, {block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.DEBIT, value})
+      const rPhoneNumber =  await redis.get(`address-phone-${to}`)
+      const sPhoneNumber =  await redis.get(`address-phone-${from}`)
 
-      // retrieve wallet balances
-      const rBalance = await retrieveWalletBalance(to, contractAddress, provider)
-      const sBalance = await retrieveWalletBalance(from, contractAddress, provider)
-      // update held vouchers
-      const uRHeldVouchers = await updateHeldVouchers(to, contractAddress, redis, symbol, rBalance)
-      const uSHeldVouchers = await updateHeldVouchers(from, contractAddress, redis, symbol, sBalance)
+      const rCache = new Cache(redis, rPhoneNumber)
+      const sCache = new Cache(redis, sPhoneNumber)
 
+      const rUser = await rCache.getJSON<User>()
+      const sUser = await sCache.getJSON<User>()
 
-      // update redis
-      await setAccountMetadata<Transaction[]>(to, uRStatement, redis, AccountMetadata.STATEMENT,)
-      await setAccountMetadata<Transaction[]>(from, uSStatement, redis, AccountMetadata.STATEMENT,)
-      await setVouchers<ActiveVoucher[]>(to, redis, uRHeldVouchers, VoucherMetadata.HELD)
-      await setVouchers<ActiveVoucher[]>(from, redis, uSHeldVouchers, VoucherMetadata.HELD)
+      const [uRTransactions, uSTransactions] = await Promise.all([
+        updateTransactions(rUser.transactions || [], {block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.CREDIT, value}),
+        updateTransactions(sUser.transactions || [], {block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.DEBIT, value})
+      ])
 
-      // update tx count
+      const [rBalance, sBalance] = await Promise.all([
+        retrieveWalletBalance(to, contractAddress, provider),
+        retrieveWalletBalance(from, contractAddress, provider)
+      ])
+
+      const [uRHeldVouchers, uSHeldVouchers] = await Promise.all([
+        updateHeldVouchers(rUser.vouchers.held || [], { address: contractAddress, balance: rBalance, symbol }),
+        updateHeldVouchers(sUser.vouchers.held || [], { address: contractAddress, balance: sBalance, symbol })
+      ])
+
+      await Promise.all([
+        rCache.updateJSON({ transactions: uRTransactions, vouchers: { held: uRHeldVouchers } }),
+        sCache.updateJSON({ transactions: uSTransactions, vouchers: { held: uSHeldVouchers } })
+      ])
+
       await cache.set(txCount + 1)
     }
 
@@ -141,21 +150,30 @@ async function handleRegistration(
   provider: Provider,
   redis: RedisClient) {
   try{
-    // activate on chain
+    const phoneNumber =  await redis.get(`address-phone-${address}`)
+
+    if (!phoneNumber) {
+      console.error(`Could not find phone number for address: ${address}`)
+      return
+    }
+
     const account = await activateOnChain(address, db, redis)
-
-    // retrieve balance
     const balance = await retrieveWalletBalance(address, contractAddress, provider)
-    console.debug("Balance for account: ", address, " is: ", balance)
-
-    // get symbol from address_symbol mapping | graph
     const symbol = await getVoucherSymbol(contractAddress, graphql, redis)
+    const voucher = { address: contractAddress, balance, symbol }
+    const tag = await generateTag(address, graphql, phoneNumber)
 
-    // set active token
-    const activeVoucher: ActiveVoucher = { address: contractAddress, balance, symbol }
-    await setVouchers<ActiveVoucher>(address, redis, activeVoucher, VoucherMetadata.ACTIVE)
-
+    const cache = new Cache(redis, phoneNumber)
+    await cache.updateJSON({
+      account: account,
+      vouchers: {
+        active: voucher,
+        held: [voucher],
+      },
+      tag,
+    })
     console.debug(`Account: ${account.address} successfully set up.`)
+
   } catch (e) {
     console.error("Error setting up account: ", e)
     throw e
