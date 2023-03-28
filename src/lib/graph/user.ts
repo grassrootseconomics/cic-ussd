@@ -1,8 +1,8 @@
-import {GraphQLClient} from "graphql-request";
-import {Redis as RedisClient} from "ioredis";
-import {AccountMetadata} from "@lib/ussd/account";
-import {pointer} from "@lib/ussd/session";
-import {Cache} from "@utils/redis";
+import { GraphQLClient } from 'graphql-request';
+import { Redis as RedisClient } from 'ioredis';
+import { Cache } from '@utils/redis';
+import { Address } from '@lib/ussd/utils';
+import { User } from '@machines/utils';
 
 
 export enum Gender {
@@ -42,7 +42,7 @@ export interface GraphUser {
   id: number
   interface_identifier: string
   interface_type: string
-  personal_information: PersonalInformation
+  personal_information: Partial<PersonalInformation>
 }
 
 
@@ -59,32 +59,15 @@ function getRequestedFields(personalInformation: Partial<PersonalInformation>) {
   return requestedFields.trim();
 }
 
-export async function getProfile(
-  address: string,
-  graphql: GraphQLClient,
-  interface_identifier: number,
-  redis: RedisClient
-) {
-  const cache = new Cache(redis, pointer([address, AccountMetadata.PROFILE]))
-  let profile = await cache.getJSON()
-
-  if (!profile) {
-    const user = await getGraphUser(graphql, interface_identifier.toString())
-    await cache.setJSON(user)
-  }
-  return profile
-}
-
-export async function getGraphUser(graphql: GraphQLClient, interface_identifier: string): Promise<Partial<GraphUser>> {
-  const query = `query GetUser($interface_identifier: String!) {
-    users(where: {interface_identifier: {_eq: $interface_identifier}}) {${graphUserFields}}}`
+export async function getPersonalInformation(address: Address, graphql: GraphQLClient){
+  const query = `query GetPersonalInformation($address: String!) {
+   personal_information(where: {user: {accounts: {blockchain_address: {_eq: $address}}}}) {${personalInformationFields}}}`
 
   const variables = {
-    interface_identifier
+    address
   }
-
-  const data = await graphql.request<{ users: Partial<GraphUser>[] }>(query, variables)
-  return data.users[0]
+  const data = await graphql.request<{ personal_information: Partial<PersonalInformation>[] }>(query, variables)
+  return data.personal_information[0]
 }
 
 export async function createGraphUser(graphql: GraphQLClient, user: Partial<GraphUser>): Promise<Partial<GraphUser>> {
@@ -98,33 +81,45 @@ export async function createGraphUser(graphql: GraphQLClient, user: Partial<Grap
   return data.insert_users_one
 }
 
+export async function updateGraphUser(id: number, graphql: GraphQLClient, user: Partial<GraphUser>): Promise<Partial<GraphUser>> {
+  const query = `mutation UpdateUser($user: users_set_input!, $id: Int!) {
+    update_users_by_pk(pk_columns: {id: $id}, _set: $user) {id}
+  }`
+  const variables = {
+    user,
+    id: id
+  }
+  const data = await graphql.request<{ update_users_by_pk: Partial<GraphUser> }>(query, variables)
+  return data.update_users_by_pk
+}
+
 // upsert only the provided fields in the personal information based on the user identifier
 export async function upsertPersonalInformation(
   address: string,
   graphql: GraphQLClient,
   personal_information: Partial<PersonalInformation>,
+  phoneNumber: string,
   redis: RedisClient
 ) {
-  const updatedFields = getRequestedFields(personal_information)
-  const query = `mutation UpsertPersonalInformation(
-  $personal_information: personal_information_insert_input!) {
-    insert_personal_information_one(
-    object: $personal_information, 
-    on_conflict: {
-      constraint: personal_information_user_identifier_key, 
-      update_columns: [${updatedFields}]
-      }) { ${updatedFields} } 
-    }`
+  const updatedFields = getRequestedFields(personal_information);
+  const constraint = 'personal_information_user_identifier_key';
+  const query = `
+    mutation UpsertPersonalInformation($personal_information: personal_information_insert_input!) {
+      insert_personal_information_one(
+        object: $personal_information,
+        on_conflict: { constraint: ${constraint}, update_columns: [${updatedFields}] }
+      ) { ${updatedFields} }
+    }`;
 
-  const variables = {
-    personal_information
+  const variables = { personal_information };
+  const { insert_personal_information_one: updatedPersonalInformation } = await graphql.request<{ insert_personal_information_one: Partial<PersonalInformation> }>(query, variables);
+  const cache = new Cache(redis, phoneNumber);
+  let updatedUser: User = {};
+  if (updatedPersonalInformation.given_names && updatedPersonalInformation.family_name) {
+    updatedUser.tag = `${updatedPersonalInformation.given_names} ${updatedPersonalInformation.family_name} ${phoneNumber}`;
   }
-
-  const data = await graphql.request<{ insert_personal_information_one: Partial<PersonalInformation> }>(query, variables)
-  const updatedPersonalInformation = data.insert_personal_information_one
-  const cache = new Cache(redis, pointer([address, AccountMetadata.PROFILE]))
-  cache.updateJSON({
-    personal_information: updatedPersonalInformation
-  })
-  return updatedPersonalInformation
+  updatedUser.graph = { personal_information: updatedPersonalInformation }
+  await cache.updateJSON(updatedUser);
+  return updatedPersonalInformation;
 }
+

@@ -1,8 +1,8 @@
-import {GraphQLClient} from "graphql-request";
-import {Redis as RedisClient} from "ioredis";
-import {Cache} from "@utils/redis";
-import {getActiveVouchers} from "@lib/graph/voucher";
-import {AccountMetadata, getAccountMetadata} from "@lib/ussd/account";
+import { GraphQLClient } from 'graphql-request';
+import { Redis as RedisClient } from 'ioredis';
+import { Cache } from '@utils/redis';
+import { getActiveVouchers } from '@lib/graph/voucher';
+import { getPersonalInformation } from '@lib/graph/user';
 
 export type Address = `0x${string & { length: 42 }}`
 export type Symbol = `Uppercase<${string}>`
@@ -58,7 +58,7 @@ export async function loadSystemVouchers (graphql: GraphQLClient, redis: RedisCl
   const cacheDataPromises = await Promise.all(chunks.map(async (chunk) => {
     const cacheSetPromises = chunk.map((voucher) => {
       console.debug(`Preparing voucher ${voucher.symbol}...`)
-      const cache = new Cache(redis, voucher.token_address)
+      const cache = new Cache(redis, voucher.voucher_address)
       return cache.setJSON(voucher)
     })
     return await Promise.all(cacheSetPromises)
@@ -66,7 +66,7 @@ export async function loadSystemVouchers (graphql: GraphQLClient, redis: RedisCl
 
   const cacheMapPromises = await Promise.all(chunks.map(async (chunk) => {
     const cacheSetPromises = chunk.map((voucher) => {
-      const cache = new Cache(redis, `address_symbol:${voucher.token_address}`)
+      const cache = new Cache(redis, `address-symbol-${voucher.voucher_address}`)
       return cache.set(voucher.symbol)
     })
     return await Promise.all(cacheSetPromises)
@@ -84,14 +84,13 @@ export async function loadSystemVouchers (graphql: GraphQLClient, redis: RedisCl
   console.debug('System vouchers loaded.')
 }
 
-export async function getTransactionTag(address: string, redis: RedisClient) {
-  const { personal_information } = await getAccountMetadata(address, redis, AccountMetadata.PROFILE) || {};
-  const { first_name, last_name } = personal_information || {};
-  if (first_name && last_name) {
-    return `${first_name} ${last_name}`;
-  }
-  const cache = new Cache(redis, address)
-  const account = await cache.getJSON()
-  return account?.phone_number
+export async function getTag(phoneNumber: string, redis: RedisClient) {
+  const cache = new Cache(redis, phoneNumber)
+  return await cache.getJSON(['tag'])
 }
 
+export async function generateTag(address: Address, graphql: GraphQLClient, phoneNumber) {
+  const personalInformation = await getPersonalInformation(address, graphql)
+  const tag = `${personalInformation?.given_names ?? ''} ${personalInformation?.family_name ?? ''}`.trim()
+  return tag ? `${tag} ${phoneNumber}` : phoneNumber
+}
