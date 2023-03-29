@@ -8,7 +8,7 @@ export enum GraphAccountTypes {
   CUSTODIAL_SYSTEM = 'CUSTODIAL_SYSTEM'
 }
 
-interface GraphAccount {
+export interface GraphAccount {
   account_type: string
   blockchain_address: string
   id?: number

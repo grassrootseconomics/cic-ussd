@@ -24,8 +24,6 @@ export const graphUserFields = `
     ${personalInformationFields}
   }`
 
-
-
 export interface PersonalInformation {
   family_name: string
   gender: string
@@ -36,7 +34,6 @@ export interface PersonalInformation {
   year_of_birth: number
 }
 
-
 export interface GraphUser {
   activated: boolean
   id: number
@@ -44,7 +41,6 @@ export interface GraphUser {
   interface_type: string
   personal_information: Partial<PersonalInformation>
 }
-
 
 function getRequestedFields(personalInformation: Partial<PersonalInformation>) {
   let requestedFields = '';
@@ -118,7 +114,9 @@ export async function upsertPersonalInformation(
   if (updatedPersonalInformation.given_names && updatedPersonalInformation.family_name) {
     updatedUser.tag = `${updatedPersonalInformation.given_names} ${updatedPersonalInformation.family_name} ${phoneNumber}`;
   }
-  updatedUser.graph = { personal_information: updatedPersonalInformation }
+  updatedUser.graph = {
+    user: { personal_information: { ...updatedPersonalInformation } },
+  }
   await cache.updateJSON(updatedUser);
   return updatedPersonalInformation;
 }

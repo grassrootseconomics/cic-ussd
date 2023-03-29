@@ -13,6 +13,8 @@ import { sanitizePhoneNumber } from '@utils/phoneNumber';
 import { MachineError } from '@lib/errors';
 import { Cache } from '@utils/redis';
 import { Transaction } from '@machines/statement';
+import { GraphAccount } from '@lib/graph/account';
+import { Marketplace } from '@lib/graph/marketplace';
 
 enum BaseError {
   INVALID_PHONE_NUMBER = "INVALID_PHONE_NUMBER",
@@ -65,6 +67,7 @@ interface ContextData {
       validated?: string
     }
   },
+  marketplace?: string,
   statement?: string[],
   transfer?: {
     amount?: number,
@@ -97,6 +100,12 @@ export interface BaseContext {
   ussd?: Ussd
 }
 
+export interface Graph {
+  account?: Partial<GraphAccount>
+  marketplace?: Marketplace
+  user?: Partial<GraphUser>
+}
+
 export interface Resources {
   db: PostgresDb
   e_redis: RedisClient
@@ -108,7 +117,7 @@ export interface Resources {
 
 export interface User {
   account?: Account,
-  graph?: Partial<GraphUser>
+  graph?: Partial<Graph>
   guardians?: string[]
   tag?: string
   transactions?: Transaction[]

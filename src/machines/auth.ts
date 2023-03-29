@@ -118,7 +118,7 @@ export const authMachine = createMachine<BaseContext, BaseEvent>({
     })
 
 export async function activateAccount (context: BaseContext) {
-  const { data: { pins: { initial } },  resources: { db, graphql, p_redis }, user: { account: { phone_number }, graph: { id } } } = context
+  const { data: { pins: { initial } },  resources: { db, graphql, p_redis }, user: { account: { phone_number }, graph: { user: { id } } } } = context
   const hashedInput = await hashValue(initial)
   const result = await activateOnUssd(db, hashedInput, phone_number)
   if (result?.status === AccountStatus.ACTIVE) {

@@ -146,15 +146,22 @@ async function initiateAccountCreation(context: BaseContext) {
       interface_type: "USSD",
     })
 
-    // update account with graph user id.
-    const cache = new Cache(p_redis, phoneNumber)
-    await cache.updateJSON({ graph: { id: graphUser.id }})
-
     // create a corresponding account on graph.
-    await createGraphAccount(graphql, {
+    const graphAccount = await createGraphAccount(graphql, {
       account_type: GraphAccountTypes.CUSTODIAL_PERSONAL,
       blockchain_address: wallet.result.publicKey,
       user_identifier: graphUser.id })
+
+    // update cache-layer user object with graph account and user-id.
+    const cache = new Cache(p_redis, phoneNumber)
+    await cache.updateJSON({ graph: {
+      account: {
+        id: graphAccount.id,
+      },
+      user: {
+        id: graphUser.id,
+      }
+    }})
 
     // create address phone number mapping.
     await p_redis.set(`address-phone-${wallet.result.publicKey}`, phoneNumber)

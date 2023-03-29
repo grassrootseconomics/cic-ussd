@@ -150,47 +150,9 @@ export type NamespaceFeedbackTranslation = {
 
 export type NamespaceHelpersTranslation = {
 	/**
-	 * H​a​m​n​a​ ​S​a​r​a​f​u​ ​n​y​e​n​g​i​n​e​ ​z​i​l​i​z​o​p​o​.​
-​2​2​.​ ​R​u​d​i​
-​0​0​.​ ​O​n​d​o​k​a
-	 */
-	noMoreVouchers: string
-	/**
-	 * J​i​n​s​i​a​:
-	 */
-	gender: string
-	/**
-	 * M​w​a​n​a​u​m​e
-	 */
-	male: string
-	/**
-	 * M​w​a​n​a​m​k​e
-	 */
-	female: string
-	/**
 	 * U​m​r​i​:
 	 */
 	age: string
-	/**
-	 * J​i​n​a​:
-	 */
-	name: string
-	/**
-	 * E​n​e​o​:
-	 */
-	location: string
-	/**
-	 * H​a​i​p​o
-	 */
-	notProvided: string
-	/**
-	 * U​l​i​t​u​m​a​ ​{​v​a​l​u​e​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​w​a​ ​{​r​e​c​i​p​i​e​n​t​}​ ​{​t​i​m​e​}​.
-	 * @param {unknown} recipient
-	 * @param {unknown} symbol
-	 * @param {unknown} time
-	 * @param {unknown} value
-	 */
-	debit: RequiredParams<'recipient' | 'symbol' | 'time' | 'value|currency'>
 	/**
 	 * U​l​i​p​o​k​e​a​ ​{​v​a​l​u​e​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​u​t​o​k​a​ ​k​w​a​ ​{​s​e​n​d​e​r​}​ ​{​t​i​m​e​}​.
 	 * @param {unknown} sender
@@ -200,17 +162,59 @@ export type NamespaceHelpersTranslation = {
 	 */
 	credit: RequiredParams<'sender' | 'symbol' | 'time' | 'value|currency'>
 	/**
-	 * H​a​m​n​a​ ​t​a​a​r​i​f​a​ ​z​a​i​d​i​ ​y​a​ ​m​a​l​i​p​o​.
+	 * U​l​i​t​u​m​a​ ​{​v​a​l​u​e​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​w​a​ ​{​r​e​c​i​p​i​e​n​t​}​ ​{​t​i​m​e​}​.
+	 * @param {unknown} recipient
+	 * @param {unknown} symbol
+	 * @param {unknown} time
+	 * @param {unknown} value
 	 */
-	noMoreTransactions: string
+	debit: RequiredParams<'recipient' | 'symbol' | 'time' | 'value|currency'>
+	/**
+	 * M​w​a​n​a​m​k​e
+	 */
+	female: string
+	/**
+	 * J​i​n​s​i​a​:
+	 */
+	gender: string
+	/**
+	 * E​n​e​o​:
+	 */
+	location: string
+	/**
+	 * M​w​a​n​a​u​m​e
+	 */
+	male: string
+	/**
+	 * J​i​n​a​:
+	 */
+	name: string
+	/**
+	 * H​a​m​n​a​ ​w​a​l​i​n​z​i​ ​z​a​i​d​i​.
+	 */
+	noMoreGuardians: string
 	/**
 	 * H​a​m​n​a​ ​l​u​g​h​a​ ​z​a​i​d​i​ ​z​i​l​i​z​o​p​o​.
 	 */
 	noMoreLanguageOptions: string
 	/**
-	 * H​a​m​n​a​ ​w​a​l​i​n​z​i​ ​z​a​i​d​i​.
+	 * H​a​m​n​a​ ​t​a​a​r​i​f​a​ ​z​a​i​d​i​ ​y​a​ ​m​a​l​i​p​o​.
 	 */
-	noMoreGuardians: string
+	noMoreTransactions: string
+	/**
+	 * H​a​m​n​a​ ​S​a​r​a​f​u​ ​n​y​e​n​g​i​n​e​ ​z​i​l​i​z​o​p​o​.​
+​2​2​.​ ​R​u​d​i​
+​0​0​.​ ​O​n​d​o​k​a
+	 */
+	noMoreVouchers: string
+	/**
+	 * H​a​i​p​o
+	 */
+	notProvided: string
+	/**
+	 * U​n​a​u​z​a​:
+	 */
+	services: string
 	/**
 	 * E​N​D​ ​S​a​r​a​f​u​ ​i​n​a​k​a​b​i​l​i​w​a​ ​n​a​ ​m​a​t​a​t​i​z​o​ ​y​a​ ​k​i​m​i​t​a​m​b​o​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​ ​b​a​a​d​a​y​e​.
 	 */
@@ -384,13 +388,15 @@ export type NamespaceProfileTranslation = {
 ​{​g​e​n​d​e​r​}​
 ​{​a​g​e​}​
 ​{​l​o​c​a​t​i​o​n​}​
+​{​s​e​r​v​i​c​e​s​}​
 ​0​.​ ​R​u​d​i
 	 * @param {unknown} age
 	 * @param {unknown} gender
 	 * @param {unknown} location
 	 * @param {unknown} name
+	 * @param {unknown} services
 	 */
-	displayingProfile: RequiredParams<'age' | 'gender' | 'location' | 'name'>
+	displayingProfile: RequiredParams<'age' | 'gender' | 'location' | 'name' | 'services'>
 	/**
 	 * C​O​N​ ​W​e​k​a​ ​j​i​n​a​ ​l​a​k​o​ ​l​a​ ​f​a​m​i​l​i​a​:​
 ​0​.​ ​R​u​d​i
@@ -417,6 +423,11 @@ export type NamespaceProfileTranslation = {
 	 */
 	enteringProfileViewPin: string
 	/**
+	 * C​O​N​ ​W​e​k​a​ ​h​u​d​u​m​a​ ​a​u​ ​b​i​d​h​a​a​ ​u​n​a​z​o​u​z​a​:​
+​0​.​ ​R​u​d​i
+	 */
+	enteringMarketplace: string
+	/**
 	 * C​O​N​ ​W​e​k​a​ ​m​w​a​k​a​ ​w​a​k​o​ ​w​a​ ​k​u​z​a​l​i​w​a​:​
 ​0​.​ ​R​u​d​i
 	 */
@@ -437,7 +448,8 @@ export type NamespaceProfileTranslation = {
 ​2​.​ ​W​e​k​a​ ​j​i​n​s​i​a​
 ​3​.​ ​W​e​k​a​ ​m​w​a​k​a​ ​w​a​ ​k​u​z​a​l​i​w​a​
 ​4​.​ ​W​e​k​a​ ​e​n​e​o​
-​5​.​ ​A​n​g​a​l​i​a​ ​W​a​s​i​f​u​
+​5​.​ ​W​e​k​a​ ​u​n​a​c​h​o​u​z​a​
+​6​.​ ​A​n​g​a​l​i​a​ ​W​a​s​i​f​u​
 ​0​.​ ​R​u​d​i
 	 */
 	profileMenu: string
@@ -1053,59 +1065,63 @@ export type TranslationFunctions = {
 	}
 	helpers: {
 		/**
+		 * Umri:
+		 */
+		age: () => LocalizedString
+		/**
+		 * Ulipokea {value|currency} {symbol} kutoka kwa {sender} {time}.
+		 */
+		credit: (arg: { sender: unknown, symbol: unknown, time: unknown, value: unknown }) => LocalizedString
+		/**
+		 * Ulituma {value|currency} {symbol} kwa {recipient} {time}.
+		 */
+		debit: (arg: { recipient: unknown, symbol: unknown, time: unknown, value: unknown }) => LocalizedString
+		/**
+		 * Mwanamke
+		 */
+		female: () => LocalizedString
+		/**
+		 * Jinsia:
+		 */
+		gender: () => LocalizedString
+		/**
+		 * Eneo:
+		 */
+		location: () => LocalizedString
+		/**
+		 * Mwanaume
+		 */
+		male: () => LocalizedString
+		/**
+		 * Jina:
+		 */
+		name: () => LocalizedString
+		/**
+		 * Hamna walinzi zaidi.
+		 */
+		noMoreGuardians: () => LocalizedString
+		/**
+		 * Hamna lugha zaidi zilizopo.
+		 */
+		noMoreLanguageOptions: () => LocalizedString
+		/**
+		 * Hamna taarifa zaidi ya malipo.
+		 */
+		noMoreTransactions: () => LocalizedString
+		/**
 		 * Hamna Sarafu nyengine zilizopo.
 	22. Rudi
 	00. Ondoka
 		 */
 		noMoreVouchers: () => LocalizedString
 		/**
-		 * Jinsia:
-		 */
-		gender: () => LocalizedString
-		/**
-		 * Mwanaume
-		 */
-		male: () => LocalizedString
-		/**
-		 * Mwanamke
-		 */
-		female: () => LocalizedString
-		/**
-		 * Umri:
-		 */
-		age: () => LocalizedString
-		/**
-		 * Jina:
-		 */
-		name: () => LocalizedString
-		/**
-		 * Eneo:
-		 */
-		location: () => LocalizedString
-		/**
 		 * Haipo
 		 */
 		notProvided: () => LocalizedString
 		/**
-		 * Ulituma {value|currency} {symbol} kwa {recipient} {time}.
+		 * Unauza:
 		 */
-		debit: (arg: { recipient: unknown, symbol: unknown, time: unknown, value: unknown }) => LocalizedString
-		/**
-		 * Ulipokea {value|currency} {symbol} kutoka kwa {sender} {time}.
-		 */
-		credit: (arg: { sender: unknown, symbol: unknown, time: unknown, value: unknown }) => LocalizedString
-		/**
-		 * Hamna taarifa zaidi ya malipo.
-		 */
-		noMoreTransactions: () => LocalizedString
-		/**
-		 * Hamna lugha zaidi zilizopo.
-		 */
-		noMoreLanguageOptions: () => LocalizedString
-		/**
-		 * Hamna walinzi zaidi.
-		 */
-		noMoreGuardians: () => LocalizedString
+		services: () => LocalizedString
 		/**
 		 * END Sarafu inakabiliwa na matatizo ya kimitambo. Tafadhali jaribu tena baadaye.
 		 */
@@ -1268,9 +1284,10 @@ export type TranslationFunctions = {
 	{gender}
 	{age}
 	{location}
+	{services}
 	0. Rudi
 		 */
-		displayingProfile: (arg: { age: unknown, gender: unknown, location: unknown, name: unknown }) => LocalizedString
+		displayingProfile: (arg: { age: unknown, gender: unknown, location: unknown, name: unknown, services: unknown }) => LocalizedString
 		/**
 		 * CON Weka jina lako la familia:
 	0. Rudi
@@ -1297,6 +1314,11 @@ export type TranslationFunctions = {
 		 */
 		enteringProfileViewPin: () => LocalizedString
 		/**
+		 * CON Weka huduma au bidhaa unazouza:
+	0. Rudi
+		 */
+		enteringMarketplace: () => LocalizedString
+		/**
 		 * CON Weka mwaka wako wa kuzaliwa:
 	0. Rudi
 		 */
@@ -1317,7 +1339,8 @@ export type TranslationFunctions = {
 	2. Weka jinsia
 	3. Weka mwaka wa kuzaliwa
 	4. Weka eneo
-	5. Angalia Wasifu
+	5. Weka unachouza
+	6. Angalia Wasifu
 	0. Rudi
 		 */
 		profileMenu: () => LocalizedString
