@@ -74,12 +74,30 @@ async function newSession(service: Interpreter<any, any, any, any>): Promise<[Ba
   return [context, id, value.toString()]
 }
 
+function resolveMachineJumps(state: StateValue, id: string) {
+  if (state === "mainMenu" && id !== "main"){
+    // override the machine id to main
+    return "main"
+  }
+
+  if (state === "settingsMenu" && id !== "settings"){
+    // override the machine id to settings
+    return "settings"
+  }
+
+  if (state === "pinManagementMenu" && id !== "pins"){
+    // override the machine id to pins
+    return "pins"
+  }
+}
+
 async function transition(input: string, service: Interpreter<any, any, any, any>): Promise<[BaseContext, string, string]> {
   const snapshot = service.getSnapshot();
-  const { context, machine: { id }, value: currentValue } = snapshot;
+  const { context, value: currentValue } = snapshot;
+  let { machine: { id } } = snapshot;
 
-  // check if current state can transition to the next state
-  if (!snapshot.can({ type: "TRANSIT", input })) {
+  // check if current state can transition to the next state or go back
+  if (!snapshot.can({ type: "TRANSIT", input }) && !snapshot.can("BACK")) {
     return [context, id, currentValue.toString()];
   }
 
@@ -89,7 +107,12 @@ async function transition(input: string, service: Interpreter<any, any, any, any
   }
 
   // attempt to transition to the next state
-  service.send({ type: "TRANSIT", input });
+  if (input === "0") {
+    service.send("BACK");
+  }
+  else {
+    service.send({ type: "TRANSIT", input });
+  }
 
   // wait for the invoked service to finish, if applicable
   let state = service.getSnapshot().value;
@@ -99,6 +122,8 @@ async function transition(input: string, service: Interpreter<any, any, any, any
   }
 
   // update the session with the new state
+  id = resolveMachineJumps(state, id) || id
+
   await updateSession(context, id, state.toString());
   return [context, id, state.toString()];
 }
@@ -120,16 +145,10 @@ async function resolveMachine(user: User | undefined, input?: string, machineId?
 }
 
 async function activeMachine(input?: string, id?: string, state?: StateValue){
-  if (state === undefined || state === "mainMenu") {
-    return await mainMenu(input)
-  } else if (state === "settingsMenu") {
-    return await settingsMenu(input)
-  } else if (state === "pinManagementMenu") {
-    return await pinManagementMenu(input)
-  } else {
-    return machines[id]
-  }
-
+  if (state === undefined || state === "mainMenu") return await mainMenu(input)
+  if (state === "settingsMenu") return await settingsMenu(input)
+  if (state === "pinManagementMenu") return await pinManagementMenu(input)
+  return machines[id]
 }
 
 async function mainMenu(input){
@@ -138,7 +157,9 @@ async function mainMenu(input){
     "2": voucherMachine,
     "3": settingsMachine
   }
-  return menu[input] || mainMenuMachine
+  const x  = menu[input] || mainMenuMachine
+  console.log(`Returning machine ${x.id}`)
+  return x
 }
 
 async function settingsMenu(input){
@@ -149,7 +170,7 @@ async function settingsMenu(input){
     "4": statementMachine,
     "5": pinManagementMachine
   }
-  return menu[input] || profileMachine
+  return menu[input] || settingsMachine
 }
 
 async function pinManagementMenu(input){
