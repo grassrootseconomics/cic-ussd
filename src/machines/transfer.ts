@@ -42,6 +42,7 @@ export const transferMachine = createMachine<BaseContext, BaseEvent>({
           onDone: { target: 'transferInitiated', cond: 'isSuccess' },
           onError: [
             { target: 'accountBlocked', cond: 'isBlocked' },
+            { target: 'transferError', cond: 'isTransferError', actions: 'updateErrorMessages' },
             { target: 'invalidPin' },
           ]
         },
@@ -113,7 +114,7 @@ export const transferMachine = createMachine<BaseContext, BaseEvent>({
           id: 'invitingRecipient',
           src: 'initiateInvite',
           onDone: { target: 'inviteSuccess', cond: 'isSuccess' },
-          onError: { target: 'inviteError', cond: 'isInviteError' }
+          onError: { target: 'inviteError', cond: 'isInviteError', actions: 'updateErrorMessages' }
         },
         tags: 'invoked'
       },
@@ -125,6 +126,11 @@ export const transferMachine = createMachine<BaseContext, BaseEvent>({
         description: 'Transfer was initiated successfully.',
         tags: 'resolved',
         type: 'final'
+      },
+      transferError: {
+        description: 'Transfer failed.',
+        type: 'final',
+        tags: 'error'
       },
       invalidPin: {
         description: 'Entered pin is invalid. Raise RETRY event to prompt user to re-enter pin.',
@@ -156,9 +162,10 @@ export const transferMachine = createMachine<BaseContext, BaseEvent>({
     guards: {
       isBlocked,
       isInviteError,
-      isSuccess,
       isOption1,
       isOption9,
+      isSuccess,
+      isTransferError,
       isValidAmount,
       isValidPhoneNumber,
       isValidPin
@@ -199,8 +206,12 @@ async function initiateInvite(context: BaseContext) {
   }
 }
 
-function isInviteError(error: any) {
-  return error.data.code === TransferError.INVITE_ERROR
+function isInviteError(_, event: any) {
+  return event.data.code === TransferError.INVITE_ERROR
+}
+
+function isTransferError(_, event: any) {
+  return event.data.code === TransferError.TRANSFER_ERROR
 }
 
 async function initiateTransfer(context: BaseContext) {
@@ -208,23 +219,19 @@ async function initiateTransfer(context: BaseContext) {
     data: { transfer: { amount, recipient: { validated } } },
     user: {account: {address}, vouchers: { active: {address: voucherAddress}}}
   } = context
-  try {
-    const response = await custodialTransfer({
+
+  const response = await custodialTransfer({
       amount: amount * 1000000,
       from: address,
       to: validated,
       voucherAddress: voucherAddress
     })
 
-    await createTracker(context.resources.db, {
+  await createTracker(context.resources.db, {
       address: address,
       task_type: CustodialTaskType.TRANSFER,
       task_reference: response.result.trackingId
     })
-  } catch (error) {
-    console.error(error)
-    throw new Error(error)
-  }
 }
 
 function isValidAmount(context: BaseContext, event: any) {
@@ -244,9 +251,9 @@ function saveEntry(context: BaseContext, event: any) {
   context.data = {
     ...(context.data || {}),
     transfer: {
-      ...(context.data.transfer || {}),
+      ...(context.data?.transfer || {}),
       recipient: {
-        ...(context.data.transfer?.recipient || {}),
+        ...(context.data?.transfer?.recipient || {}),
         entry: event.input
       }
     }
