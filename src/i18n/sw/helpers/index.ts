@@ -15,6 +15,8 @@ const sw_helpers = {
   noMoreTransactions: "Hamna taarifa zaidi ya malipo.",
   noMoreLanguageOptions: "Hamna lugha zaidi zilizopo.",
   noMoreGuardians: "Hamna walinzi zaidi.",
+  systemError:
+    "END Sarafu inakabiliwa na matatizo ya kimitambo. Tafadhali jaribu tena baadaye.",
 
 } as NamespaceHelpersTranslation
 

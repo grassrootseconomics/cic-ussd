@@ -15,7 +15,8 @@ const en_helpers = {
 	noMoreTransactions: "No more transactions.",
 	noMoreLanguageOptions: "No more language options.",
 	noMoreGuardians: "No more guardians.",
-
+	systemError:
+    "END Sarafu is experiencing technical difficulties. Please try again later.",
 } satisfies NamespaceHelpersTranslation
 
 export default en_helpers

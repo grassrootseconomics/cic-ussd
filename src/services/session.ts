@@ -5,8 +5,10 @@ import { machineService } from '@services/machine';
 import { Cache } from '@utils/redis';
 import { PostgresDb } from '@fastify/postgres';
 import { Provider } from 'ethers';
-import { User } from '@machines/utils';
+import { User, Ussd } from '@machines/utils';
 import { retrieveWalletBalance } from '@lib/ussd/account';
+import { tHelpers } from '@src/i18n/translator';
+import { supportedLanguages } from '@lib/ussd/utils';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -15,7 +17,9 @@ declare module 'fastify' {
 }
 
 export interface SessionRequest extends FastifyRequest {
-  uContext: { }
+  uContext: {
+    ussd?: Ussd
+  }
 }
 
 async function updateBalance(provider: Provider, user: Partial<User>){
@@ -49,21 +53,17 @@ async function loadUser(db: PostgresDb, redis: RedisClient, phoneNumber: string,
   return user
 }
 
-
-
-async function processRequest (context) {
-  const { resources: { db, p_redis, provider  }, ussd: { phoneNumber } } = context
-  context["user"] = await loadUser(db, p_redis, phoneNumber, provider)
-  return await machineService(context)
-}
-
 export async function sessionHandler (request: SessionRequest, reply: FastifyReply) {
   const { pg: db, graphql, provider, e_redis, p_redis } = request.server
   request.uContext["resources"] = { db, graphql, provider, e_redis, p_redis }
+  const user = await loadUser(db, p_redis, request.uContext.ussd.phoneNumber, provider)
+  request.uContext["user"] = user
   try {
-    const response = await processRequest(request.uContext)
+    const response = await machineService(request.uContext)
     reply.send(response)
   } catch (error) {
-    reply.send(error)
+    const language = user?.account?.language || Object.values(supportedLanguages.fallback)[0]
+    const response = await tHelpers("systemError", language)
+    reply.send(response)
   }
 }
