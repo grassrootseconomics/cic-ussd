@@ -13,7 +13,7 @@ const en_profile = {
 	changeError:
 		'END An error occurred while updating your profile, please try again later.',
 	displayingProfile:
-		'CON My profile:\n{name}\n{gender}\n{age}\n{location}\n0. Back',
+		'CON My profile:\n{name}\n{gender}\n{age}\n{location}\n{services}\n0. Back',
 	enteringFamilyName:
 		'CON Enter your family name:\n0. Back',
 	enteringGivenNames:
@@ -24,13 +24,15 @@ const en_profile = {
 		'CON Please enter your PIN:\n0. Back',
 	enteringProfileViewPin:
 		'CON Please enter your PIN:\n0. Back',
+	enteringMarketplace:
+		'CON Enter the services or goods you offer:\n0. Back',
 	enteringYOB:
 		'CON Enter your year of birth:\n0. Back',
 	exit: exit,
 	profileChangeSuccess:
 		'CON Profile updated successfully.\n0. Back\n9. Exit',
 	profileMenu:
-		'CON My profile\n1. Edit name\n2. Edit gender\n3. Edit year of birth\n4. Edit location\n5. View profile\n0. Back',
+		'CON My profile\n1. Edit name\n2. Edit gender\n3. Edit year of birth\n4. Edit location\n5. Edit offerings\n6. View profile\n0. Back',
 	selectingGender:
 		'CON Select a gender:\n1. Male\n2. Female\n3. Other\n0. Back',
 	settingsMenu: settingsMenu,

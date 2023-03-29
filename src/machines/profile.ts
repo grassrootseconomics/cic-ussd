@@ -17,6 +17,7 @@ import { Gender, PersonalInformation, upsertPersonalInformation } from '@lib/gra
 import { isBlocked, validatePin } from '@machines/auth';
 import { MachineError } from '@lib/errors';
 import { tHelpers } from '@src/i18n/translator';
+import { upsertMarketplace } from '@lib/graph/marketplace';
 
 enum ProfileError {
   CHANGE_ERROR = "CHANGE_ERROR",
@@ -70,8 +71,10 @@ export const profileMachine = createMachine<BaseContext, BaseEvent>({
     },
     displayingProfile: {
       description: 'Displays the account\'s profile.',
-      tags: 'resolved',
-      type: 'final'
+      on: {
+        BACK: 'profileMenu',
+      },
+      tags: 'resolved'
     },
     enteringFamilyName: {
       description: 'Expects family name.',
@@ -99,8 +102,19 @@ export const profileMachine = createMachine<BaseContext, BaseEvent>({
       on: {
         BACK: 'profileMenu',
         TRANSIT: [
+          { target: 'enteringMarketplace', cond: 'marketplaceAbsent', actions: 'saveLocation' },
           { target: 'enteringProfileChangePin', cond: 'isValidLocation', actions: 'saveLocation' },
           { target: 'invalidLocationEntry' }
+        ]
+      }
+    },
+    enteringMarketplace: {
+      description: 'Expects a valid service that will be mapped to the marketplace name.',
+      on: {
+        BACK: 'profileMenu',
+        TRANSIT: [
+          { target: 'enteringProfileChangePin', cond: 'isValidMarketplace', actions: 'saveMarketPlace' },
+          { target: 'invalidMarketplaceEntry' }
         ]
       }
     },
@@ -171,6 +185,13 @@ export const profileMachine = createMachine<BaseContext, BaseEvent>({
       },
       tags: 'error'
     },
+    invalidMarketplaceEntry: {
+      description: 'Entered service is invalid. Raises a RETRY event to prompt user to retry service entry.',
+      entry: raise({ type: 'RETRY', feedback: 'inValidServiceOption' }),
+      on: {
+        RETRY: 'enteringMarketplace'
+      }
+    },
     invalidYOBEntry: {
       description: 'Entered year of birth is invalid. Raises a RETRY event to prompt user to retry year of birth entry.',
       entry: raise({ type: 'RETRY', feedback: 'inValidYOBOption' }),
@@ -200,7 +221,8 @@ export const profileMachine = createMachine<BaseContext, BaseEvent>({
           { target: 'selectingGender', cond: 'isOption2' },
           { target: 'enteringYOB', cond: 'isOption3' },
           { target: 'enteringLocation', cond: 'isOption4' },
-          { target: 'enteringProfileViewPin', cond: 'isOption5' }
+          { target: 'enteringMarketplace', cond: 'isOption5' },
+          { target: 'enteringProfileViewPin', cond: 'isOption6' }
         ]
       }
     },
@@ -221,6 +243,15 @@ export const profileMachine = createMachine<BaseContext, BaseEvent>({
     }
   }
 }, {
+  actions: {
+    saveFamilyName,
+    saveGender,
+    saveGivenNames,
+    saveLocation,
+    saveMarketPlace,
+    saveYOB,
+    updateErrorMessages
+  },
   guards: {
     YOBAbsent,
     genderAbsent,
@@ -237,17 +268,11 @@ export const profileMachine = createMachine<BaseContext, BaseEvent>({
     isSuccess,
     isValidGender,
     isValidLocation,
+    isValidMarketplace,
     isValidName,
     isValidYOB,
-    locationAbsent
-  },
-  actions: {
-    saveFamilyName,
-    saveGender,
-    saveGivenNames,
-    saveLocation,
-    saveYOB,
-    updateErrorMessages
+    locationAbsent,
+    marketplaceAbsent
   },
   services: {
     initiateProfileChange,
@@ -256,18 +281,29 @@ export const profileMachine = createMachine<BaseContext, BaseEvent>({
 });
 
 async function initiateProfileChange(context: BaseContext, event: any) {
-  const { resources: { graphql, p_redis }, user: { account: { address, phone_number }, graph: { id: graphUserId }} } = context
+  const { resources: { graphql, p_redis }, user: { account: { address, phone_number }, graph: { account: { id: graphAccountId }, user: { id: graphUserId } } } } = context
   const { input } = event
   const { personal_information } = context.data
 
   await validatePin(context, input)
 
   try {
-    let updatedProfile: Partial<PersonalInformation> = {
+
+    if (personal_information){
+      let updatedProfile: Partial<PersonalInformation> = {
       ...personal_information,
       user_identifier: graphUserId
     }
     await upsertPersonalInformation(address, graphql, updatedProfile, phone_number, p_redis)
+    }
+
+    if (context.data?.marketplace) {
+      const marketplace = {
+        account: graphAccountId,
+        marketplace_name: context.data.marketplace
+      }
+      await upsertMarketplace(graphql, marketplace, phone_number, p_redis)
+    }
     return { success: true }
   } catch (error) {
     throw new MachineError(ProfileError.CHANGE_ERROR, error.message)
@@ -282,7 +318,7 @@ function isChangeError(_, event: any) {
   return event.data.code === ProfileError.CHANGE_ERROR
 }
 
-function isValidName(context: BaseContext , event: any) {
+function isValidName(_ , event: any) {
   return /^[A-Z][a-z]+([][A-Z][a-z]+)?$/.test(event.input)
 }
 
@@ -355,19 +391,36 @@ function saveLocation(context: BaseContext , event: any) {
   return context
 }
 
+function isValidMarketplace(_ , event: any) {
+  return isValidName(_, event)
+}
+
+function saveMarketPlace(context: BaseContext , event: any) {
+  context.data = {
+    ...(context.data || {}),
+    marketplace: event.input
+  }
+  return context
+}
+
 function genderAbsent(context: BaseContext) {
-  const gender = context.user?.graph?.personal_information?.gender;
+  const gender = context.user?.graph?.user?.personal_information?.gender;
   return gender === null || gender === undefined;
 }
 
 function YOBAbsent(context: BaseContext) {
-  const yob = context.user?.graph?.personal_information?.year_of_birth;
+  const yob = context.user?.graph?.user?.personal_information?.year_of_birth;
   return yob === null || yob === undefined;
 }
 
 function locationAbsent(context: BaseContext) {
-  const location = context.user?.graph?.personal_information?.location_name;
+  const location = context.user?.graph?.user?.personal_information?.location_name;
   return location === null || location === undefined;
+}
+
+function marketplaceAbsent(context: BaseContext) {
+  const services = context.user?.graph?.marketplace?.marketplace_name;
+  return services === null || services === undefined;
 }
 
 async function loadPersonalInformation(context: BaseContext, event: any) {
@@ -383,18 +436,20 @@ export async function profileTranslations(context: BaseContext, state: string, t
   if (state === "displayingProfile") {
     const notProvided = tHelpers("notProvided", language);
     const { user } = context;
-    const given_names = user.graph?.personal_information?.given_names;
-    const family_name = user.graph?.personal_information?.family_name;
-    const genderSelection = user.graph?.personal_information?.gender?.toLowerCase();
+    const given_names = user.graph?.user?.personal_information?.given_names;
+    const family_name = user.graph?.user?.personal_information?.family_name;
+    const genderSelection = user.graph?.user?.personal_information?.gender?.toLowerCase();
     const gender = tHelpers(genderSelection, language)
-    const year_of_birth = user.graph?.personal_information?.year_of_birth;
-    const location_name = user.graph?.personal_information?.location_name;
+    const year_of_birth = user.graph?.user?.personal_information?.year_of_birth;
+    const location_name = user.graph?.user?.personal_information?.location_name;
     const name = given_names && family_name ? `${given_names} ${family_name}` : notProvided;
+    const marketplace = user.graph?.marketplace?.marketplace_name || notProvided;
     return await translate(state, translator, {
       name: `${tHelpers("name", language)} ${name || notProvided}`,
       gender: `${tHelpers("gender", language)} ${gender || notProvided}`,
       age: `${tHelpers("age", language)} ${year_of_birth ? new Date().getFullYear() - year_of_birth : notProvided}`,
-      location: `${tHelpers("location", language)} ${location_name || notProvided}`
+      location: `${tHelpers("location", language)} ${location_name || notProvided}`,
+      services: `${tHelpers("services", language)} ${marketplace}`
     });
   }
   return await translate(state, translator);
