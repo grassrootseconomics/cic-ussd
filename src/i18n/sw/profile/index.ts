@@ -1,6 +1,9 @@
 import { NamespaceProfileTranslation } from '../../i18n-types';
 import sw from '..'
+import sw_settings from '../../sw/settings';
+
 const { accountBlocked, exit } = sw
+const { settingsMenu } = sw_settings
 
 const sw_profile = {
   accountBlocked: accountBlocked,
@@ -28,8 +31,8 @@ const sw_profile = {
   profileMenu:
     'CON Wasifu wangu\n1. Weka jina\n2. Weka jinsia\n3. Weka mwaka wa kuzaliwa\n4. Weka eneo\n5. Angalia Wasifu\n0. Rudi',
   selectingGender:
-    'CON Chagua jinsia:\n1. Mwanaume\n2. Mwanamke\n3. Nyingine\n0. Rudi'
-
+    'CON Chagua jinsia:\n1. Mwanaume\n2. Mwanamke\n3. Nyingine\n0. Rudi',
+  settingsMenu: settingsMenu,
 } satisfies NamespaceProfileTranslation
 
 export default sw_profile

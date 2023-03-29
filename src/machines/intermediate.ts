@@ -15,10 +15,6 @@ export const mainMenuMachine = createMachine<BaseContext, BaseEvent>({
   id: MachineId.MAIN,
   initial: "mainMenu",
   states: {
-    accountManagement: {
-      description: 'Transitions to profile machine',
-      type: 'final'
-    },
     help: {
       type: 'final'
     },
@@ -27,10 +23,14 @@ export const mainMenuMachine = createMachine<BaseContext, BaseEvent>({
         TRANSIT: [
           { target: 'transfer', cond: 'isOption1' },
           { target: 'voucher', cond: 'isOption2' },
-          { target: 'accountManagement', cond: 'isOption3' },
+          { target: 'settings', cond: 'isOption3' },
           { target: 'help', cond: 'isOption4' }
         ]
       }
+    },
+    settings: {
+      description: 'Transitions to profile machine',
+      type: 'final'
     },
     transfer: {
       description: 'Transitions to transfer machine',

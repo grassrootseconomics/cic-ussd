@@ -211,6 +211,10 @@ export type NamespaceHelpersTranslation = {
 	 * H​a​m​n​a​ ​w​a​l​i​n​z​i​ ​z​a​i​d​i​.
 	 */
 	noMoreGuardians: string
+	/**
+	 * E​N​D​ ​S​a​r​a​f​u​ ​i​n​a​k​a​b​i​l​i​w​a​ ​n​a​ ​m​a​t​a​t​i​z​o​ ​y​a​ ​k​i​m​i​t​a​m​b​o​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​ ​b​a​a​d​a​y​e​.
+	 */
+	systemError: string
 }
 
 export type NamespaceLanguagesTranslation = {
@@ -240,7 +244,7 @@ export type NamespaceLanguagesTranslation = {
 	/**
 	 * C​O​N​ ​C​h​a​g​u​a​ ​l​u​g​h​a​:​
 ​{​l​a​n​g​u​a​g​e​s​}​
-​
+​0​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a​
 ​1​1​.​ ​M​b​e​l​e
 	 * @param {unknown} languages
@@ -249,7 +253,6 @@ export type NamespaceLanguagesTranslation = {
 	/**
 	 * C​O​N​ ​C​h​a​g​u​a​ ​l​u​g​h​a​:​
 ​{​l​a​n​g​u​a​g​e​s​}​
-​
 ​1​1​.​ ​M​b​e​l​e​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a
@@ -259,7 +262,6 @@ export type NamespaceLanguagesTranslation = {
 	/**
 	 * C​O​N​ ​C​h​a​g​u​a​ ​l​u​g​h​a​:​
 ​{​l​a​n​g​u​a​g​e​s​}​
-​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a
 	 * @param {unknown} languages
@@ -447,13 +449,22 @@ export type NamespaceProfileTranslation = {
 ​0​.​ ​R​u​d​i
 	 */
 	selectingGender: string
+	/**
+	 * C​O​N​ ​A​k​a​u​n​t​i​ ​y​a​n​g​u​
+​1​.​ ​W​a​s​i​f​u​ ​w​a​n​g​u​
+​2​.​ ​B​a​d​i​l​i​ ​l​u​g​h​a​
+​3​.​ ​A​n​g​a​l​i​a​ ​s​a​l​i​o​
+​4​.​ ​T​a​a​r​i​f​a​ ​y​a​ ​m​a​t​u​m​i​z​i​
+​5​.​ ​M​i​p​a​n​g​i​l​i​o​ ​y​a​ ​P​I​N​
+​0​.​ ​R​u​d​i
+	 */
+	settingsMenu: string
 }
 
 export type NamespaceRegistrationTranslation = {
 	/**
 	 * C​O​N​ ​K​a​r​i​b​u​ ​S​a​r​a​f​u​ ​N​e​t​w​o​r​k​!​
 ​{​l​a​n​g​u​a​g​e​s​}​
-​
 ​0​0​.​O​n​d​o​k​a​
 ​1​1​.​ ​M​b​e​l​e
 	 * @param {unknown} languages
@@ -462,7 +473,6 @@ export type NamespaceRegistrationTranslation = {
 	/**
 	 * C​O​N​ ​C​h​a​g​u​a​ ​l​u​g​h​a​:​
 ​{​l​a​n​g​u​a​g​e​s​}​
-​
 ​1​1​.​ ​M​b​e​l​e​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a
@@ -472,7 +482,6 @@ export type NamespaceRegistrationTranslation = {
 	/**
 	 * C​O​N​ ​C​h​a​g​u​a​ ​l​u​g​h​a​:​
 ​{​l​a​n​g​u​a​g​e​s​}​
-​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a
 	 * @param {unknown} languages
@@ -500,7 +509,6 @@ export type NamespaceSettingsTranslation = {
 ​3​.​ ​A​n​g​a​l​i​a​ ​s​a​l​i​o​
 ​4​.​ ​T​a​a​r​i​f​a​ ​y​a​ ​m​a​t​u​m​i​z​i​
 ​5​.​ ​M​i​p​a​n​g​i​l​i​o​ ​y​a​ ​P​I​N​
-​
 ​0​.​ ​R​u​d​i
 	 */
 	settingsMenu: string
@@ -588,9 +596,16 @@ export type NamespaceSocialRecoveryTranslation = {
 	 */
 	loadError: string
 	/**
+	 * C​O​N​ ​M​i​p​a​n​g​i​l​i​o​ ​y​a​ ​P​I​N​:​
+​1​.​ ​B​a​d​i​l​i​ ​P​I​N​
+​2​.​ ​B​a​d​i​l​i​ ​P​I​N​ ​y​a​ ​m​w​e​n​z​i​o​
+​3​.​ ​L​i​n​d​a​ ​P​I​N​ ​y​a​n​g​u​
+​0​.​ ​R​u​d​i
+	 */
+	pinManagementMenu: string
+	/**
 	 * C​O​N​ ​W​a​l​i​n​z​i​:​
 ​{​g​u​a​r​d​i​a​n​s​}​
-​
 ​1​1​.​ ​M​b​e​l​e​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a
@@ -608,7 +623,6 @@ export type NamespaceSocialRecoveryTranslation = {
 	/**
 	 * C​O​N​ ​W​a​l​i​n​z​i​:​
 ​{​g​u​a​r​d​i​a​n​s​}​
-​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​O​n​d​o​k​a
 	 * @param {unknown} guardians
@@ -632,7 +646,6 @@ export type NamespaceStatementTranslation = {
 	exit: string
 	/**
 	 * C​O​N​ ​{​t​r​a​n​s​a​c​t​i​o​n​s​}​
-​
 ​1​1​.​M​b​e​l​e​
 ​0​0​.​ ​O​n​d​o​k​a
 	 * @param {unknown} transactions
@@ -654,7 +667,6 @@ export type NamespaceStatementTranslation = {
 	mainMenu: RequiredParams<'balance|currency' | 'symbol'>
 	/**
 	 * C​O​N​ ​{​t​r​a​n​s​a​c​t​i​o​n​s​}​
-​
 ​1​1​.​ ​M​b​e​l​e​
 ​2​2​.​ ​N​y​u​m​a​
 ​0​0​.​ ​O​n​d​o​k​a
@@ -663,7 +675,6 @@ export type NamespaceStatementTranslation = {
 	secondTransactionSet: RequiredParams<'transactions'>
 	/**
 	 * C​O​N​ ​{​t​r​a​n​s​a​c​t​i​o​n​s​}​
-​
 ​2​2​.​ ​N​y​u​m​a​
 ​0​0​.​ ​O​n​d​o​k​a
 	 * @param {unknown} transactions
@@ -685,7 +696,8 @@ export type NamespaceTransferTranslation = {
 	enteringAmount: RequiredParams<'spendable|currency'>
 	/**
 	 * C​O​N​ ​{​r​e​c​i​p​i​e​n​t​}​ ​a​t​a​p​o​k​e​a​ ​{​a​m​o​u​n​t​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​ ​k​u​t​o​k​a​ ​k​w​a​ ​{​s​e​n​d​e​r​}​
-​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​P​I​N​ ​y​a​k​o​ ​k​u​d​h​i​b​i​t​i​s​h​a​:
+​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​P​I​N​ ​y​a​k​o​ ​k​u​d​h​i​b​i​t​i​s​h​a​:​
+​0​.​ ​R​u​d​i
 	 * @param {unknown} amount
 	 * @param {unknown} recipient
 	 * @param {unknown} sender
@@ -751,7 +763,6 @@ export type NamespaceVoucherTranslation = {
 	 * C​O​N​ ​{​s​y​m​b​o​l​}​ ​{​n​a​m​e​}​
 ​{​c​o​n​t​a​c​t​}​ ​{​l​o​c​a​t​i​o​n​}​
 ​{​d​e​s​c​r​i​p​t​i​o​n​}​
-​
 ​0​.​ ​R​u​d​i
 	 * @param {unknown} contact
 	 * @param {unknown} description
@@ -765,7 +776,6 @@ export type NamespaceVoucherTranslation = {
 ​{​s​y​m​b​o​l​}​ ​{​n​a​m​e​}​
 ​{​c​o​n​t​a​c​t​}​ ​{​l​o​c​a​t​i​o​n​}​
 ​{​d​e​s​c​r​i​p​t​i​o​n​}​
-​
 ​0​.​ ​R​u​d​i​
 ​0​0​.​ ​O​n​d​o​k​a
 	 * @param {unknown} contact
@@ -782,7 +792,6 @@ export type NamespaceVoucherTranslation = {
 	/**
 	 * C​O​N​ ​C​h​a​g​u​a​ ​n​a​m​b​a​r​i​ ​a​u​ ​i​s​h​a​r​a​ ​k​u​t​o​k​a​ ​k​w​a​ ​s​a​l​i​o​ ​z​a​k​o​:​
 ​{​v​o​u​c​h​e​r​s​}​
-​
 ​0​.​ ​R​u​d​i​
 ​1​1​.​ ​M​b​e​l​e​
 ​0​0​.​ ​O​n​d​o​k​a
@@ -790,9 +799,18 @@ export type NamespaceVoucherTranslation = {
 	 */
 	firstVoucherSet: RequiredParams<'vouchers'>
 	/**
+	 * C​O​N​ ​S​a​l​i​o​:​ ​{​b​a​l​a​n​c​e​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​
+​1​.​ ​T​u​m​a​
+​2​.​ ​S​a​r​a​f​u​ ​y​a​n​g​u​
+​3​.​ ​A​k​a​u​n​t​i​ ​y​a​n​g​u​
+​4​.​ ​U​s​a​i​d​i​z​i
+	 * @param {unknown} balance
+	 * @param {unknown} symbol
+	 */
+	mainMenu: RequiredParams<'balance|currency' | 'symbol'>
+	/**
 	 * C​O​N​ ​C​h​a​g​u​a​ ​n​a​m​b​a​r​i​ ​a​u​ ​i​s​h​a​r​a​ ​k​u​t​o​k​a​ ​k​w​a​ ​s​a​l​i​o​ ​z​a​k​o​:​
 ​{​v​o​u​c​h​e​r​s​}​
-​
 ​1​1​.​ ​M​b​e​l​e​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​ ​O​n​d​o​k​a
@@ -813,7 +831,6 @@ export type NamespaceVoucherTranslation = {
 	/**
 	 * C​O​N​ ​C​h​a​g​u​a​ ​n​a​m​b​a​r​i​ ​a​u​ ​i​s​h​a​r​a​ ​k​u​t​o​k​a​ ​k​w​a​ ​s​a​l​i​o​ ​z​a​k​o​:​
 ​{​v​o​u​c​h​e​r​s​}​
-​
 ​2​2​.​ ​R​u​d​i​
 ​0​0​.​ ​O​n​d​o​k​a
 	 * @param {unknown} vouchers
@@ -1089,6 +1106,10 @@ export type TranslationFunctions = {
 		 * Hamna walinzi zaidi.
 		 */
 		noMoreGuardians: () => LocalizedString
+		/**
+		 * END Sarafu inakabiliwa na matatizo ya kimitambo. Tafadhali jaribu tena baadaye.
+		 */
+		systemError: () => LocalizedString
 	}
 	languages: {
 		/**
@@ -1117,7 +1138,7 @@ export type TranslationFunctions = {
 		/**
 		 * CON Chagua lugha:
 	{languages}
-
+	0. Rudi
 	00.Ondoka
 	11. Mbele
 		 */
@@ -1125,7 +1146,6 @@ export type TranslationFunctions = {
 		/**
 		 * CON Chagua lugha:
 	{languages}
-
 	11. Mbele
 	22. Rudi
 	00.Ondoka
@@ -1134,7 +1154,6 @@ export type TranslationFunctions = {
 		/**
 		 * CON Chagua lugha:
 	{languages}
-
 	22. Rudi
 	00.Ondoka
 		 */
@@ -1310,12 +1329,21 @@ export type TranslationFunctions = {
 	0. Rudi
 		 */
 		selectingGender: () => LocalizedString
+		/**
+		 * CON Akaunti yangu
+	1. Wasifu wangu
+	2. Badili lugha
+	3. Angalia salio
+	4. Taarifa ya matumizi
+	5. Mipangilio ya PIN
+	0. Rudi
+		 */
+		settingsMenu: () => LocalizedString
 	}
 	registration: {
 		/**
 		 * CON Karibu Sarafu Network!
 	{languages}
-
 	00.Ondoka
 	11. Mbele
 		 */
@@ -1323,7 +1351,6 @@ export type TranslationFunctions = {
 		/**
 		 * CON Chagua lugha:
 	{languages}
-
 	11. Mbele
 	22. Rudi
 	00.Ondoka
@@ -1332,7 +1359,6 @@ export type TranslationFunctions = {
 		/**
 		 * CON Chagua lugha:
 	{languages}
-
 	22. Rudi
 	00.Ondoka
 		 */
@@ -1358,7 +1384,6 @@ export type TranslationFunctions = {
 	3. Angalia salio
 	4. Taarifa ya matumizi
 	5. Mipangilio ya PIN
-
 	0. Rudi
 		 */
 		settingsMenu: () => LocalizedString
@@ -1438,9 +1463,16 @@ export type TranslationFunctions = {
 		 */
 		loadError: () => LocalizedString
 		/**
+		 * CON Mipangilio ya PIN:
+	1. Badili PIN
+	2. Badili PIN ya mwenzio
+	3. Linda PIN yangu
+	0. Rudi
+		 */
+		pinManagementMenu: () => LocalizedString
+		/**
 		 * CON Walinzi:
 	{guardians}
-
 	11. Mbele
 	22. Rudi
 	00.Ondoka
@@ -1457,7 +1489,6 @@ export type TranslationFunctions = {
 		/**
 		 * CON Walinzi:
 	{guardians}
-
 	22. Rudi
 	00.Ondoka
 		 */
@@ -1479,7 +1510,6 @@ export type TranslationFunctions = {
 		exit: () => LocalizedString
 		/**
 		 * CON {transactions}
-
 	11.Mbele
 	00. Ondoka
 		 */
@@ -1498,7 +1528,6 @@ export type TranslationFunctions = {
 		mainMenu: (arg: { balance: unknown, symbol: unknown }) => LocalizedString
 		/**
 		 * CON {transactions}
-
 	11. Mbele
 	22. Nyuma
 	00. Ondoka
@@ -1506,7 +1535,6 @@ export type TranslationFunctions = {
 		secondTransactionSet: (arg: { transactions: unknown }) => LocalizedString
 		/**
 		 * CON {transactions}
-
 	22. Nyuma
 	00. Ondoka
 		 */
@@ -1526,6 +1554,7 @@ export type TranslationFunctions = {
 		/**
 		 * CON {recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}
 	Tafadhali weka PIN yako kudhibitisha:
+	0. Rudi
 		 */
 		enteringPin: (arg: { amount: unknown, recipient: unknown, sender: unknown, symbol: unknown }) => LocalizedString
 		/**
@@ -1577,7 +1606,6 @@ export type TranslationFunctions = {
 		 * CON {symbol} {name}
 	{contact} {location}
 	{description}
-
 	0. Rudi
 		 */
 		displayVoucherInfo: (arg: { contact: unknown, description: unknown, location: unknown, name: unknown, symbol: unknown }) => LocalizedString
@@ -1586,7 +1614,6 @@ export type TranslationFunctions = {
 	{symbol} {name}
 	{contact} {location}
 	{description}
-
 	0. Rudi
 	00. Ondoka
 		 */
@@ -1598,16 +1625,22 @@ export type TranslationFunctions = {
 		/**
 		 * CON Chagua nambari au ishara kutoka kwa salio zako:
 	{vouchers}
-
 	0. Rudi
 	11. Mbele
 	00. Ondoka
 		 */
 		firstVoucherSet: (arg: { vouchers: unknown }) => LocalizedString
 		/**
+		 * CON Salio: {balance|currency} {symbol}
+	1. Tuma
+	2. Sarafu yangu
+	3. Akaunti yangu
+	4. Usaidizi
+		 */
+		mainMenu: (arg: { balance: unknown, symbol: unknown }) => LocalizedString
+		/**
 		 * CON Chagua nambari au ishara kutoka kwa salio zako:
 	{vouchers}
-
 	11. Mbele
 	22. Rudi
 	00. Ondoka
@@ -1626,7 +1659,6 @@ export type TranslationFunctions = {
 		/**
 		 * CON Chagua nambari au ishara kutoka kwa salio zako:
 	{vouchers}
-
 	22. Rudi
 	00. Ondoka
 		 */

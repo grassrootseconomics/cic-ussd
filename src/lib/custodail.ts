@@ -52,10 +52,7 @@ export async function custodialTransfer (payload: TransferPayload): Promise<Tran
   })
 
   if (!response.ok) {
-    if (response) {
-      const json = await response.json()
-      console.error(`Failed to initiate transfer: ${json.errorCode}, ${json.message}`)
-    }
+    console.error('Failed to initiate transfer.')
     throw new Error(`Failed to initiate transfer: ${response.status} ${response.statusText}`)
   }
 

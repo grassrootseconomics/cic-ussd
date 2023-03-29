@@ -12,11 +12,11 @@ const sw_languages = {
     'CON Tafadhali weka PIN yenye nambari nne:\n0. Rudi',
   exit: exit,
   firstLanguageSet:
-    'CON Chagua lugha:\n{languages}\n\n00.Ondoka\n11. Mbele',
+    'CON Chagua lugha:\n{languages}\n0. Rudi\n00.Ondoka\n11. Mbele',
   secondLanguageSet:
-    'CON Chagua lugha:\n{languages}\n\n11. Mbele\n22. Rudi\n00.Ondoka',
+    'CON Chagua lugha:\n{languages}\n11. Mbele\n22. Rudi\n00.Ondoka',
   thirdLanguageSet:
-    'CON Chagua lugha:\n{languages}\n\n22. Rudi\n00.Ondoka'
+    'CON Chagua lugha:\n{languages}\n22. Rudi\n00.Ondoka'
 
 } as NamespaceLanguagesTranslation
 

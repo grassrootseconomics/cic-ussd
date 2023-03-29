@@ -12,11 +12,11 @@ const en_languages = {
     'CON Please enter four number PIN:\n0. Back',
   exit: exit,
   firstLanguageSet:
-    'CON Select language:\n{languages}\n\n00.Exit\n11. Next',
+    'CON Select language:\n{languages}\n0. Back\n00.Exit\n11. Next',
   secondLanguageSet:
-    'CON Select language:\n{languages}\n\n11. Next\n22. Back\n00.Exit',
+    'CON Select language:\n{languages}\n11. Next\n22. Back\n00.Exit',
   thirdLanguageSet:
-    'CON Select language:\n{languages}\n\n22. Back\n00.Exit'
+    'CON Select language:\n{languages}\n22. Back\n00.Exit'
 
 } satisfies NamespaceLanguagesTranslation
 

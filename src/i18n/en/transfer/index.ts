@@ -1,7 +1,9 @@
 import type { NamespaceTransferTranslation } from '../../i18n-types';
 import en from '..';
+import en_main from '../../en/main';
 
 const { accountBlocked, exit } = en
+const { mainMenu } = en_main
 
 const en_transfer = {
     accountBlocked: accountBlocked,
@@ -18,8 +20,7 @@ const en_transfer = {
         "END Your invite request for {invitee} to Sarafu Network failed. Please try again later.",
     inviteSuccess:
         "END Your invitation to {invitee} to join Sarafu Network has been sent.",
-    mainMenu:
-        "CON Balance: {balance|currency} {symbol}\n1. Send\n2. My Vouchers\n3. My Account\n4. Help",
+    mainMenu: mainMenu,
     transferError:
         "END Your request failed. Please try again later.",
     transferInitiated:

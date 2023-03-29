@@ -2,11 +2,11 @@ import { NamespaceRegistrationTranslation } from '../../i18n-types';
 
 export const sw_registration: NamespaceRegistrationTranslation = {
   firstLanguageSet:
-  "CON Karibu Sarafu Network!\n{languages}\n\n00.Ondoka\n11. Mbele",
+  "CON Karibu Sarafu Network!\n{languages}\n00.Ondoka\n11. Mbele",
   secondLanguageSet:
-    "CON Chagua lugha:\n{languages}\n\n11. Mbele\n22. Rudi\n00.Ondoka",
+    "CON Chagua lugha:\n{languages}\n11. Mbele\n22. Rudi\n00.Ondoka",
   thirdLanguageSet:
-    'CON Chagua lugha:\n{languages}\n\n22. Rudi\n00.Ondoka',
+    'CON Chagua lugha:\n{languages}\n22. Rudi\n00.Ondoka',
   accountCreationSuccess:
     "END Akaunti yako ya Sarafu inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.",
   accountCreationFailed:

@@ -1,6 +1,9 @@
 import type { NamespaceSocialRecoveryTranslation } from '../../i18n-types';
 import en from '..'
+import en_pins from '../../en/pins';
+
 const { accountBlocked, exit } = en
+const { pinManagementMenu } = en_pins
 
 const en_socialRecovery = {
   accountBlocked: accountBlocked,
@@ -27,12 +30,13 @@ const en_socialRecovery = {
     'CON {guardian} has been removed as your guardian.\n0. Back\n9. Exit',
   loadError:
     'END There was an error loading your guardians. Please try again later.',
+  pinManagementMenu: pinManagementMenu,
   secondGuardiansSet:
-    'CON Guardians:\n{guardians}\n\n11. Next\n22. Back\n00.Exit',
+    'CON Guardians:\n{guardians}\n11. Next\n22. Back\n00.Exit',
   socialRecoveryMenu:
     'CON PIN guarding:\n1. Add guardian\n2. Remove guardian\n3. View guardians\n0. Back',
   thirdGuardiansSet:
-    'CON Guardians:\n{guardians}\n\n22. Back\n00.Exit'
+    'CON Guardians:\n{guardians}\n22. Back\n00.Exit'
 } satisfies NamespaceSocialRecoveryTranslation
 
 export default en_socialRecovery

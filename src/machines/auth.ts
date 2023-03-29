@@ -50,6 +50,7 @@ export const authMachine = createMachine<BaseContext, BaseEvent>({
     confirmingPin: {
       description: 'Expects PIN that matches the previously entered PIN.',
       on: {
+        BACK: 'enteringPin',
         TRANSIT: [
           { target: 'activatingAccount', cond: 'pinsMatch' },
           { target: 'exit', cond: 'isOption00' },

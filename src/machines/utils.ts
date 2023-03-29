@@ -149,7 +149,6 @@ function generateOptionChecker(expectedValue: string) {
   };
 }
 
-export const isOption0 = generateOptionChecker('0');
 export const isOption1 = generateOptionChecker('1');
 export const isOption2 = generateOptionChecker('2');
 export const isOption3 = generateOptionChecker('3');

@@ -1,6 +1,6 @@
 import {
   BaseContext,
-  BaseEvent,
+  BaseEvent, isOption00, isOption11, isOption22,
   isOption9,
   isSuccess,
   languageOptions,
@@ -134,6 +134,9 @@ export const languagesMachine = createMachine<BaseContext, BaseEvent>({
     isBlocked,
     isChangeError,
     isOption9,
+    isOption00,
+    isOption11,
+    isOption22,
     isSuccess,
     isValidLanguageOption
   },

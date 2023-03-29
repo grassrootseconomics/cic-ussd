@@ -1,6 +1,9 @@
 import { NamespaceSocialRecoveryTranslation } from '../../i18n-types';
 import sw from '..'
+import sw_pins from '../../sw/pins';
+
 const { accountBlocked, exit } = sw
+const { pinManagementMenu } = sw_pins
 
 const sw_socialRecovery = {
   accountBlocked: accountBlocked,
@@ -27,12 +30,13 @@ const sw_socialRecovery = {
     'CON {guardian} ameondolewa kuwa mlinzi wako.\n0. Rudi\n9. Ondoka',
   loadError:
     'END Kulikuwa na tatizo katika kuangalia walinzi wako. Tafadhali jaribu tena baadaye.',
+  pinManagementMenu: pinManagementMenu,
   secondGuardiansSet:
-    'CON Walinzi:\n{guardians}\n\n11. Mbele\n22. Rudi\n00.Ondoka',
+    'CON Walinzi:\n{guardians}\n11. Mbele\n22. Rudi\n00.Ondoka',
   socialRecoveryMenu:
     'CON Ulinzi wa PIN:\n1. Ongeza mlinzi\n2. Ondoa mlinzi\n3. Angalia walinzi\n0. Rudi',
   thirdGuardiansSet:
-    'CON Walinzi:\n{guardians}\n\n22. Rudi\n00.Ondoka'
+    'CON Walinzi:\n{guardians}\n22. Rudi\n00.Ondoka'
 } satisfies NamespaceSocialRecoveryTranslation
 
 export default sw_socialRecovery
