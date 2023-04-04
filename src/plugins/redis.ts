@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import Redis from 'ioredis';
-import { config } from '@src/config';
+import { config } from '@/config';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -33,6 +33,7 @@ const redisPlugin: FastifyPluginAsync<RedisPluginOptions> = async (fastify, opts
     maxRetriesPerRequest: 5
   }
 
+  fastify.log.debug(`Connecting to redis at: ${host}:${port} ...`)
   const ephemeralClient = new Redis(port, host, {
     connectionName: "ephemeral",
     db: config.REDIS.EPHEMERAL_DATABASE,
@@ -46,7 +47,9 @@ const redisPlugin: FastifyPluginAsync<RedisPluginOptions> = async (fastify, opts
   })
 
   fastify.decorate('e_redis', ephemeralClient)
+  fastify.log.debug('Ephemeral redis client connected.')
   fastify.decorate('p_redis', persistentClient)
+  fastify.log.debug('Persistent redis client connected.')
 
   // gracefully kill redis connection
   fastify.addHook('onClose', async (_) => {

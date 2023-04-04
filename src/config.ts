@@ -54,7 +54,8 @@ export const config = {
   },
   DEV: process.env.NODE_ENV !== 'production',
   LOG: {
-    LEVEL: process.env.LOG_LEVEL ?? 'info'
+    LEVEL: process.env.LOG_LEVEL ?? 'info',
+    NAME: process.env.LOG_NAME ?? 'cic-ussd'
   },
   NATS: {
     CHAIN: {

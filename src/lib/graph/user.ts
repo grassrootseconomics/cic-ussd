@@ -1,8 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { Redis as RedisClient } from 'ioredis';
-import { Cache } from '@utils/redis';
 import { Address } from '@lib/ussd/utils';
-import { User } from '@machines/utils';
+import { Cache } from '@utils/redis';
 
 
 export enum Gender {
@@ -26,7 +25,7 @@ export const graphUserFields = `
 
 export interface PersonalInformation {
   family_name: string
-  gender: string
+  gender: Gender
   geo: string
   given_names: string
   location_name: string
@@ -109,15 +108,16 @@ export async function upsertPersonalInformation(
 
   const variables = { personal_information };
   const { insert_personal_information_one: updatedPersonalInformation } = await graphql.request<{ insert_personal_information_one: Partial<PersonalInformation> }>(query, variables);
-  const cache = new Cache(redis, phoneNumber);
-  let updatedUser: User = {};
-  if (updatedPersonalInformation.given_names && updatedPersonalInformation.family_name) {
-    updatedUser.tag = `${updatedPersonalInformation.given_names} ${updatedPersonalInformation.family_name} ${phoneNumber}`;
-  }
-  updatedUser.graph = {
-    user: { personal_information: { ...updatedPersonalInformation } },
-  }
-  await cache.updateJSON(updatedUser);
-  return updatedPersonalInformation;
+  await updateCacheUser(updatedPersonalInformation, phoneNumber, redis);
 }
+
+export async function updateCacheUser(personalInformation: Partial<PersonalInformation>, phoneNumber: string, redis: RedisClient) {
+  const cache = new Cache(redis, phoneNumber);
+  const tag = personalInformation.given_names && personalInformation.family_name
+    ? `${personalInformation.given_names} ${personalInformation.family_name} ${phoneNumber}`
+    : phoneNumber;
+
+  await cache.updateJSON({ graph: { personal_information: personalInformation }, tag });
+}
+
 

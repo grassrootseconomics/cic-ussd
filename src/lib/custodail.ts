@@ -1,4 +1,5 @@
-import { config } from '@src/config';
+import { config } from '@/config';
+import { logger } from '@/app';
 
 interface RegistrationResponse {
   errorCode?: string
@@ -33,16 +34,16 @@ export async function createWallet(): Promise<RegistrationResponse> {
   })
 
   if (!response.ok) {
-    console.error('Failed to create wallet.')
+    logger.error('Failed to create wallet.')
     throw new Error(`Failed to create wallet: ${response.status} ${response.statusText}`)
   }
 
-  console.debug('Successfully created wallet.')
+  logger.debug('Successfully created wallet.')
   return await response.json()
 }
 
 export async function custodialTransfer (payload: TransferPayload): Promise<TransferResponse> {
-  console.debug('Initiating transfer...')
+  logger.debug('Initiating transfer...')
   const response = await fetch(config.CIC_CUSTODIAL.TRANSFER_ENDPOINT, {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -52,10 +53,10 @@ export async function custodialTransfer (payload: TransferPayload): Promise<Tran
   })
 
   if (!response.ok) {
-    console.error('Failed to initiate transfer.')
+    logger.error('Failed to initiate transfer.')
     throw new Error(`Failed to initiate transfer: ${response.status} ${response.statusText}`)
   }
 
-  console.debug('Successfully initiated transfer.')
+  logger.debug('Successfully initiated transfer.')
   return await response.json()
 }

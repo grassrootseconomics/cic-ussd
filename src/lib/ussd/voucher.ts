@@ -1,27 +1,30 @@
-import { Cache } from '@utils/redis';
 import { Redis as RedisClient } from 'ioredis';
 import { GraphQLClient } from 'graphql-request';
 import { getVouchersByAddress } from '@lib/graph/voucher';
-import { Address, Symbol } from '@lib/ussd/utils';
+import { Address, handleResults } from '@lib/ussd/utils';
+import { Cache } from '@utils/redis';
 
 export interface ActiveVoucher {
   address: string
   balance: number
-  symbol: Symbol
+  symbol: string
 }
 
-export async function getVoucherSymbol(contractAddress: Address, graphql: GraphQLClient, redis: RedisClient): Promise<Symbol> {
-  const cache = new Cache(redis, `address-symbol-${contractAddress}`)
-  let symbol = await cache.get()
+export async function getVoucherSymbol(contractAddress: Address, graphql: GraphQLClient, redis: RedisClient): Promise<string> {
+  let symbol = await redis.get(`address-symbol-${contractAddress}`)
 
   if (!symbol) {
     const voucher = await getVouchersByAddress(graphql, contractAddress)
-    if (voucher) {
-      symbol = voucher.symbol
-      await cache.set(symbol)
-    } else {
-      throw new Error(`Voucher with contract address ${contractAddress} not recognized.`)
+    if (!voucher) {
+      throw new Error(`Could not find voucher with address ${contractAddress}`)
     }
+    symbol = voucher.symbol
+    const cache = new Cache(redis, contractAddress)
+    const results = await Promise.allSettled([
+      await redis.set(`address-symbol-${contractAddress}`, symbol),
+      await cache.setJSON(voucher)
+    ])
+    handleResults(results)
   }
   return symbol
 }

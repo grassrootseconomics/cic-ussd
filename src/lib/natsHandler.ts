@@ -1,4 +1,4 @@
-import { config } from '@src/config';
+import { config } from '@/config';
 import { JSONCodec, Msg } from 'nats';
 import { GraphQLClient } from 'graphql-request';
 import { Redis as RedisClient } from 'ioredis';
@@ -8,11 +8,11 @@ import { Cache } from '@utils/redis';
 import { ActiveVoucher, getVoucherSymbol } from '@lib/ussd/voucher';
 import { retrieveWalletBalance } from '@lib/ussd/account';
 import { Transaction, TransactionType } from '@machines/statement';
-import { getVouchersByAddress } from '@lib/graph/voucher';
 import { activateOnChain } from '@db/models/account';
-import { Address, generateTag, getTag, Symbol } from '@lib/ussd/utils';
+import { Address, generateTag } from '@lib/ussd/utils';
 import { User } from '@machines/utils';
-import { getPersonalInformation } from '@lib/graph/user';
+import { logger } from '@/app';
+import { SystemError } from '@lib/errors';
 
 interface TransferEvent {
   block: number;
@@ -38,11 +38,10 @@ export async function processMessage (db: PostgresDb, graphql: GraphQLClient, ms
         //message.respond('OK')
       }
     } else {
-      console.log("Unknown subject: ", msg.subject)
+      logger.debug(`Unknown subject: ${msg.subject}`)
     }
-  } catch(error) {
-    console.error(error)
-    throw new Error(error)
+  } catch(error: any) {
+    throw new SystemError(`Error processing NATS message: ${error.message}`)
   }
 }
 
@@ -59,23 +58,6 @@ async function updateHeldVouchers(heldVouchers: ActiveVoucher[], voucher: Active
   }
 }
 
-async function getSymbol(redis: RedisClient, graphql: GraphQLClient, contractAddress: string): Promise<Symbol> {
-  let cache = new Cache(redis, `address-symbol-${contractAddress}`)
-  let symbol = await cache.get()
-
-  if (!symbol) {
-    const voucher = await getVouchersByAddress(graphql, contractAddress)
-    if (voucher) {
-      symbol = voucher.symbol
-      cache = new Cache(redis, contractAddress)
-      await cache.set(symbol)
-    } else {
-      throw new Error(`Could not find symbol for contract address: ${contractAddress}`)
-    }
-  }
-
-  return symbol
-}
 
 async function updateTransactions(statement: Transaction[], transaction: Transaction): Promise<Transaction[]> {
   const updatedTransaction = [...statement]
@@ -90,56 +72,32 @@ async function updateTransactions(statement: Transaction[], transaction: Transac
 }
 
 async function handleTransfer(db: PostgresDb, graphql: GraphQLClient, message: TransferEvent, provider: Provider, redis: RedisClient) {
-  // parse message
   const { block, success, transactionHash, value } = message;
   const contractAddress = getAddress(message.contractAddress) as Address
   const from = getAddress(message.from) as Address
   const to = getAddress(message.to) as Address
 
-  if (success) {
-    const cache = new Cache(redis, `address-tx-count-${to}`)
-    const txCount = await cache.get()
-    if (!txCount) {
-      await handleRegistration(to, contractAddress, db, graphql, message, provider, redis)
-      await cache.set(1)
-    } else {
-      const symbol = await getSymbol(redis, graphql, contractAddress)
-
-      const rPhoneNumber =  await redis.get(`address-phone-${to}`)
-      const sPhoneNumber =  await redis.get(`address-phone-${from}`)
-
-      const rCache = new Cache(redis, rPhoneNumber)
-      const sCache = new Cache(redis, sPhoneNumber)
-
-      const rUser = await rCache.getJSON<User>()
-      const sUser = await sCache.getJSON<User>()
-
-      const [uRTransactions, uSTransactions] = await Promise.all([
-        updateTransactions(rUser.transactions || [], {block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.CREDIT, value}),
-        updateTransactions(sUser.transactions || [], {block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.DEBIT, value})
-      ])
-
-      const [rBalance, sBalance] = await Promise.all([
-        retrieveWalletBalance(to, contractAddress, provider),
-        retrieveWalletBalance(from, contractAddress, provider)
-      ])
-
-      const [uRHeldVouchers, uSHeldVouchers] = await Promise.all([
-        updateHeldVouchers(rUser.vouchers.held || [], { address: contractAddress, balance: rBalance, symbol }),
-        updateHeldVouchers(sUser.vouchers.held || [], { address: contractAddress, balance: sBalance, symbol })
-      ])
-
-      await Promise.all([
-        rCache.updateJSON({ transactions: uRTransactions, vouchers: { held: uRHeldVouchers } }),
-        sCache.updateJSON({ transactions: uSTransactions, vouchers: { held: uSHeldVouchers } })
-      ])
-
-      await cache.set(txCount + 1)
-    }
-
-  } else {
-    console.error("Transaction failed: ", message)
+  if (!success) {
+    logger.error("Transaction failed: ", message)
+    return
   }
+
+  const txCount = await redis.get(`address-tx-count-${to}`)
+  if (!txCount) {
+    await handleRegistration(to, contractAddress, db, graphql, message, provider, redis)
+    await updateTxCount(to, redis, '1')
+    return
+  }
+
+  const symbol = await getVoucherSymbol(contractAddress, graphql, redis)
+  await Promise.all([
+    processTransaction(to, contractAddress, graphql, provider, redis, {
+      block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.CREDIT, value
+    }, txCount),
+    processTransaction(from, contractAddress, graphql, provider, redis, {
+      block, from, symbol, time: Date.now(), to, transactionHash, type: TransactionType.DEBIT, value
+    }, txCount),
+  ])
 }
 async function handleRegistration(
   address: Address,
@@ -149,34 +107,80 @@ async function handleRegistration(
   message: TransferEvent,
   provider: Provider,
   redis: RedisClient) {
+
+  const phoneNumber =  await getPhoneNumber(address, redis)
+
+  if (!phoneNumber) {
+    throw new SystemError(`Could not find phone number for address: ${address}.`)
+  }
+
+
   try{
-    const phoneNumber =  await redis.get(`address-phone-${address}`)
-
-    if (!phoneNumber) {
-      console.error(`Could not find phone number for address: ${address}`)
-      return
-    }
-
-    const account = await activateOnChain(address, db, redis)
     const balance = await retrieveWalletBalance(address, contractAddress, provider)
     const symbol = await getVoucherSymbol(contractAddress, graphql, redis)
     const voucher = { address: contractAddress, balance, symbol }
     const tag = await generateTag(address, graphql, phoneNumber)
+    await activateOnChain(address, db, redis)
 
     const cache = new Cache(redis, phoneNumber)
     await cache.updateJSON({
-      account: account,
       vouchers: {
         active: voucher,
         held: [voucher],
       },
       tag,
     })
-    console.debug(`Account: ${account.address} successfully set up.`)
+    logger.debug(`Account: ${address} successfully set up.`)
+  } catch (error) {
+    throw new SystemError(`Error setting up account: ${address}.`)
+  }
+}
 
-  } catch (e) {
-    console.error("Error setting up account: ", e)
-    throw e
+
+async function processTransaction(accountAddress: Address,
+                                  contractAddress: Address,
+                                  graphql: GraphQLClient,
+                                  provider: Provider,
+                                  redis: RedisClient,
+                                  transaction: Transaction,
+                                  txCount: string) {
+
+  const phoneNumber = await getPhoneNumber(accountAddress, redis)
+
+  if (!phoneNumber) {
+    logger.error(`No phone number mapped to address: ${accountAddress}`)
+    return
   }
 
+  const cache = new Cache(redis, phoneNumber)
+  let user: User = await cache.getJSON() as User
+
+  if(!user) {
+    logger.error(`No user found for phone number: ${phoneNumber}`)
+    return
+  }
+
+  const balance = await retrieveWalletBalance(accountAddress, contractAddress, provider)
+
+  const [held, transactions] = await Promise.all([
+    updateHeldVouchers(user.vouchers?.held || [], { address: contractAddress, balance, symbol: transaction.symbol }),
+    updateTransactions(user.transactions || [], transaction)
+  ])
+
+  await cache.updateJSON({
+    transactions: transactions,
+    vouchers: {
+      held: held,
+    }
+  })
+
+  await updateTxCount(accountAddress, redis, `${parseInt(txCount) + 1}`)
+}
+
+async function updateTxCount(address: Address, redis: RedisClient, txCount: string) {
+  await redis.set(`address-tx-count-${address}`, txCount)
+}
+
+async function getPhoneNumber(address: Address, redis: RedisClient) {
+  return redis.get(`address-phone-${address}`);
 }

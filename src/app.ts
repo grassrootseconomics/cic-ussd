@@ -1,4 +1,3 @@
-import { fastifyServerDevOptions } from '@dev/debug';
 import fastifyCors from '@fastify/cors';
 import formBody from '@fastify/formbody';
 import fastifyPostgres from '@fastify/postgres';
@@ -8,29 +7,27 @@ import graphqlPlugin from '@plugins/graphql';
 import natsPlugin from '@plugins/nats';
 import redisPlugin from '@plugins/redis';
 import ussdRoutes from '@routes/ussd';
-
-import * as dotenv from 'dotenv';
 import fastify, { FastifyServerOptions } from 'fastify';
 import qs from 'qs';
 
-import { config } from './config';
+import { config } from '@/config';
+import pino from 'pino';
+import moment from 'moment-timezone';
 
-// TODO: [Philip] - Whereas this shifts from convict to dotenv, is it ideal for externally defined variables like ones stored in vault?
-dotenv.config()
+export const logger = pino({
+  name: config.LOG.NAME,
+  level: config.LOG.LEVEL,
+  ignore: 'pid,hostname',
+  formatters: {
+    level: (label) => ({ level: label.toUpperCase() }),
+  },
+  timestamp: () => `,"time":"${moment(new Date(Date.now())).tz(config.TIMEZONE).format("DD-MM-YYYY HH:mm A")}"`,
+})
 
 let serverOptions: FastifyServerOptions = {
   disableRequestLogging: config.SERVER.DISABLE_REQUEST_LOGGING,
-  logger: {
-    base: null,
-    level: config.LOG.LEVEL
-  },
+  logger: logger,
   trustProxy: config.SERVER.TRUST_PROXY_ENABLED
-}
-
-// load dev configs if in development mode.
-if (config.DEV) {
-  console.debug('Running in development mode.')
-  serverOptions = fastifyServerDevOptions
 }
 
 const app = fastify(serverOptions)
@@ -68,7 +65,7 @@ app.setErrorHandler<Error>(function (error, request, reply) {
 
   reply.status(500).send({
     error: 'INTERNAL',
-    message: 'Internal server error',
+    message: 'Internal server error.',
     statusCode: 500
   })
 })

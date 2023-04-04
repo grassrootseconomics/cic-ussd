@@ -38,7 +38,7 @@ interface EthPluginOptions {
 const ethPlugin: FastifyPluginAsync<EthPluginOptions> = async (fastify, opts) => {
   const { endpoint } = opts
   const rpcProvider = new ethers.JsonRpcProvider(endpoint)
-  fastify.log.debug(`Ethers provider created with RPC endpoint ${endpoint}`)
+  fastify.log.debug(`Ethers provider created with RPC endpoint ${endpoint}.`)
 
   fastify.decorate('provider', rpcProvider)
 

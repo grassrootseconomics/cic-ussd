@@ -1,8 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import { connect, ConnectionOptions, Msg, NatsError } from 'nats';
-import { config } from '@src/config';
-import { natsConnectionDevOptions } from '@dev/debug';
 import { processMessage } from '@lib/natsHandler';
 
 
@@ -15,19 +13,14 @@ const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, option
 
   let { connOpts, subjects } = options;
 
-  if (connOpts.servers.length === 0) {
+  if (connOpts.servers?.length === 0) {
     throw new Error("NATS server URL not specified.");
   }
 
-
-  if(config.DEV) {
-    connOpts = { ...connOpts, ...natsConnectionDevOptions }
-  }
-
   const nc = await connect( connOpts);
-  fastify.log.info(`Connected to NATS server at ${connOpts.servers[0]}`);
+  fastify.log.debug(`Connected to NATS server at ${connOpts?.servers?[0]: []}.`);
 
-  const handler = async (err: NatsError, msg: Msg) => {
+  const handler = async (err: NatsError | null, msg: Msg) => {
     if (err) {
       fastify.log.error(err);
       return;
@@ -36,7 +29,7 @@ const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, option
   }
 
   for (const subject of subjects) {
-    console.info(`Subscribing to subject ${subject}`);
+    fastify.log.debug(`Subscribing to subject ${subject}.`);
     nc.subscribe(subject, {
       callback: handler,
     });
