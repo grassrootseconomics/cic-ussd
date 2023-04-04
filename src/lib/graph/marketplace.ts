@@ -24,7 +24,10 @@ export async function upsertMarketplace(graphQlClient: GraphQLClient, marketplac
   const data = await graphQlClient.request<{ insert_marketplaces_one: Partial<Marketplace> }>(query, variables)
   const { insert_marketplaces_one: updatedMarketplace } = data
 
-  await updateCachedMarketPlace(phoneNumber, updatedMarketplace.marketplace_name, redis)
+  if (updatedMarketplace.marketplace_name) {
+    await updateCachedMarketPlace(phoneNumber, updatedMarketplace.marketplace_name, redis)
+  }
+
   return updatedMarketplace
 }
 

@@ -1,7 +1,7 @@
 import { CountryCode, parsePhoneNumber } from 'libphonenumber-js';
 
 
-export function getCountryCodeFromPhoneNumber (phoneNumber: string) {
+export async function getCountryCode (phoneNumber: string) {
   const formattedNumber = sanitizePhoneNumber(phoneNumber)
   const parsedPhoneNumber = parsePhoneNumber(formattedNumber)
   if (parsedPhoneNumber) {

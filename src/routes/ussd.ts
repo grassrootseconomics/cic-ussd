@@ -1,18 +1,8 @@
-import { ATOnRequestHook, ATPreHandlerHook, ATRequestBody } from '@src/services/africasTalking';
-import { sessionHandler } from '@src/services/session';
-
+import { ATOnRequestHook, ATPreHandlerHook, ATRequestBody } from '@services/africasTalking';
 import { FastifyInstance } from 'fastify';
+import { sessionHandler } from '@services/session';
 
-/**
- * Description placeholder
- *
- * @export
- * @async
- * @param {FastifyInstance} fastify
- * @returns {*}
- */
 export default async function ussdRoutes (fastify: FastifyInstance) {
-  // add route to handle AT ussd requests.
   fastify.route<{
     Body: typeof ATRequestBody
   }>({

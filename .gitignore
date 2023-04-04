@@ -4,6 +4,7 @@ node_modules/
 # build packages
 build/*
 src/**.js
+dist/*
 
 # ide-user-sepcific files
 .idea
@@ -23,4 +24,4 @@ venv/
 yarn.lock
 
 # env files
-/.env
+*.env

@@ -4,9 +4,7 @@ import { Cache } from '@utils/redis';
 
 import Redis from 'ioredis';
 import { StateValue } from 'xstate';
-import { BaseContext } from '@src/machines/utils';
-import { createHash } from 'crypto';
-import { Address, Symbol } from '@lib/ussd/utils';
+import { BaseContext } from '@machines/utils';
 
 
 type SessionData = any
@@ -19,7 +17,7 @@ export interface History {
 
 export interface SessionInterface {
   data?: SessionData
-  history?: History
+  history: History
   id: string
   input: string
   machineId: string
@@ -30,17 +28,17 @@ export interface SessionInterface {
 }
 
 export class Session extends Cache<SessionInterface> implements SessionInterface {
-  input: string
+  input!: string
   data?: SessionData
-  history?: History
-  id: string
-  state: StateValue
-  machineId: string
-  phoneNumber: string
-  serviceCode: string
-  version: number
+  history!: History
+  id!: string
+  state!: StateValue
+  machineId!: string
+  phoneNumber!: string
+  serviceCode!: string
+  version!: number
 
-  constructor (redis: Redis, session: SessionInterface) {
+  constructor(redis: Redis, session: SessionInterface) {
     super(redis, session.id)
     const { input, data, history, id, machineId, phoneNumber, serviceCode, state, version = 1 } = session
     this.input = input
@@ -54,79 +52,79 @@ export class Session extends Cache<SessionInterface> implements SessionInterface
     this.version = version
   }
 
-  async create (db: PostgresDb): Promise<Session> {
-    await this.setJSON(this.toJson(), 180)
-    let session = {
-        input: this.input,
+  async create(db: PostgresDb): Promise<Session> {
+  await this.setJSON(this.toJson(), 180);
+  const session: SessionInterface = {
+    input: this.input,
+    history: this.history,
+    id: this.id,
+    phoneNumber: this.phoneNumber,
+    serviceCode: this.serviceCode,
+    state: this.state,
+    version: this.version,
+    ...(this.data && { data: this.data }),
+  };
+  await insertSession(db, session);
+  return this;
+}
 
-        history: this.history,
-        id: this.id,
-        phoneNumber: this.phoneNumber,
-        serviceCode: this.serviceCode,
-        state: this.state,
-        version: this.version
-    }
-    if (this.data !== undefined) {
-      session["data"] = this.data
-    }
-    await insertSession(db, session)
-    return this
-  }
-
-  async update (data: Partial<SessionData>, db: PostgresDb): Promise<void> {
+  async update(data: SessionData, db: PostgresDb): Promise<void> {
     await this.updateJSON(data)
-    // TODO[Philip]: For now we're just updating the session in Postgres, however this generates a lot of db traffic.
-    // Ideally we would maintain a threshold value above the the session's TLL and only update the session in Postgres
-    // when the threshold is reached. However, this creates a lot of complexity and is not worth the effort at this point.
-    // We can revisit this later.
     await setSession(db, {
       history: {
-        inputs: data.history?.inputs,
-        machines: data.history?.machines,
-        responses: data.history?.responses
+        inputs: data.history?.inputs ?? this.history?.inputs,
+        machines: data.history?.machines ?? this.history?.machines,
+        responses: data.history?.responses ?? this.history?.responses,
       },
       id: this.id,
-      state: data.state,
-      version: data.version
+      state: data.state ?? this.state,
+      version: data.version ?? this.version,
     })
   }
 
-
-  toJson (): SessionInterface {
-    const { input, history, id, machineId, phoneNumber, serviceCode, state, version } = this
-    let session = { input, history, id, machineId, phoneNumber, serviceCode, state, version }
-    if (this.data !== undefined) {
-      session["data"] = this.data
-    }
-    return session
+  toJson(): SessionInterface {
+  const session: SessionInterface = {
+    history: this.history,
+    input: this.input,
+    id: this.id,
+    machineId: this.machineId,
+    phoneNumber: this.phoneNumber,
+    serviceCode: this.serviceCode,
+    state: this.state,
+    version: this.version,
+  };
+  if (this.data !== undefined) {
+    session.data = this.data;
   }
+  return session;
+}
 }
 
+export async function createSession(context: BaseContext, machineId: string, redis: Redis, state: StateValue) {
+  const { resources: { db }, ussd: { phoneNumber, requestId, serviceCode }, data } = context;
+  const { input } = context.ussd;
 
-export async function createSession (context: BaseContext, machineId: string, redis: Redis, state: StateValue) {
-  const { resources: { db }, ussd: { phoneNumber, requestId, serviceCode } } = context
-  const history: History = {
-    inputs: [context.ussd.input],
-    machines: [machineId],
-    responses: [state]
-  }
-
-  let session = {
-    input: context.ussd.input,
-    history,
+  const session: SessionInterface = {
+    input,
+    history: {
+      inputs: [input],
+      machines: [machineId],
+      responses: [state]
+    },
     id: requestId,
-    machineId: machineId,
-    phoneNumber: phoneNumber,
-    serviceCode: serviceCode,
-    state: state
-  }
-  if (context.data !== undefined) {
-    session["data"] = context.data
+    machineId,
+    phoneNumber,
+    serviceCode,
+    state
+  };
+
+  if (data !== undefined) {
+    session.data = data;
   }
 
-  // create new session
-  return await new Session(redis, session).create(db)
+  return await new Session(redis, session).create(db);
 }
+
 
 export async function getSessionById (
   redis: Redis,
@@ -156,8 +154,12 @@ export function updateHistory (history: History, update: History) {
 export async function updateSession (context: BaseContext, machineId: string, state: StateValue) {
   const { data, resources: { db }, session, ussd: { input } } = context
 
-  const updatedHistory = updateHistory(session.history || { inputs: [], machines: [], responses: [] }, { inputs: [input], machines: [machineId], responses: [state] })
-  let updatedSession = {
+  if (!session) {
+    throw new Error('Session is undefined.')
+  }
+
+  const updatedHistory = updateHistory(session.history, { inputs: [input], machines: [machineId], responses: [state] })
+  const updatedSession: Partial<SessionInterface> = {
     input: input,
     history: updatedHistory,
     machineId: machineId,
@@ -166,19 +168,8 @@ export async function updateSession (context: BaseContext, machineId: string, st
   }
 
   if(data) {
-    updatedSession['data'] = updateData(session.data || {}, data)
+    updatedSession.data = updateData(session.data || {}, data)
   }
+
   await session.update(updatedSession, db)
-}
-
-
-export function pointer (identifier: Address | Symbol | string[]): string {
-  const hashBuilder = createHash('sha256')
-  if (Array.isArray(identifier)) {
-    const concatenated = identifier.join('')
-    hashBuilder.update(concatenated)
-  } else {
-    hashBuilder.update(identifier)
-  }
-  return hashBuilder.digest('hex')
 }

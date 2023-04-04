@@ -10,14 +10,15 @@ import { pinManagementMachine, pinsTranslations } from '@machines/pins';
 import { AccountStatus } from '@db/models/account';
 import { authMachine, authTranslations, hashValue } from '@machines/auth';
 import { registrationMachine, registrationTranslations } from '@machines/registration';
-import { supportedLanguages } from '@lib/ussd/utils';
 import { createSession, getSessionById, updateSession } from '@lib/ussd/session';
 import { interpret, Interpreter, StateValue } from 'xstate';
-import L from '@src/i18n/i18n-node';
+import L from '@i18n/i18n-node';
 import { waitFor } from 'xstate/lib/waitFor';
 import { socialRecoveryMachine, socialRecoveryTranslations } from '@machines/socialRecovery';
+import { Locales } from '@i18n/i18n-types';
+import { fallbackLanguage } from '@i18n/translators';
 
-const machines = {
+const machines: menu = {
   balances: balancesMachine,
   languages: languagesMachine,
   pins: pinManagementMachine,
@@ -67,8 +68,13 @@ export async function machineService(context: BaseContext) {
 }
 
 async function newSession(service: Interpreter<any, any, any, any>): Promise<[BaseContext, string, string]> {
-  const { context, machine: { id }, value } = service.getSnapshot()
+  const { context, value } = service.getSnapshot()
   const { resources: { e_redis } } = context
+
+  const id = service.getSnapshot().machine?.id
+  if(!id) {
+    throw new Error("Machine ID not found")
+  }
 
   await createSession(context, id, e_redis, value)
   return [context, id, value.toString()]
@@ -92,9 +98,13 @@ function resolveMachineJumps(state: StateValue, id: string) {
 }
 
 async function transition(input: string, service: Interpreter<any, any, any, any>): Promise<[BaseContext, string, string]> {
-  const snapshot = service.getSnapshot();
+  let snapshot = service.getSnapshot();
   const { context, value: currentValue } = snapshot;
-  let { machine: { id } } = snapshot;
+
+  let id = snapshot.machine?.id
+  if(!id) {
+    throw new Error("Machine ID not found")
+  }
 
   // check if current state can transition to the next state or go back
   if (!snapshot.can({ type: "TRANSIT", input }) && !snapshot.can("BACK")) {
@@ -115,9 +125,12 @@ async function transition(input: string, service: Interpreter<any, any, any, any
   }
 
   // wait for the invoked service to finish, if applicable
-  let state = service.getSnapshot().value;
-  if (service.getSnapshot().hasTag("invoked")) {
-    const resolvedState = await waitFor(service, (state) => state.hasTag("resolved") || state.hasTag("error"));
+  snapshot = service.getSnapshot();
+  let state = snapshot.value;
+  if (snapshot.hasTag("invoked")) {
+    const resolvedState = await waitFor(service, state => {
+      return state.hasTag('resolved') || state.hasTag('error');
+    })
     state = resolvedState.value;
   }
 
@@ -129,7 +142,7 @@ async function transition(input: string, service: Interpreter<any, any, any, any
 }
 
 
-async function resolveMachine(user: User | undefined, input?: string, machineId?: string, state?: StateValue) {
+async function resolveMachine(user: User | undefined, input: string, machineId?: string, state?: StateValue) {
 
   if (!user) {
     return registrationMachine;
@@ -144,26 +157,29 @@ async function resolveMachine(user: User | undefined, input?: string, machineId?
   }
 }
 
-async function activeMachine(input?: string, id?: string, state?: StateValue){
+type menu = {
+  [key: string]: any
+}
+
+async function activeMachine(input: string, id?: string, state?: StateValue){
   if (state === undefined || state === "mainMenu") return await mainMenu(input)
   if (state === "settingsMenu") return await settingsMenu(input)
   if (state === "pinManagementMenu") return await pinManagementMenu(input)
+  if(!id) return mainMenuMachine
   return machines[id]
 }
 
-async function mainMenu(input){
-  const menu = {
+async function mainMenu(input: string){
+  const menu: menu = {
     "1": transferMachine,
     "2": voucherMachine,
     "3": settingsMachine
   }
-  const x  = menu[input] || mainMenuMachine
-  console.log(`Returning machine ${x.id}`)
-  return x
+  return menu[input] || mainMenuMachine
 }
 
-async function settingsMenu(input){
-  const menu = {
+async function settingsMenu(input: string){
+  const menu: menu = {
     "1": profileMachine,
     "2": languagesMachine,
     "3": balancesMachine,
@@ -173,8 +189,8 @@ async function settingsMenu(input){
   return menu[input] || settingsMachine
 }
 
-async function pinManagementMenu(input){
-  const menu = {
+async function pinManagementMenu(input: string){
+  const menu: menu = {
     "3": socialRecoveryMachine
   }
   return menu[input] || pinManagementMachine
@@ -182,13 +198,13 @@ async function pinManagementMenu(input){
 
 async function response(context: BaseContext, machineId: string, state: string) {
   const { data, user } = context
-  let language
-  if (state === "changeSuccess" || state === "accountCreationSuccess") {
-    language = data?.languages.selected
+  let language: Locales
+  if (state === "changeSuccess" || state === "accountCreationSuccess" || state === "accountCreationError") {
+    language = data?.languages?.selected || fallbackLanguage()
   } else {
-    language = user?.account?.language  || Object.values(supportedLanguages.fallback)[0]
+    language = user?.account?.language || fallbackLanguage()
   }
-  const translator = L[language][machineId]
+  const translator = L[language][machineId as keyof typeof L[typeof language]]
   switch (machineId) {
     case MachineId.REGISTRATION:
         return await registrationTranslations(state, translator)
