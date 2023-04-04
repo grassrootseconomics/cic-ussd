@@ -1,13 +1,13 @@
 import { NamespaceHelpersTranslation } from '../../i18n-types';
 
-const sw_helpers = {
+const sw_helpers: NamespaceHelpersTranslation = {
   age: 'Umri:',
   credit: 'Ulipokea {value|currency} {symbol} kutoka kwa {sender} {time}.',
   debit: 'Ulituma {value|currency} {symbol} kwa {recipient} {time}.',
-  female: 'Mwanamke',
+  FEMALE: 'Mwanamke',
   gender: 'Jinsia:',
   location: 'Eneo:',
-  male: 'Mwanaume',
+  MALE: 'Mwanaume',
   name: 'Jina:',
   noMoreGuardians: 'Hamna walinzi zaidi.',
   noMoreLanguageOptions: 'Hamna lugha zaidi zilizopo.',
@@ -17,8 +17,8 @@ const sw_helpers = {
   notProvided: 'Haipo',
   services: 'Unauza:',
   systemError:
-    'END Sarafu inakabiliwa na matatizo ya kimitambo. Tafadhali jaribu tena baadaye.'
-
-} as NamespaceHelpersTranslation
+    'END Sarafu inakabiliwa na matatizo ya kimitambo. Tafadhali jaribu tena baadaye.',
+  unknownAddress: 'Akaunti isiyojulikana',
+}
 
 export default sw_helpers

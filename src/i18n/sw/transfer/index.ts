@@ -5,7 +5,7 @@ import sw_main from '../../sw/main';
 const { accountBlocked, exit } = sw;
 const { mainMenu } = sw_main;
 
-const sw_transfer = {
+const sw_transfer: NamespaceTransferTranslation = {
     accountBlocked: accountBlocked,
     enteringAmount:
       'CON Kiwango cha juu: {spendable|currency}\nWeka kiwango:\n0. Rudi',
@@ -25,6 +25,6 @@ const sw_transfer = {
       'END Ombi lako halikufaulu. Tafadhali jaribu tena baadaye.',
     transferInitiated:
       'END Ombi lako limetumwa. {recipient} atapokea {amount|currency} {symbol} kutoka kwa {sender}.'
-} satisfies NamespaceTransferTranslation
+}
 
 export default sw_transfer

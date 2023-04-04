@@ -1,11 +1,11 @@
 import { NamespaceVoucherTranslation } from '../../i18n-types';
-import en from '..'
+import en from '..';
 import en_main from '../../en/main';
 
 const { accountBlocked, exit } = en
 const { mainMenu } = en_main
 
-const en_voucher = {
+const en_voucher: NamespaceVoucherTranslation = {
   accountBlocked: accountBlocked,
   displayVoucherInfo:
     'CON {symbol} {name}\n{contact} {location}\n{description}\n0. Back',
@@ -25,7 +25,6 @@ const en_voucher = {
     'CON Select number or symbol from your vouchers:\n{vouchers}\n22. Back\n00. Exit',
   voucherMenu:
     'CON My voucher\n1. Select voucher\n2. Voucher details\n0. Back'
-
-} satisfies NamespaceVoucherTranslation
+}
 
 export default en_voucher;

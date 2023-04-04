@@ -1,6 +1,6 @@
 import type { NamespaceAuthTranslation } from '../../i18n-types';
 
-const en_auth = {
+const en_auth: NamespaceAuthTranslation = {
     accountBlocked:
         "END Your PIN has been blocked. For assistance please call: {supportPhone}.",
     processingAccount:
@@ -15,6 +15,6 @@ const en_auth = {
         "END Please try again in a few minutes. If the problem persists, please contact {supportNumber|phone}",
     exit:
         "END Thank you for using Sarafu. Goodbye.",
-} satisfies NamespaceAuthTranslation
+}
 
 export default en_auth

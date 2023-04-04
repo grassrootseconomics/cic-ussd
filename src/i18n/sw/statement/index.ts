@@ -1,8 +1,9 @@
 import { NamespaceStatementTranslation } from '../../i18n-types';
-import sw from '..'
+import sw from '..';
+
 const { accountBlocked, exit } = sw
 
-const sw_statement = {
+const sw_statement: NamespaceStatementTranslation = {
   accountBlocked: accountBlocked,
   enteringPin:
     "CON Weka PIN kuona taarifa ya akaunti yako:\n0. Rudi",
@@ -18,6 +19,6 @@ const sw_statement = {
   thirdTransactionSet:
     "CON {transactions}\n22. Nyuma\n00. Ondoka"
 
-} as NamespaceStatementTranslation
+}
 
 export default sw_statement

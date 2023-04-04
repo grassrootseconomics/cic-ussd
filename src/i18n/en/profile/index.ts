@@ -1,12 +1,12 @@
 import type { NamespaceProfileTranslation } from '../../i18n-types';
-import en from '..'
+import en from '..';
 import en_settings from '../../en/settings';
 
 const { accountBlocked, exit } = en
 const { settingsMenu } = en_settings
 
 
-const en_profile = {
+const en_profile: NamespaceProfileTranslation = {
 	accountBlocked: accountBlocked,
 	authorizingProfileView:
 		'CON Please enter your PIN:\n0. Back',
@@ -36,6 +36,6 @@ const en_profile = {
 	selectingGender:
 		'CON Select a gender:\n1. Male\n2. Female\n3. Other\n0. Back',
 	settingsMenu: settingsMenu,
-} satisfies NamespaceProfileTranslation
+}
 
 export default en_profile

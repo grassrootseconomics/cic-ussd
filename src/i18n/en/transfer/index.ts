@@ -5,7 +5,7 @@ import en_main from '../../en/main';
 const { accountBlocked, exit } = en
 const { mainMenu } = en_main
 
-const en_transfer = {
+const en_transfer: NamespaceTransferTranslation = {
     accountBlocked: accountBlocked,
     enteringPin:
         "CON {recipient} will receive {amount|currency} {symbol} from {sender}\nPlease enter your PIN to confirm:\n0. Back",
@@ -25,7 +25,6 @@ const en_transfer = {
         "END Your request failed. Please try again later.",
     transferInitiated:
         "END Your request has been sent. {recipient} will receive {amount|currency} {symbol} from {sender}.",
-
-} satisfies NamespaceTransferTranslation
+}
 
 export default en_transfer

@@ -1,8 +1,9 @@
 import type { NamespaceBalancesTranslation } from '../../i18n-types';
-import en from '..'
+import en from '..';
+
 const { accountBlocked, exit } = en
 
-const en_balances = {
+const en_balances: NamespaceBalancesTranslation = {
   accountBlocked: accountBlocked,
   balancesMenu:
     'CON My balance\n1. My balance\n2. Community balance\n0. Back',
@@ -18,8 +19,7 @@ const en_balances = {
   loadError:
     'END There was an error loading your balance. Please try again later.',
   loadSuccess:
-    'CON Your balance is: {balance|currency} {symbol}.\n0. Back\n9. Exit'
-
-} satisfies NamespaceBalancesTranslation
+    'CON Your balance is: {balance|currency} {symbol}.\n0. Back\n9. Exit',
+}
 
 export default en_balances

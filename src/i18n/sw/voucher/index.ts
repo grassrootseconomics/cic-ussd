@@ -1,11 +1,11 @@
 import { NamespaceVoucherTranslation } from '../../i18n-types';
-import sw from '..'
+import sw from '..';
 import sw_main from '../../sw/main';
 
 const { accountBlocked, exit } = sw
 const { mainMenu } = sw_main
 
-const sw_voucher = {
+const sw_voucher : NamespaceVoucherTranslation = {
   accountBlocked: accountBlocked,
   displayVoucherInfo:
     'CON {symbol} {name}\n{contact} {location}\n{description}\n0. Rudi',
@@ -27,6 +27,6 @@ const sw_voucher = {
     'CON Sarafu yangu\n1. Chagua Sarafu\n2. Maelezo ya Sarafu\n0. Rudi'
 
 
-} satisfies NamespaceVoucherTranslation
+}
 
 export default sw_voucher;

@@ -1,11 +1,11 @@
 import { NamespaceSocialRecoveryTranslation } from '../../i18n-types';
-import sw from '..'
+import sw from '..';
 import sw_pins from '../../sw/pins';
 
 const { accountBlocked, exit } = sw
 const { pinManagementMenu } = sw_pins
 
-const sw_socialRecovery = {
+const sw_socialRecovery: NamespaceSocialRecoveryTranslation = {
   accountBlocked: accountBlocked,
   enteringGuardianToRemove:
     'CON Weka namba ya simu ya mlinzi unayetaka kuondoa:\n0. Rudi',
@@ -37,6 +37,6 @@ const sw_socialRecovery = {
     'CON Ulinzi wa PIN:\n1. Ongeza mlinzi\n2. Ondoa mlinzi\n3. Angalia walinzi\n0. Rudi',
   thirdGuardiansSet:
     'CON Walinzi:\n{guardians}\n22. Rudi\n00.Ondoka'
-} satisfies NamespaceSocialRecoveryTranslation
+}
 
 export default sw_socialRecovery

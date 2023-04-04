@@ -15,7 +15,6 @@ export type Translations = RootTranslation &
 {
 	auth: NamespaceAuthTranslation,
 	balances: NamespaceBalancesTranslation,
-	feedback: NamespaceFeedbackTranslation,
 	helpers: NamespaceHelpersTranslation,
 	languages: NamespaceLanguagesTranslation,
 	main: NamespaceMainTranslation,
@@ -133,21 +132,6 @@ export type NamespaceBalancesTranslation = {
 	loadSuccess: RequiredParams<'balance|currency' | 'symbol'>
 }
 
-export type NamespaceFeedbackTranslation = {
-	/**
-	 * C​O​N​ ​l​u​g​h​a​ ​'​{​f​e​e​d​b​a​c​k​}​'​ ​s​i​o​ ​s​a​h​i​h​i​.​
-​C​h​a​g​u​a​ ​l​u​g​h​a​:​
-​{​l​a​n​g​u​a​g​e​s​}​
-​
-​1​1​.​ ​M​b​e​l​e​
-​2​2​.​ ​R​u​d​i​
-​0​0​.​O​n​d​o​k​a
-	 * @param {unknown} feedback
-	 * @param {unknown} languages
-	 */
-	invalidLanguageOption: RequiredParams<'feedback' | 'languages'>
-}
-
 export type NamespaceHelpersTranslation = {
 	/**
 	 * U​m​r​i​:
@@ -172,7 +156,7 @@ export type NamespaceHelpersTranslation = {
 	/**
 	 * M​w​a​n​a​m​k​e
 	 */
-	female: string
+	FEMALE: string
 	/**
 	 * J​i​n​s​i​a​:
 	 */
@@ -184,7 +168,7 @@ export type NamespaceHelpersTranslation = {
 	/**
 	 * M​w​a​n​a​u​m​e
 	 */
-	male: string
+	MALE: string
 	/**
 	 * J​i​n​a​:
 	 */
@@ -219,6 +203,10 @@ export type NamespaceHelpersTranslation = {
 	 * E​N​D​ ​S​a​r​a​f​u​ ​i​n​a​k​a​b​i​l​i​w​a​ ​n​a​ ​m​a​t​a​t​i​z​o​ ​y​a​ ​k​i​m​i​t​a​m​b​o​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​ ​b​a​a​d​a​y​e​.
 	 */
 	systemError: string
+	/**
+	 * A​k​a​u​n​t​i​ ​i​s​i​y​o​j​u​l​i​k​a​n​a
+	 */
+	unknownAddress: string
 }
 
 export type NamespaceLanguagesTranslation = {
@@ -475,6 +463,18 @@ export type NamespaceProfileTranslation = {
 
 export type NamespaceRegistrationTranslation = {
 	/**
+	 * E​N​D​ ​S​a​r​a​f​u​ ​i​n​a​ ​h​i​t​i​l​a​f​u​ ​z​a​ ​k​i​m​i​t​a​m​b​o​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​ ​b​a​a​d​a​y​e​.
+	 */
+	accountCreationError: string
+	/**
+	 * E​N​D​ ​A​k​a​u​n​t​i​ ​y​a​k​o​ ​y​a​ ​S​a​r​a​f​u​ ​i​n​a​t​a​y​a​r​i​s​h​w​a​.​ ​U​t​a​p​o​k​e​a​ ​u​j​u​m​b​e​ ​w​a​ ​S​M​S​ ​a​k​a​u​n​t​i​ ​y​a​k​o​ ​i​k​i​w​a​ ​t​a​y​a​r​i​.
+	 */
+	accountCreationSuccess: string
+	/**
+	 * E​N​D​ ​A​s​a​n​t​e​ ​k​w​a​ ​k​u​t​u​m​i​a​ ​h​u​d​u​m​a​ ​y​a​ ​S​a​r​a​f​u​.
+	 */
+	exit: string
+	/**
 	 * C​O​N​ ​K​a​r​i​b​u​ ​S​a​r​a​f​u​ ​N​e​t​w​o​r​k​!​
 ​{​l​a​n​g​u​a​g​e​s​}​
 ​0​0​.​O​n​d​o​k​a​
@@ -499,18 +499,6 @@ export type NamespaceRegistrationTranslation = {
 	 * @param {unknown} languages
 	 */
 	thirdLanguageSet: RequiredParams<'languages'>
-	/**
-	 * E​N​D​ ​A​k​a​u​n​t​i​ ​y​a​k​o​ ​y​a​ ​S​a​r​a​f​u​ ​i​n​a​t​a​y​a​r​i​s​h​w​a​.​ ​U​t​a​p​o​k​e​a​ ​u​j​u​m​b​e​ ​w​a​ ​S​M​S​ ​a​k​a​u​n​t​i​ ​y​a​k​o​ ​i​k​i​w​a​ ​t​a​y​a​r​i​.
-	 */
-	accountCreationSuccess: string
-	/**
-	 * E​N​D​ ​S​a​r​a​f​u​ ​i​n​a​ ​h​i​t​i​l​a​f​u​ ​z​a​ ​k​i​m​i​t​a​m​b​o​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​ ​b​a​a​d​a​y​e​.
-	 */
-	accountCreationFailed: string
-	/**
-	 * E​N​D​ ​A​s​a​n​t​e​ ​k​w​a​ ​k​u​t​u​m​i​a​ ​h​u​d​u​m​a​ ​y​a​ ​S​a​r​a​f​u​.
-	 */
-	exit: string
 }
 
 export type NamespaceSettingsTranslation = {
@@ -860,7 +848,6 @@ export type NamespaceVoucherTranslation = {
 export type Namespaces =
 	| 'auth'
 	| 'balances'
-	| 'feedback'
 	| 'helpers'
 	| 'languages'
 	| 'main'
@@ -885,12 +872,6 @@ type DisallowNamespaces = {
 	 * you need to use the `./balances/index.ts` file instead
 	 */
 	balances?: "[typesafe-i18n] reserved for 'balances'-namespace. You need to use the `./balances/index.ts` file instead."
-
-	/**
-	 * reserved for 'feedback'-namespace\
-	 * you need to use the `./feedback/index.ts` file instead
-	 */
-	feedback?: "[typesafe-i18n] reserved for 'feedback'-namespace. You need to use the `./feedback/index.ts` file instead."
 
 	/**
 	 * reserved for 'helpers'-namespace\
@@ -1051,18 +1032,6 @@ export type TranslationFunctions = {
 		 */
 		loadSuccess: (arg: { balance: unknown, symbol: unknown }) => LocalizedString
 	}
-	feedback: {
-		/**
-		 * CON lugha '{feedback}' sio sahihi.
-	Chagua lugha:
-	{languages}
-
-	11. Mbele
-	22. Rudi
-	00.Ondoka
-		 */
-		invalidLanguageOption: (arg: { feedback: unknown, languages: unknown }) => LocalizedString
-	}
 	helpers: {
 		/**
 		 * Umri:
@@ -1079,7 +1048,7 @@ export type TranslationFunctions = {
 		/**
 		 * Mwanamke
 		 */
-		female: () => LocalizedString
+		FEMALE: () => LocalizedString
 		/**
 		 * Jinsia:
 		 */
@@ -1091,7 +1060,7 @@ export type TranslationFunctions = {
 		/**
 		 * Mwanaume
 		 */
-		male: () => LocalizedString
+		MALE: () => LocalizedString
 		/**
 		 * Jina:
 		 */
@@ -1126,6 +1095,10 @@ export type TranslationFunctions = {
 		 * END Sarafu inakabiliwa na matatizo ya kimitambo. Tafadhali jaribu tena baadaye.
 		 */
 		systemError: () => LocalizedString
+		/**
+		 * Akaunti isiyojulikana
+		 */
+		unknownAddress: () => LocalizedString
 	}
 	languages: {
 		/**
@@ -1365,6 +1338,18 @@ export type TranslationFunctions = {
 	}
 	registration: {
 		/**
+		 * END Sarafu ina hitilafu za kimitambo. Tafadhali jaribu tena baadaye.
+		 */
+		accountCreationError: () => LocalizedString
+		/**
+		 * END Akaunti yako ya Sarafu inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.
+		 */
+		accountCreationSuccess: () => LocalizedString
+		/**
+		 * END Asante kwa kutumia huduma ya Sarafu.
+		 */
+		exit: () => LocalizedString
+		/**
 		 * CON Karibu Sarafu Network!
 	{languages}
 	00.Ondoka
@@ -1386,18 +1371,6 @@ export type TranslationFunctions = {
 	00.Ondoka
 		 */
 		thirdLanguageSet: (arg: { languages: unknown }) => LocalizedString
-		/**
-		 * END Akaunti yako ya Sarafu inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.
-		 */
-		accountCreationSuccess: () => LocalizedString
-		/**
-		 * END Sarafu ina hitilafu za kimitambo. Tafadhali jaribu tena baadaye.
-		 */
-		accountCreationFailed: () => LocalizedString
-		/**
-		 * END Asante kwa kutumia huduma ya Sarafu.
-		 */
-		exit: () => LocalizedString
 	}
 	settings: {
 		/**

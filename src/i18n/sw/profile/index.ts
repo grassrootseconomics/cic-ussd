@@ -1,11 +1,11 @@
 import { NamespaceProfileTranslation } from '../../i18n-types';
-import sw from '..'
+import sw from '..';
 import sw_settings from '../../sw/settings';
 
 const { accountBlocked, exit } = sw
 const { settingsMenu } = sw_settings
 
-const sw_profile = {
+const sw_profile: NamespaceProfileTranslation = {
   accountBlocked: accountBlocked,
   authorizingProfileView:
     'CON Tafadhali weka PIN yako:\n0. Rudi',
@@ -35,6 +35,6 @@ const sw_profile = {
   selectingGender:
     'CON Chagua jinsia:\n1. Mwanaume\n2. Mwanamke\n3. Nyingine\n0. Rudi',
   settingsMenu: settingsMenu,
-} satisfies NamespaceProfileTranslation
+}
 
 export default sw_profile

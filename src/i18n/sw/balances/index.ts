@@ -1,8 +1,9 @@
 import { NamespaceBalancesTranslation } from '../../i18n-types';
-import sw from '..'
+import sw from '..';
+
 const { accountBlocked, exit } = sw
 
-const sw_balances = {
+const sw_balances: NamespaceBalancesTranslation = {
   accountBlocked: accountBlocked,
   balancesMenu:
     'CON Salio langu\n1. Salio langu\n2. Salio la kikundi\n0. Rudi',
@@ -19,6 +20,6 @@ const sw_balances = {
     'END Tatizo limetokea wakati wa kuangali salio lako. Tafadhali jaribu tena baadaye.',
   loadSuccess:
     'CON Salio lako ni: {balance|currency} {symbol}.\n0. Rudi\n9. Ondoka'
-} as NamespaceBalancesTranslation
+}
 
 export default sw_balances

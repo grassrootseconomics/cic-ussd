@@ -1,8 +1,9 @@
 import type { NamespaceLanguagesTranslation } from '../../i18n-types';
-import en from '..'
+import en from '..';
+
 const { accountBlocked, exit } = en
 
-const en_languages = {
+const en_languages: NamespaceLanguagesTranslation = {
   accountBlocked: accountBlocked,
   changeError:
     'END An error occurred while changing language, please try again later.',
@@ -17,7 +18,6 @@ const en_languages = {
     'CON Select language:\n{languages}\n11. Next\n22. Back\n00.Exit',
   thirdLanguageSet:
     'CON Select language:\n{languages}\n22. Back\n00.Exit'
-
-} satisfies NamespaceLanguagesTranslation
+}
 
 export default en_languages

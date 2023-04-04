@@ -4,10 +4,10 @@ import type { Formatters, Locales } from './i18n-types';
 export const initFormatters: FormattersInitializer<Locales, Formatters> = (locale: Locales) => {
 
 	const formatters: Formatters = {
-		currency: (value: number) => {
+		currency: (value: any) => {
 			return value.toFixed(2)
 		},
-		phone: (value: string) => {
+		phone: (value: any) => {
 			return value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')
 		}
 	}

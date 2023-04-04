@@ -1,13 +1,13 @@
 import type { NamespaceHelpersTranslation } from '../../i18n-types';
 
-const en_helpers = {
+const en_helpers: NamespaceHelpersTranslation = {
 	age: 'Age:',
 	credit: 'You received {value|currency} {symbol} from {sender} {time}.',
 	debit: 'You sent {value|currency} {symbol} to {recipient} {time}.',
-	female: 'Female',
+	FEMALE: 'Female',
 	gender: 'Gender:',
 	location: 'Location:',
-	male: 'Male',
+	MALE: 'Male',
 	name: 'Name:',
 	noMoreGuardians: 'No more guardians.',
 	noMoreLanguageOptions: 'No more language options.',
@@ -17,7 +17,8 @@ const en_helpers = {
 	notProvided: 'Not provided',
 	services: 'You provide:',
 	systemError:
-		'END Sarafu is experiencing technical difficulties. Please try again later.'
-} satisfies NamespaceHelpersTranslation
+		'END Sarafu is experiencing technical difficulties. Please try again later.',
+	unknownAddress: 'Unrecognized account',
+}
 
 export default en_helpers

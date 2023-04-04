@@ -1,8 +1,9 @@
 import { NamespacePinsTranslation } from '../../i18n-types';
-import sw from '..'
+import sw from '..';
+
 const { accountBlocked, exit } = sw
 
-const sw_pins = {
+const sw_pins: NamespacePinsTranslation = {
   accountBlocked: accountBlocked,
   changeError:
     "END Kulikuwa na tatizo la kubadili PIN yako. Tafadhali jaribu tena baadaye.",
@@ -29,8 +30,6 @@ const sw_pins = {
     "CON Ombi lako la kubadili PIN limefanikiwa.\n0. Rudi\n9. Toka",
   pinChangeError:
     "END Kulikuwa na tatizo la kubadili PIN yako. Tafadhali jaribu tena baadaye."
-
-
-} satisfies NamespacePinsTranslation;
+}
 
 export default sw_pins;

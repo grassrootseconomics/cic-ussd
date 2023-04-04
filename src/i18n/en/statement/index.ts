@@ -1,8 +1,9 @@
 import type { NamespaceStatementTranslation } from '../../i18n-types';
-import en from '..'
+import en from '..';
+
 const { accountBlocked, exit } = en
 
-const en_statement = {
+const en_statement: NamespaceStatementTranslation = {
   accountBlocked: accountBlocked,
   enteringPin:
     "CON Enter your PIN to view your account statement:\n0. Back",
@@ -17,7 +18,6 @@ const en_statement = {
     "CON {transactions}\n11. Next\n22. Back\n00. Exit",
   thirdTransactionSet:
     "CON {transactions}\n22. Back\n00. Exit"
-
-} satisfies NamespaceStatementTranslation
+}
 
 export default en_statement

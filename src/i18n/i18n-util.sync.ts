@@ -10,7 +10,6 @@ import sw from './sw'
 
 import en_auth from './en/auth'
 import en_balances from './en/balances'
-import en_feedback from './en/feedback'
 import en_helpers from './en/helpers'
 import en_languages from './en/languages'
 import en_main from './en/main'
@@ -24,7 +23,6 @@ import en_transfer from './en/transfer'
 import en_voucher from './en/voucher'
 import sw_auth from './sw/auth'
 import sw_balances from './sw/balances'
-import sw_feedback from './sw/feedback'
 import sw_helpers from './sw/helpers'
 import sw_languages from './sw/languages'
 import sw_main from './sw/main'
@@ -42,7 +40,6 @@ const localeTranslations = {
 		...en,
 		auth: en_auth,
 		balances: en_balances,
-		feedback: en_feedback,
 		helpers: en_helpers,
 		languages: en_languages,
 		main: en_main,
@@ -59,7 +56,6 @@ const localeTranslations = {
 		...sw,
 		auth: sw_auth,
 		balances: sw_balances,
-		feedback: sw_feedback,
 		helpers: sw_helpers,
 		languages: sw_languages,
 		main: sw_main,

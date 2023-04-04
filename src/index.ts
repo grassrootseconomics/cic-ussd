@@ -1,47 +1,29 @@
-import app from './app';
-import { config } from './config';
-import { FastifyInstance } from 'fastify';
+import app from '@/app';
+import { config } from '@/config';
 import { loadSystemVouchers } from '@lib/ussd/utils';
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:43:49 AM
- *
- * @async
- * @param {FastifyInstance} fastify
- * @returns {*}
- */
-async function init(fastify: FastifyInstance) {
-  fastify.ready((error) => {
+
+app.ready(async (error) => {
+  if (error) {
+    app.log.error(error);
+    process.exit(1);
+  }
+
+  await loadSystemVouchers(app.graphql, app.p_redis)
+});
+
+app.listen({ host: config.SERVER.HOST, port: config.SERVER.PORT },
+  (error) => {
     if (error) {
-      fastify.log.error(error);
+      app.log.error(error);
       process.exit(1);
     }
+});
 
-    if (config.DEV) {
-      fastify.log.debug(`Server routes: ${fastify.printRoutes()}`);
-    }
-
-    loadSystemVouchers(fastify.graphql, fastify.p_redis)
-  });
-
-  fastify.listen({ host: config.SERVER.HOST, port: config.SERVER.PORT },
-    (error) => {
-      if (error) {
-        fastify.log.error(error);
-        process.exit(1);
-      }
-  });
-
-  fastify.log.info('Starting server...')
-
-  for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.once(signal, async () => {
-      app.log.info('Gracefully shutting down.')
-      await app.close()
-      return process.exit(0)
-    })
-  }
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.once(signal, async () => {
+    app.log.info('Gracefully shutting down.')
+    await app.close()
+    return process.exit(0)
+  })
 }
-
-init(app)

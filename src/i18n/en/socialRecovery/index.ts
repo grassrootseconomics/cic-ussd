@@ -1,11 +1,11 @@
 import type { NamespaceSocialRecoveryTranslation } from '../../i18n-types';
-import en from '..'
+import en from '..';
 import en_pins from '../../en/pins';
 
 const { accountBlocked, exit } = en
 const { pinManagementMenu } = en_pins
 
-const en_socialRecovery = {
+const en_socialRecovery: NamespaceSocialRecoveryTranslation = {
   accountBlocked: accountBlocked,
   enteringGuardianToRemove:
     'CON Enter phone number of the guardian to remove:\n0. Back',
@@ -37,6 +37,6 @@ const en_socialRecovery = {
     'CON PIN guarding:\n1. Add guardian\n2. Remove guardian\n3. View guardians\n0. Back',
   thirdGuardiansSet:
     'CON Guardians:\n{guardians}\n22. Back\n00.Exit'
-} satisfies NamespaceSocialRecoveryTranslation
+}
 
 export default en_socialRecovery

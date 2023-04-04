@@ -1,6 +1,6 @@
-import { BaseTranslation } from '../../i18n-types';
+import { NamespaceAuthTranslation } from '../../i18n-types';
 
-const sw_auth = {
+const sw_auth: NamespaceAuthTranslation  = {
     accountBlocked:
         "END PIN yako imefungwa. Kwa usaidizi tafadhali piga simu kwa: {supportPhone}.",
     processingAccount:
@@ -15,6 +15,6 @@ const sw_auth = {
         "END Tafadhali jaribu tena baada ya dakika chache. Kama tatizo linaendelea, tafadhali wasiliana na {supportNumber|phone}.",
     exit:
         "END Asante kwa kutumia Sarafu. Kwaheri.",
-} satisfies BaseTranslation
+}
 
 export default sw_auth

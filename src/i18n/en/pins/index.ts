@@ -1,8 +1,9 @@
 import type { NamespacePinsTranslation } from '../../i18n-types';
-import en from '..'
+import en from '..';
+
 const { accountBlocked, exit } = en
 
-const en_pins = {
+const en_pins: NamespacePinsTranslation = {
   accountBlocked: accountBlocked,
   changeError:
     "END There was an error changing your PIN. Please try again later.",
@@ -29,8 +30,6 @@ const en_pins = {
     "CON Your PIN change request has been successful.\n0. Back\n9. Exit",
   pinChangeError:
     "END There was an error changing your PIN. Please try again later.",
-
-
-} satisfies NamespacePinsTranslation
+}
 
 export default en_pins

@@ -1,8 +1,9 @@
 import { NamespaceLanguagesTranslation } from '../../i18n-types';
-import sw from '..'
+import sw from '..';
+
 const { accountBlocked, exit } = sw
 
-const sw_languages = {
+const sw_languages: NamespaceLanguagesTranslation = {
   accountBlocked: accountBlocked,
   changeError:
     'END Tatizo limetokea wakati wa kubadilisha lugha, tafadhali jaribu tena baadaye.',
@@ -18,6 +19,6 @@ const sw_languages = {
   thirdLanguageSet:
     'CON Chagua lugha:\n{languages}\n22. Rudi\n00.Ondoka'
 
-} as NamespaceLanguagesTranslation
+}
 
 export default sw_languages
