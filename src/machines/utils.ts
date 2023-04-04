@@ -8,13 +8,15 @@ import { Account } from '@db/models/account';
 import { Session } from '@lib/ussd/session';
 import { supportedLanguages } from '@lib/ussd/utils';
 import { Gender, GraphUser } from '@lib/graph/user';
-import { tHelpers } from '@src/i18n/translator';
+import { fallbackLanguage, tHelpers } from '@i18n/translators';
 import { sanitizePhoneNumber } from '@utils/phoneNumber';
 import { MachineError } from '@lib/errors';
 import { Cache } from '@utils/redis';
 import { Transaction } from '@machines/statement';
 import { GraphAccount } from '@lib/graph/account';
 import { Marketplace } from '@lib/graph/marketplace';
+import { logger } from '@/app';
+import { Locales } from '@i18n/i18n-types';
 
 enum BaseError {
   INVALID_PHONE_NUMBER = "INVALID_PHONE_NUMBER",
@@ -37,9 +39,10 @@ export enum MachineId {
   VOUCHER = "voucher",
 }
 
+
 interface ContextData {
-  communityBalance?: string,
-  guardians?: {
+  communityBalance: string,
+  guardians: {
     entry?: {
       toAdd?: string,
       toRemove?: string
@@ -50,26 +53,26 @@ interface ContextData {
       toRemove?: string
     }
   },
-  languages?: {
-    selected?: string
+  languages: {
+    selected: Locales
   },
   personal_information?: {
-    given_names?: string,
     family_name?: string,
     gender?: Gender,
-    year_of_birth?: number,
+    given_names?: string,
     location_name?: string,
+    year_of_birth?: number,
   },
-  pins?: {
+  pins: {
     initial?: string,
     wards?: {
       entry?: string,
       validated?: string
     }
   },
-  marketplace?: string,
-  statement?: string[],
-  transfer?: {
+  marketplace: string,
+  statement: string[],
+  transfer: {
     amount?: number,
     recipient?: {
       entry?: string,
@@ -77,7 +80,7 @@ interface ContextData {
       validated?: string
     }
   },
-  vouchers?: {
+  vouchers: {
     balances?: string[],
     held?: string[],
     selected?: string
@@ -92,18 +95,30 @@ interface ContextData {
 }
 
 export interface BaseContext {
-  data?: ContextData
+  data: Partial<ContextData>
   errorMessages?: string[],
-  resources?: Resources,
+  resources: Resources,
   session?: Session,
-  user?: User,
-  ussd?: Ussd
+  user: User
+  ussd: Ussd
 }
 
-export interface Graph {
-  account?: Partial<GraphAccount>
-  marketplace?: Marketplace
-  user?: Partial<GraphUser>
+interface Graph {
+  account: Pick<GraphAccount, 'id'>
+  marketplace?: Pick<Marketplace, 'marketplace_name'>
+  user: Partial<GraphUser>
+}
+
+export interface User {
+  account: Account
+  graph: Graph
+  guardians?: string[]
+  tag: string
+  transactions?: Transaction[]
+  vouchers: {
+    active: ActiveVoucher
+    held?: ActiveVoucher[]
+  }
 }
 
 export interface Resources {
@@ -115,26 +130,15 @@ export interface Resources {
 
 }
 
-export interface User {
-  account?: Account,
-  graph?: Partial<Graph>
-  guardians?: string[]
-  tag?: string
-  transactions?: Transaction[]
-  vouchers?: {
-    active?: ActiveVoucher
-    held?: ActiveVoucher[]
-  }
-}
-
 export interface Ussd {
-  countryCode?: CountryCode,
+  countryCode: CountryCode,
   input: string,
   phoneNumber: string,
   requestId: string,
   responseContentType: string,
   serviceCode: string,
 }
+
 
 export type BaseEvent =
   | { type: "BACK" }
@@ -169,6 +173,12 @@ export const isOption00 = generateOptionChecker('00');
 export const isOption11 = generateOptionChecker('11');
 export const isOption22 = generateOptionChecker('22');
 
+
+export function getLanguage(input: string): Locales {
+  const index = parseInt(input) - 1;
+  return Object.keys(supportedLanguages)[index] as Locales;
+}
+
 export function isValidPhoneNumber(context: BaseContext, event: any) {
   const { ussd: { countryCode } } = context;
   return validatePhoneNumber(countryCode, event.input)[0] === '+';
@@ -179,14 +189,13 @@ export function isSuccess(context: BaseContext, event: any) {
 }
 
 export async function languageOptions () {
-  const languagesList = Object.values(supportedLanguages)
-    .filter((obj) => Object.keys(obj)[0] !== 'fb')
-    .map((obj, index) => `${index + 1}. ${Object.values(obj)[0]}`)
-  const placeholder = tHelpers("noMoreLanguages", Object.values(supportedLanguages.fallback)[0])
-  return await menuPages(languagesList, placeholder)
+  const languages = Object.values(supportedLanguages)
+    .map((language, index) => `${index + 1}. ${language}`)
+  const placeholder = tHelpers("noMoreLanguageOptions", fallbackLanguage())
+  return await menuPages(languages, placeholder)
 }
 
-export async function menuPages(list: string[], placeholder: string): Promise<string[][]> {
+export async function menuPages(list: string[], placeholder: string): Promise<string[]> {
   const pages = [];
   for (let i = 0; i < list.length; i += 3) {
     pages.push(list.slice(i, i + 3));
@@ -214,7 +223,7 @@ export async function translate(state: string, translator:any, data?: Record<str
 export function updateErrorMessages (context: BaseContext, event: any) {
   const errorMessages = context.errorMessages || []
   const { message } = event.data
-  console.error(`State machine error occurred: ${JSON.stringify(message)}. STACKTRACE: ${event.data.stack}`)
+  logger.debug(`State machine error occurred: ${JSON.stringify(message)}. STACKTRACE: ${event.data.stack}`)
   errorMessages.push(message)
   context.errorMessages = errorMessages
   return context
@@ -224,14 +233,14 @@ export function validatePhoneNumber(countryCode: CountryCode, phoneNumber: strin
   try {
     return sanitizePhoneNumber(phoneNumber, countryCode);
   } catch (error) {
-    throw new MachineError(BaseError.INVALID_PHONE_NUMBER, error.message)
+    throw new MachineError(BaseError.INVALID_PHONE_NUMBER, "Invalid phone number.")
   }
 }
 
 export async function validateUser(countryCode: CountryCode, phoneNumber: string, redis: RedisClient): Promise<User> {
   const key = validatePhoneNumber(countryCode, phoneNumber)
-  const cache = new Cache(redis, key)
-  const user = await cache.getJSON<User>()
+  const cache = new Cache<User>(redis, key)
+  const user = await cache.getJSON()
   if (!user) {
     throw new MachineError(BaseError.UNKNOWN_ACCOUNT, `Account not found for: ${key}`)
   }
@@ -239,10 +248,13 @@ export async function validateUser(countryCode: CountryCode, phoneNumber: string
 }
 
 export async function validateTargetUser(context: BaseContext, input: string) {
-  const { user: { account: { phone_number } }, resources: { p_redis }, ussd: { countryCode } } = context
+  const { user, resources: { p_redis }, ussd: { countryCode } } = context
+
   const targetUser = await validateUser(countryCode, input, p_redis)
-  if (targetUser.account.phone_number === phone_number) {
+
+  if (user?.account.phone_number === targetUser.account.phone_number) {
     throw new MachineError(BaseError.SELF_INTERACTION, "Cannot interact with self.")
   }
+
   return targetUser
 }

@@ -3,39 +3,18 @@ import { Redis as RedisClient } from 'ioredis';
 import { Cache } from '@utils/redis';
 import { getActiveVouchers } from '@lib/graph/voucher';
 import { getPersonalInformation } from '@lib/graph/user';
+import { logger } from '@/app';
+import { User } from '@machines/utils';
+import { Locales } from '@i18n/i18n-types';
+import { SystemError } from '@lib/errors';
 
 export type Address = `0x${string & { length: 42 }}`
-export type Symbol = `Uppercase<${string}>`
 
+type SupportedLanguages = Record<Locales, string>
 
-export const supportedLanguages = {
-  1: {
-    en: 'English'
-  },
-  2: {
-    sw: 'Swahili'
-  },
-  3: {
-    kam: 'Kamba'
-  },
-  4: {
-    kik: 'Kikuyu'
-  },
-  5: {
-    miji: 'Mijikenda'
-  },
-  6: {
-    luo: 'Luo'
-  },
-  7: {
-    bor: 'Borana'
-  },
-  8: {
-    fr: 'French'
-  },
-  fallback: {
-    fb: 'sw'
-  }
+export const supportedLanguages: SupportedLanguages = {
+  en: 'English',
+  sw: 'Swahili'
 }
 
 export function cashRounding (amount: string): number {
@@ -49,7 +28,6 @@ export function cashRounding (amount: string): number {
 }
 
 export async function loadSystemVouchers (graphql: GraphQLClient, redis: RedisClient) {
-  console.debug('Loading system vouchers...')
   const vouchers = await getActiveVouchers(graphql)
 
   const CHUNK_SIZE = 50 // batch size
@@ -57,7 +35,6 @@ export async function loadSystemVouchers (graphql: GraphQLClient, redis: RedisCl
 
   const cacheDataPromises = await Promise.all(chunks.map(async (chunk) => {
     const cacheSetPromises = chunk.map((voucher) => {
-      console.debug(`Preparing voucher ${voucher.symbol}...`)
       const cache = new Cache(redis, voucher.voucher_address)
       return cache.setJSON(voucher)
     })
@@ -66,31 +43,44 @@ export async function loadSystemVouchers (graphql: GraphQLClient, redis: RedisCl
 
   const cacheMapPromises = await Promise.all(chunks.map(async (chunk) => {
     const cacheSetPromises = chunk.map((voucher) => {
-      const cache = new Cache(redis, `address-symbol-${voucher.voucher_address}`)
-      return cache.set(voucher.symbol)
+      redis.set(`address-symbol-${voucher.voucher_address}`, voucher.symbol)
     })
     return await Promise.all(cacheSetPromises)
   }))
 
   const results = await Promise.allSettled([...cacheDataPromises, ...cacheMapPromises])
-
   results.forEach((result, index) => {
     if (result.status === 'rejected') {
-      console.error(`Promise ${index} failed with error: ${result.reason}`)
-    } else {
-      console.debug(`Promise ${index} succeeded with value: ${result.value}`)
+      logger.error(`Error loading system voucher ${index}: ${result.reason}`)
     }
   })
-  console.debug('System vouchers loaded.')
 }
 
 export async function getTag(phoneNumber: string, redis: RedisClient) {
-  const cache = new Cache(redis, phoneNumber)
-  return await cache.getJSON(['tag'])
+  const cache = new Cache<User>(redis, phoneNumber)
+  const tag = await cache.getJSON(['tag'])
+  return tag?.tag || phoneNumber
 }
 
-export async function generateTag(address: Address, graphql: GraphQLClient, phoneNumber) {
+export async function generateTag(address: Address, graphql: GraphQLClient, phoneNumber: string) {
   const personalInformation = await getPersonalInformation(address, graphql)
   const tag = `${personalInformation?.given_names ?? ''} ${personalInformation?.family_name ?? ''}`.trim()
   return tag ? `${tag} ${phoneNumber}` : phoneNumber
+}
+
+export function handleResults(results: PromiseSettledResult<any>[]) {
+  const errors = results
+    .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+    .map((result) => result.reason)
+
+  if (errors.length) {
+    throw new AggregateError(errors)
+  }
+
+  return results.map((result) => {
+    if (result.status === 'fulfilled') {
+      return result.value;
+    }
+    throw new SystemError(`Error: ${result.reason}`);
+  });
 }
