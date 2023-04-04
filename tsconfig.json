@@ -2,12 +2,14 @@
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"],
   "compilerOptions": {
+    "allowJs": false,
     "module": "CommonJS",
     "target": "ES2022",
     "outDir": "dist",
-    "rootDir": "./",
+    "rootDir": "src",
     "sourceMap": true,
-    //"strict": true,
+    "strict": true,
+    "types": ["node"],
     "importHelpers": true,
     "esModuleInterop": true,
     "moduleResolution": "Node",
@@ -16,16 +18,17 @@
     "stripInternal": true,
     "skipLibCheck": true,
     "experimentalDecorators": true,
+    "baseUrl": "src",
     "paths": {
-      "@src/*": ["./src/*"],
-      "@db/*": ["./src/db/*"],
-      "@dev/*": ["./dev/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@machines/*": ["./src/machines/*"],
-      "@plugins/*": ["./src/plugins/*"],
-      "@routes/*": ["./src/routes/*"],
-      "@services/*": ["./src/services/*"],
-      "@utils/*": ["./src/utils/*"]
+      "@/*": ["./*"],
+      "@db/*": ["db/*"],
+      "@i18n/*": ["i18n/*"],
+      "@lib/*": ["lib/*"],
+      "@machines/*": ["machines/*"],
+      "@plugins/*": ["plugins/*"],
+      "@routes/*": ["routes/*"],
+      "@services/*": ["services/*"],
+      "@utils/*": ["utils/*"]
     }
   }
 }

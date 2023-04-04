@@ -1,0 +1,1 @@
+CREATE DATABASE cic_ussd;
