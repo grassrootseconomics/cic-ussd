@@ -11,11 +11,11 @@ import {
   translate,
   updateErrorMessages,
   validateTargetUser
-} from '@src/machines/utils';
+} from '@machines/utils';
 import { createMachine, raise } from 'xstate';
-import { hashValue, isBlocked, isValidPin, pinsMatch, validatePin } from '@src/machines/auth';
+import { hashValue, isBlocked, isValidPin, pinsMatch, validatePin } from '@machines/auth';
 import { resetAccount, updatePin } from '@db/models/account';
-import { MachineError } from '@lib/errors';
+import { ContextError, MachineError } from '@lib/errors';
 
 
 enum PinsError {
@@ -268,9 +268,9 @@ function saveValidatedWard(context: BaseContext, event: any) {
   context.data = {
     ...(context.data || {}),
     pins: {
-      ...(context.data.pins || {}),
+      ...(context.data?.pins || {}),
       wards: {
-        ...(context.data.pins.wards || {}),
+        ...(context.data?.pins?.wards || {}),
         validated: event.data
       }
     }
@@ -284,28 +284,35 @@ async function authorizePinChange(context: BaseContext, event: any) {
 }
 
 async function initiatePinUpdate(context: BaseContext) {
-  const { data: { pins: { initial } }, resources: { db, p_redis }, user: { account: { phone_number } } } = context;
-  const hashedPin = await hashValue(initial)
+  const { data: { pins }, resources: { db, p_redis }, user: { account: { phone_number } } } = context;
+
+  if (!pins?.initial) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Initial PIN missing from context.")
+  }
+  const hashedPin = await hashValue(pins.initial)
   try {
     await updatePin(db, hashedPin, phone_number, p_redis);
     return { success: true }
   } catch (error) {
-    throw new MachineError(PinsError.CHANGE_ERROR, error.message)
+    throw new MachineError(PinsError.CHANGE_ERROR, "Failed to update PIN.")
   }
 }
 
 async function initiateWardPinReset(context: BaseContext, event: any) {
-  const { data: { pins: { wards: { validated } } }, resources: { db, p_redis } } = context;
+  const { data: { pins }, resources: { db, p_redis } } = context;
   const { input } = event
 
   await validatePin(context, input)
 
-  // attempt to reset ward pin.
+  if(!pins?.wards?.validated) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Validated ward missing from context.")
+  }
+
   try {
-    await resetAccount(db, validated, p_redis);
+    await resetAccount(db, pins.wards.validated, p_redis);
     return { success: true }
   } catch (error) {
-    throw new MachineError(PinsError.WARD_RESET_ERROR, error.message)
+    throw new MachineError(PinsError.WARD_RESET_ERROR, "Failed to reset ward's PIN.")
   }
 }
 
@@ -322,14 +329,13 @@ async function validateWardToReset(context: BaseContext, event: any) {
 }
 
 export async function pinsTranslations(context: BaseContext, state: string, translator: any) {
+  const { data: { pins } } = context;
   if (state ===  "wardResetSuccess" ) {
-    const { data: { pins: { wards: { validated } } } } = context;
-    return await translate(state, translator, { ward: validated })
+    return await translate(state, translator, { ward: pins?.wards?.validated })
   }
 
   if (state === "wardResetError") {
-    const { data: { pins: { wards: { entry } } } } = context;
-    return await translate(state, translator, { ward: entry })
+    return await translate(state, translator, { ward: pins?.wards?.entry })
   }
 
   return await translate(state, translator)

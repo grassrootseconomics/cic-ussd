@@ -10,16 +10,17 @@ import {
   menuPages,
   translate,
   updateErrorMessages
-} from '@src/machines/utils';
+} from '@machines/utils';
 import { isBlocked, validatePin } from '@machines/auth';
-import { MachineError } from '@lib/errors';
-import { Address, cashRounding, getTag, Symbol } from '@lib/ussd/utils';
-import { tHelpers } from '@src/i18n/translator';
+import { ContextError, MachineError } from '@lib/errors';
+import { Address, cashRounding, getTag } from '@lib/ussd/utils';
+import { tHelpers } from '@i18n/translators';
 import moment from 'moment-timezone';
 import { Redis as RedisClient } from 'ioredis';
 import { GraphQLClient } from 'graphql-request';
-import { config } from '@src/config';
+import { config } from '@/config';
 import { ethers } from 'ethers';
+import { Locales } from '@i18n/i18n-types';
 
 
 export enum TransactionType {
@@ -30,7 +31,7 @@ export enum TransactionType {
 export interface Transaction {
   block: number;
   from: Address;
-  symbol: Symbol;
+  symbol: string;
   time: number;
   to: Address;
   transactionHash: string;
@@ -156,41 +157,49 @@ async function authorizeStatementView(context: BaseContext, event: any) {
 
   await validatePin(context, input)
 
-  // load statement
   try {
-    const statement = transactions || [];
-    const formattedStatement = await formatStatement(graphql, language, p_redis, statement)
-    return { success: true, statement: formattedStatement }
+    const statement = await generateStatement(graphql, language, p_redis, transactions || [])
+    return { success: true, statement: statement }
   } catch (error) {
-    throw new MachineError(StatementError.LOAD_ERROR, error.message)
+    throw new MachineError(StatementError.LOAD_ERROR, `Error loading statement.`)
   }
 }
 
-async function formatStatement( graphql: GraphQLClient, language: string, redis: RedisClient, transactions: Transaction[]){
+async function generateStatement( graphql: GraphQLClient, language: Locales, redis: RedisClient, transactions: Transaction[]){
   const placeholder = tHelpers("noMoreTransactions", language)
-  const formattedTransactions = await Promise.all(transactions.map(async (transaction) => {
-    const { from, symbol, time, to, type, value } = transaction
-    const transactionType = type === TransactionType.CREDIT ? "credit" : "debit"
-    const [fromPhone, toPhone] = await Promise.all([
-      redis.get(`address-phone-${from}`),
-      redis.get(`address-phone-${to}`)
-    ])
-    const [fromTag, toTag] = await Promise.all([
-      getTag(fromPhone, redis),
-      getTag(toPhone, redis)
-    ])
-    const sender = fromTag.tag
-    const recipient = toTag.tag
-    const data = {
-      value: cashRounding(ethers.formatUnits(value, 6)),
-      symbol: symbol,
-      time: moment(new Date(time)).tz(config.TIMEZONE).format("DD-MM-YYYY HH:mm A"),
-      sender: sender,
-      recipient: recipient
-    }
-    return tHelpers(transactionType, language, data)
+  const sortedTransactions = [...transactions].sort((a, b) => b.time - a.time)
+  const formattedTransactions = await Promise.all(sortedTransactions
+    .map(async (transaction) => {
+     return formatTransaction(transaction, language, redis)
   }))
   return await menuPages(formattedTransactions, placeholder)
+}
+
+async function formatTransaction(transaction: Transaction, language: Locales, redis: RedisClient){
+  const { from, symbol, time, to, type, value } = transaction
+  const transactionType = type === TransactionType.CREDIT ? "credit" : "debit"
+  const [recipient, sender] = await Promise.all([
+    getTransactionActor(to, language, redis),
+    getTransactionActor(from, language, redis)
+  ])
+
+  const data = {
+    value: cashRounding(ethers.formatUnits(value, 6)),
+    symbol: symbol,
+    time: moment(new Date(time)).tz(config.TIMEZONE).format("DD-MM-YYYY HH:mm A"),
+    sender: sender,
+    recipient: recipient
+  }
+  return tHelpers(transactionType, language, data)
+}
+
+async function getTransactionActor(address: string, language: Locales, redis: RedisClient){
+  let actor = tHelpers("unknownAddress", language)
+  const phoneNumber = await redis.get(`address-phone-${address}`)
+  if (phoneNumber) {
+    actor = await getTag(phoneNumber, redis)
+  }
+  return actor
 }
 
 function saveStatement(context: BaseContext, event: any) {
@@ -202,19 +211,17 @@ function saveStatement(context: BaseContext, event: any) {
 }
 
 export async function statementTranslations(context: BaseContext, state: string, translator: any){
+  const { data: { statement } } = context
   switch (state) {
-    case "firstTransactionSet": {
-      const { data: { statement } } = context
+    case "firstTransactionSet":
+      if(!statement) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Statement missing in context object data.")
       return await translate(state, translator, {transactions: statement[0]})
-    }
-    case "secondTransactionSet": {
-      const { data: { statement } } = context
+    case "secondTransactionSet":
+      if(!statement) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Statement missing in context object data.")
       return await translate(state, translator, {transactions: statement[1]})
-    }
-    case "thirdTransactionSet": {
-      const { data: { statement } } = context
+    case "thirdTransactionSet":
+      if(!statement) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Statement missing in context object data.")
       return await translate(state, translator, {transactions: statement[2]})
-    }
     default:
       return await translate(state, translator)
   }

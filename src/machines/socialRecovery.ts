@@ -14,16 +14,18 @@ import {
   menuPages,
   translate,
   updateErrorMessages,
+  User,
   validateTargetUser
 } from '@machines/utils';
 import { sanitizePhoneNumber } from '@utils/phoneNumber';
 import { isBlocked, isValidPin, validatePin } from '@machines/auth';
-import { MachineError } from '@lib/errors';
+import { ContextError, MachineError } from '@lib/errors';
 import { addGuardian, removeGuardian } from '@db/models/guardian';
 import { Cache } from '@utils/redis';
-import { tHelpers } from '@src/i18n/translator';
+import { tHelpers } from '@i18n/translators';
 import { Redis as RedisClient } from 'ioredis';
 import { getTag } from '@lib/ussd/utils';
+import { Locales } from '@i18n/i18n-types';
 
 
 enum SocialRecoveryError {
@@ -390,36 +392,42 @@ function saveGuardianToRemoveEntry(context: BaseContext, event: any) {
 
 async function initiateGuardianAddition(context: BaseContext, event: any) {
   const {
-    data: { guardians: { validated: { toAdd } } },
+    data: { guardians },
     resources: { db, p_redis },
     user: { account: { phone_number } } } = context
   const { input } = event
 
   await validatePin(context, input)
 
-  // add guardian to db and redis.
+  if(!guardians?.validated?.toAdd) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardian to add missing from context.")
+  }
+
   try {
-    await addGuardian(db, toAdd, p_redis, phone_number)
+    await addGuardian(db, guardians.validated.toAdd, p_redis, phone_number)
     return { success: true }
-  } catch (error) {
+  } catch (error: any) {
     throw new MachineError(SocialRecoveryError.GUARDIAN_ADDITION_ERROR, error.message)
   }
 }
 
 async function initiateGuardianRemoval(context: BaseContext, event: any) {
   const {
-    data: { guardians: { validated: { toRemove } } },
+    data: { guardians },
     resources: { db, p_redis },
     user: { account: { phone_number } } } = context
   const { input } = event
 
   await validatePin(context, input)
 
-  // remove guardian from db and redis.
+  if(!guardians?.validated?.toRemove) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardian to remove missing from context.")
+  }
+
   try {
-    await removeGuardian(db, toRemove, p_redis, phone_number)
+    await removeGuardian(db, guardians.validated.toRemove, p_redis, phone_number)
     return { success: true }
-  } catch (error) {
+  } catch (error: any) {
     throw new MachineError(SocialRecoveryError.GUARDIAN_REMOVAL_ERROR, error.message)
   }
 }
@@ -432,23 +440,25 @@ async function loadPinGuardians(context: BaseContext, event: any) {
 
   // load guardians from redis.
   try {
-    const cache = new Cache(p_redis, phone_number);
-    const account = await cache.getJSON()
-    const { guardians } = account
+    const cache = new Cache<User>(p_redis, phone_number);
+    const user = await cache.getJSON()
+
+    const guardians = user?.guardians || []
+
     const formattedGuardians = await formatGuardians(guardians, language, p_redis)
     return { guardians: formattedGuardians, success: true }
-  } catch (error) {
+  } catch (error: any) {
     throw new MachineError(SocialRecoveryError.LOAD_ERROR, error.message)
   }
 
 }
 
-async function formatGuardians(guardians: string[], language: string, redis: RedisClient) {
+async function formatGuardians(guardians: string[], language: Locales, redis: RedisClient) {
   const placeholder = tHelpers("noMoreGuardians", language)
   const formattedGuardians = []
   for (const guardian of guardians) {
     const tag = await getTag(guardian, redis)
-    formattedGuardians.push(tag.tag)
+    formattedGuardians.push(tag)
   }
   return await menuPages(formattedGuardians, placeholder)
 }
@@ -480,38 +490,34 @@ async function validateGuardianToRemove(context: BaseContext, event: any) {
 }
 
 export async function socialRecoveryTranslations(context: BaseContext, state: string, translator: any){
-  const { resources: { p_redis } } = context
+  const { data: { guardians }, resources: { p_redis } } = context
 
   switch (state) {
-    case 'guardianAdditionSuccess': {
-      const { data: { guardians: { validated: { toAdd } } } } = context;
-      const tag = await getTag(toAdd, p_redis);
-      return await translate(state, translator, { guardian: tag.tag });
-    }
+    case 'guardianAdditionSuccess':
     case 'guardianAdditionError': {
-      const { data: { guardians: { entry: { toAdd } } } } = context;
-      return await translate(state, translator, { guardian: toAdd });
+      if (!guardians?.validated?.toAdd) throw new MachineError(ContextError.MALFORMED_CONTEXT, 'Validated guardian to add missing from context.');
+      const guardian = await getTag(guardians.validated.toAdd, p_redis);
+      return await translate(state, translator, { guardian: guardian });
     }
-    case 'guardianRemovalSuccess': {
-      const { data: { guardians: { validated: { toRemove } } } } = context;
-      const tag = await getTag(toRemove, p_redis);
-      return await translate(state, translator, { guardian: tag.tag });
-    }
+
+    case 'guardianRemovalSuccess':
     case 'guardianRemovalError': {
-      const { data: { guardians: { entry: { toRemove } } } } = context;
-      return await translate(state, translator, { guardian: toRemove });
+      if (!guardians?.validated?.toRemove) throw new MachineError(ContextError.MALFORMED_CONTEXT, 'Validated guardian to remove missing from context.');
+      const guardian = await getTag(guardians.validated.toRemove, p_redis);
+      return await translate(state, translator, { guardian: guardian });
     }
+
     case "firstGuardiansSet": {
-      const { data: { guardians: { loaded } } } = context;
-      return await translate(state, translator, { guardians: loaded[0] });
+      if (!guardians?.loaded) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardians missing from context.")
+      return await translate(state, translator, { guardians: guardians.loaded[0] });
     }
     case "secondGuardiansSet": {
-      const { data: { guardians: { loaded } } } = context;
-      return await translate(state, translator, { guardians: loaded[1] });
+      if (!guardians?.loaded) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardians missing from context.")
+      return await translate(state, translator, { guardians: guardians.loaded[1] });
     }
     case "thirdGuardiansSet": {
-      const { data: { guardians: { loaded } } } = context;
-      return await translate(state, translator, { guardians: loaded[2] });
+      if (!guardians?.loaded) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardians missing from context.")
+      return await translate(state, translator, { guardians: guardians.loaded[2] });
     }
     default:
       return await translate(state, translator)

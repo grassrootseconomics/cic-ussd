@@ -6,17 +6,18 @@ import {
   isOption3,
   isOption4,
   isOption5,
-  isOption6, isOption9,
+  isOption6,
+  isOption9,
   isSuccess,
   MachineId,
   translate,
   updateErrorMessages
-} from '@src/machines/utils';
+} from '@machines/utils';
 import { createMachine, raise } from 'xstate';
 import { Gender, PersonalInformation, upsertPersonalInformation } from '@lib/graph/user';
 import { isBlocked, validatePin } from '@machines/auth';
 import { MachineError } from '@lib/errors';
-import { tHelpers } from '@src/i18n/translator';
+import { tHelpers } from '@i18n/translators';
 import { upsertMarketplace } from '@lib/graph/marketplace';
 
 enum ProfileError {
@@ -306,20 +307,20 @@ async function initiateProfileChange(context: BaseContext, event: any) {
     }
     return { success: true }
   } catch (error) {
-    throw new MachineError(ProfileError.CHANGE_ERROR, error.message)
+    throw new MachineError(ProfileError.CHANGE_ERROR, "Error changing profile.")
   }
 }
 
-function isLoadError(_, event: any) {
+function isLoadError(_: BaseContext, event: any) {
   return event.data.code === ProfileError.LOAD_ERROR
 }
 
-function isChangeError(_, event: any) {
+function isChangeError(_: BaseContext, event: any) {
   return event.data.code === ProfileError.CHANGE_ERROR
 }
 
-function isValidName(_ , event: any) {
-  return /^[A-Z][a-z]+([][A-Z][a-z]+)?$/.test(event.input)
+function isValidName(_: BaseContext, event: any) {
+  return /^[A-Za-z]+([][A-Za-z]+)?$/.test(event.input)
 }
 
 function saveFamilyName(context: BaseContext , event: any) {
@@ -391,7 +392,7 @@ function saveLocation(context: BaseContext , event: any) {
   return context
 }
 
-function isValidMarketplace(_ , event: any) {
+function isValidMarketplace(_: BaseContext, event: any) {
   return isValidName(_, event)
 }
 
@@ -431,24 +432,22 @@ async function loadPersonalInformation(context: BaseContext, event: any) {
 }
 
 export async function profileTranslations(context: BaseContext, state: string, translator: any) {
-  const { language } = context.user.account;
+  const {  user: { account: { language }, graph } } = context;
 
   if (state === "displayingProfile") {
     const notProvided = tHelpers("notProvided", language);
-    const { user } = context;
-    const given_names = user.graph?.user?.personal_information?.given_names;
-    const family_name = user.graph?.user?.personal_information?.family_name;
-    const genderSelection = user.graph?.user?.personal_information?.gender?.toLowerCase();
-    const gender = tHelpers(genderSelection, language)
-    const year_of_birth = user.graph?.user?.personal_information?.year_of_birth;
-    const location_name = user.graph?.user?.personal_information?.location_name;
-    const name = given_names && family_name ? `${given_names} ${family_name}` : notProvided;
-    const marketplace = user.graph?.marketplace?.marketplace_name || notProvided;
+    const { user } = graph;
+    const name = user?.personal_information?.given_names && user?.personal_information?.family_name ? `${user.personal_information.given_names} ${user.personal_information.family_name}` : notProvided;
+    const gender = user?.personal_information?.gender;
+    const genderText = gender ? tHelpers(gender, language) : notProvided;
+    const age = user?.personal_information?.year_of_birth ? new Date().getFullYear() - user.personal_information.year_of_birth : notProvided;
+    const location = user?.personal_information?.location_name || notProvided;
+    const marketplace = graph.marketplace?.marketplace_name || notProvided;
     return await translate(state, translator, {
-      name: `${tHelpers("name", language)} ${name || notProvided}`,
-      gender: `${tHelpers("gender", language)} ${gender || notProvided}`,
-      age: `${tHelpers("age", language)} ${year_of_birth ? new Date().getFullYear() - year_of_birth : notProvided}`,
-      location: `${tHelpers("location", language)} ${location_name || notProvided}`,
+      name: `${tHelpers("name", language)} ${name}`,
+      gender: `${tHelpers("gender", language)} ${genderText}`,
+      age: `${tHelpers("age", language)} ${age}`,
+      location: `${tHelpers("location", language)} ${location}`,
       services: `${tHelpers("services", language)} ${marketplace}`
     });
   }

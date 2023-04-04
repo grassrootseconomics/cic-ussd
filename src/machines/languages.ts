@@ -1,17 +1,21 @@
 import {
   BaseContext,
-  BaseEvent, isOption00, isOption11, isOption22,
+  BaseEvent,
+  getLanguage,
+  isOption00,
+  isOption11,
+  isOption22,
   isOption9,
   isSuccess,
   languageOptions,
   MachineId,
   translate,
   updateErrorMessages
-} from '@src/machines/utils';
+} from '@machines/utils';
 import { createMachine, raise } from 'xstate';
 import { supportedLanguages } from '@lib/ussd/utils';
 import { isBlocked, validatePin } from '@machines/auth';
-import { MachineError } from '@lib/errors';
+import { ContextError, MachineError } from '@lib/errors';
 import { updateLanguage } from '@db/models/account';
 
 enum LanguageError {
@@ -146,18 +150,21 @@ export const languagesMachine = createMachine<BaseContext, BaseEvent>({
 })
 
 async function initiateLanguageChange(context: BaseContext, event: any) {
-    const { data: { languages: { selected } }, resources: { db, p_redis }, user: { account: { phone_number } } } = context
-    const { input } = event
+  const { data: { languages }, resources: { db, p_redis }, user: { account: { phone_number } } } = context
+  const { input } = event
 
-    await validatePin(context, input)
+  await validatePin(context, input)
 
-    // change language in db and redis
-    try {
-      await updateLanguage(db, phone_number, selected, p_redis)
-      return { success: true }
-    } catch (error) {
-      throw new MachineError(LanguageError.CHANGE_ERROR, "Language change failed.")
-    }
+  if (!languages) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Language selection is missing from context.")
+  }
+
+  try {
+    await updateLanguage(db, phone_number, languages.selected, p_redis)
+    return { success: true }
+  } catch (error) {
+    throw new MachineError(LanguageError.CHANGE_ERROR, "Language change failed.")
+  }
 }
 
 function isValidLanguageOption(context: BaseContext) {
@@ -169,7 +176,7 @@ function saveLanguageSelection(context: BaseContext, event: any) {
   context.data = {
     ...(context.data || {}),
     languages: {
-      selected: Object.keys(supportedLanguages[input])[0]
+      selected: getLanguage(input)
     }
   }
   return context

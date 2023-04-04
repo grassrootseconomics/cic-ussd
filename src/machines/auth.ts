@@ -1,18 +1,17 @@
 import { createMachine, raise } from 'xstate';
-import bcrypt from 'bcrypt';
 import { AccountStatus, activateOnUssd, blockOnUssd, updatePinAttempts } from '@db/models/account';
-import { BaseContext, BaseEvent, isOption00, MachineId, translate, updateErrorMessages } from '@src/machines/utils';
-import { Cache } from '@utils/redis';
-import { MachineError } from '@lib/errors';
+import { BaseContext, BaseEvent, isOption00, MachineId, translate, updateErrorMessages } from '@machines/utils';
+import { ContextError, MachineError, SystemError } from '@lib/errors';
 import { PostgresDb } from '@fastify/postgres';
 import { Redis as RedisClient } from 'ioredis';
 import { updateGraphUser } from '@lib/graph/user';
 
+const bcrypt = require('bcrypt');
+
 enum AuthErrors {
   HASH_ERROR = "HASH_ERROR",
   INVALID = "INVALID",
-  UNAUTHORIZED = "UNAUTHORIZED",
-  VALIDATION_ERROR = "VALIDATION_ERROR"
+  UNAUTHORIZED = "UNAUTHORIZED"
 }
 
 
@@ -118,13 +117,19 @@ export const authMachine = createMachine<BaseContext, BaseEvent>({
     })
 
 export async function activateAccount (context: BaseContext) {
-  const { data: { pins: { initial } },  resources: { db, graphql, p_redis }, user: { account: { phone_number }, graph: { user: { id } } } } = context
-  const hashedInput = await hashValue(initial)
-  const result = await activateOnUssd(db, hashedInput, phone_number)
-  if (result?.status === AccountStatus.ACTIVE) {
-    const cache = new Cache(p_redis, phone_number)
-    await cache.updateJSON( { account: result } )
+  const { resources: { db, graphql, p_redis }, user: { account: { phone_number }, graph: { user: { id } } } } =  context
+  const initial = context.data?.pins?.initial
+
+  if (!initial) {
+      throw new SystemError(`Malformed context data. Expected 'pins.initial' to be defined.`)
   }
+
+  if(!id) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Graph user id missing from context object.")
+  }
+
+  const hashedInput = await hashValue(initial)
+  await activateOnUssd(db, hashedInput, phone_number, p_redis)
   await updateGraphUser(id, graphql, { activated: true })
 }
 
@@ -141,14 +146,13 @@ export async function hashValue(value: string) {
 }
 
 export function isBlocked (context: BaseContext) {
-  return context.user.account.status === 'BLOCKED'
+  const { user: { account: { status } } } = context
+  return status === AccountStatus.BLOCKED
 }
 
-export function isPendingOnChain (context: BaseContext) {
+export function isPendingOnChain (context: BaseContext, _: any) {
   const { user: { account: { activated_on_chain, status } } } = context
-  return (
-      !activated_on_chain && status === AccountStatus.PENDING
-  )
+  return !activated_on_chain && status === AccountStatus.PENDING
 }
 
 export function isPendingOnUssd (context: BaseContext) {
@@ -158,12 +162,17 @@ export function isPendingOnUssd (context: BaseContext) {
   )
 }
 
-export function isValidPin (_, event: any) {
+export function isValidPin (_: BaseContext, event: any) {
   return /^\d{4}$/.test(event.input)
 }
 
 export function pinsMatch (context: BaseContext, event: any) {
-  const { data: { pins: { initial } } } = context
+  const initial = context.data?.pins?.initial
+
+  if (!initial) {
+      throw new SystemError(`Malformed context data. Expected 'pins.initial' to be defined.`)
+  }
+
   return initial === event.input
 }
 

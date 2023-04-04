@@ -8,13 +8,13 @@ import {
   MachineId,
   translate,
   updateErrorMessages
-} from '@src/machines/utils';
+} from '@machines/utils';
 import { createMachine, raise } from 'xstate';
 import { retrieveWalletBalance } from '@lib/ussd/account';
 import { Cache } from '@utils/redis';
 import { Voucher } from '@lib/graph/voucher';
 import { isBlocked, validatePin } from '@machines/auth';
-import { MachineError } from '@lib/errors';
+import { MachineError, SystemError } from '@lib/errors';
 
 
 enum BalancesError {
@@ -173,7 +173,7 @@ async function loadAccountBalance(context: BaseContext, event: any) {
   try {
     return { balance, success: true }
   } catch (error) {
-    throw new MachineError(BalancesError.LOAD_ERROR, error.message)
+    throw new MachineError(BalancesError.LOAD_ERROR, "Failed to load account balance.")
   }
 }
 
@@ -181,21 +181,22 @@ async function fetchCommunityBalance(context: BaseContext, event: any) {
   const {  resources: { provider, p_redis }, user: { vouchers: { active: { address: contractAddress } } } } = context;
   const { input } = event;
 
-  // validate pin.
   await validatePin(context, input)
 
-  // fetch community balance from chain.
+  const cache = new Cache<Voucher>(p_redis, contractAddress);
+  const voucher = await cache.getJSON();
+
+  if(!voucher) throw new SystemError("Voucher not found in cache.")
+
   try {
-    const cache = new Cache<Voucher>(p_redis, contractAddress);
-    const voucher = await cache.getJSON();
     const balance = await retrieveWalletBalance(voucher.sink_address, contractAddress, provider);
     return { balance, success: true }
   } catch (error) {
-    throw new MachineError(BalancesError.FETCH_ERROR, error.message)
+    throw new MachineError(BalancesError.FETCH_ERROR, "Failed to fetch community balance.")
   }
 }
 
-function saveCommunityBalance(context:BaseContext, event: any) {
+function saveCommunityBalance(context: BaseContext, event: any) {
   context.data = {
     ...(context.data || {}),
     communityBalance: event.data.balance
@@ -203,11 +204,11 @@ function saveCommunityBalance(context:BaseContext, event: any) {
   return context;
 }
 
-function isFetchError(_, event: any) {
+function isFetchError(_: BaseContext, event: any) {
   return event.data.code === BalancesError.FETCH_ERROR;
 }
 
-function isLoadError(_, event: any) {
+function isLoadError(_: BaseContext, event: any) {
   return event.data.code === BalancesError.LOAD_ERROR;
 }
 

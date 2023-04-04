@@ -8,7 +8,7 @@ import {
   isOption5,
   MachineId,
   translate
-} from '@src/machines/utils';
+} from '@machines/utils';
 import { createMachine } from 'xstate';
 
 export const mainMenuMachine = createMachine<BaseContext, BaseEvent>({

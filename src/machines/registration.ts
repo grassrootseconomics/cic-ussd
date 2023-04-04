@@ -2,22 +2,24 @@ import { createMachine, raise } from 'xstate';
 import {
   BaseContext,
   BaseEvent,
+  getLanguage,
   isOption00,
   isOption11,
   isOption22,
   isSuccess,
   languageOptions,
   MachineId,
-  updateErrorMessages
-} from '@src/machines/utils';
+  translate,
+  updateErrorMessages,
+  User
+} from '@machines/utils';
 import { Address, supportedLanguages } from '@lib/ussd/utils';
 import { createWallet } from '@lib/custodail';
 import { createTracker, CustodialTaskType } from '@db/models/custodailTasks';
 import { createAccount } from '@db/models/account';
 import { createGraphUser } from '@lib/graph/user';
 import { createGraphAccount, GraphAccountTypes } from '@lib/graph/account';
-import { translate } from '@machines/utils';
-import { MachineError } from '@lib/errors';
+import { ContextError, ErrorCodes, MachineError, SystemError } from '@lib/errors';
 import { Cache } from '@utils/redis';
 
 enum RegistrationError {
@@ -116,72 +118,103 @@ export const registrationMachine = createMachine<BaseContext, BaseEvent>({
 })
 
 function isAccountCreationError(context: BaseContext, event: any) {
-  return event.data instanceof MachineError && event.data.code === RegistrationError.ACCOUNT_CREATION_FAILED
+  return event.data.code === RegistrationError.ACCOUNT_CREATION_FAILED || event.data.code === ErrorCodes.SYSTEM_ERROR
 }
 
 async function initiateAccountCreation(context: BaseContext) {
-  const { data: { languages: { selected } }, resources: { db, graphql, p_redis }, ussd: { phoneNumber } } = context
-  try {
-    // create wallet.
-    const wallet = await createWallet()
+  const { data: { languages }, resources: { db, graphql, p_redis }, ussd: { phoneNumber } } = context
 
-    // create tracker for wallet creation task.
+  if (!languages?.selected){
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, 'selected language is missing.')
+  }
+
+  let account, graphAccount, graphUser, wallet;
+  try {
+    wallet = await createWallet()
+  } catch (error: any) {
+    throw new SystemError(error.message)
+  }
+
+  if(!wallet.result) {
+    throw new SystemError("Wallet creation failed.")
+  }
+
+  try {
     await createTracker(db, {
       address: wallet.result.publicKey,
       task_reference: wallet.result.trackingId,
       task_type: CustodialTaskType.REGISTER
     })
+  } catch (error: any) {
+    throw new SystemError(error.message)
+  }
 
-    // create an account in db and redis.
-    const account = await createAccount({
+  try {
+    account = await createAccount({
       address: wallet.result.publicKey as Address,
-      language: selected,
+      language: languages.selected,
       phone_number: phoneNumber
     }, db, p_redis)
+  } catch (error: any) {
+    throw new SystemError(error.message)
+  }
 
-    // create a user on graph.
-    const graphUser = await createGraphUser(graphql, {
+  if(!account){
+    throw new SystemError("Account creation failed.")
+  }
+
+  try {
+    graphUser = await createGraphUser(graphql, {
       activated: false,
       interface_identifier: String(account.id),
       interface_type: "USSD",
     })
+  } catch (error: any) {
+    throw new SystemError(error.message)
+  }
 
-    // create a corresponding account on graph.
-    const graphAccount = await createGraphAccount(graphql, {
+  if(!graphUser){
+    throw new SystemError("Graph user creation failed.")
+  }
+
+  try {
+    graphAccount = await createGraphAccount(graphql, {
       account_type: GraphAccountTypes.CUSTODIAL_PERSONAL,
       blockchain_address: wallet.result.publicKey,
       user_identifier: graphUser.id })
+  } catch (error: any) {
+    throw new SystemError(error.message)
+  }
 
-    // update cache-layer user object with graph account and user-id.
-    const cache = new Cache(p_redis, phoneNumber)
-    await cache.updateJSON({ graph: {
-      account: {
-        id: graphAccount.id,
-      },
-      user: {
-        id: graphUser.id,
+  if(!graphAccount){
+    throw new SystemError("Graph account creation failed.")
+  }
+
+  try {
+    const cache = new Cache<User>(p_redis, phoneNumber)
+    await cache.updateJSON({
+      graph: {
+        account: { id: graphAccount.id },
+        user: { id: graphUser.id }
       }
-    }})
-
-    // create address phone number mapping.
-    await p_redis.set(`address-phone-${wallet.result.publicKey}`, phoneNumber)
-
+    })
     return { success: true }
-
-  } catch (error) {
+  } catch (error: any) {
     throw new MachineError(RegistrationError.ACCOUNT_CREATION_FAILED, error.message)
   }
 }
 
-function isValidLanguageOption(context: BaseContext) {
-  return Object.keys(supportedLanguages).includes(context.ussd.input)
+function isValidLanguageOption(context: BaseContext, event: any) {
+  const index = parseInt(event.input) - 1;
+  return Object.keys(supportedLanguages)[index] !== undefined
 }
 
 function saveLanguageOption(context: BaseContext, event: any) {
+  const { input } = event
   context.data = {
     ...(context.data || {}),
     languages: {
-      selected: Object.keys(supportedLanguages[event.input])[0]
+      selected: getLanguage(input)
     }
   }
   return context

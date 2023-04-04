@@ -11,12 +11,12 @@ import {
   updateErrorMessages,
   validatePhoneNumber,
   validateTargetUser
-} from '@src/machines/utils';
+} from '@machines/utils';
 import { cashRounding } from '@lib/ussd/utils';
-import { isBlocked, isValidPin, validatePin } from '@src/machines/auth';
+import { isBlocked, isValidPin, validatePin } from '@machines/auth';
 import { custodialTransfer } from '@lib/custodail';
 import { createTracker, CustodialTaskType } from '@db/models/custodailTasks';
-import { MachineError } from '@lib/errors';
+import { ContextError, MachineError, SystemError } from '@lib/errors';
 
 enum TransferError {
   INVITE_ERROR = 'INVITE_ERROR',
@@ -179,7 +179,7 @@ export const transferMachine = createMachine<BaseContext, BaseEvent>({
   });
 
 
-async function authorizeTransfer(context, event: any) {
+async function authorizeTransfer(context: BaseContext, event: any) {
   const { input } = event
 
   await validatePin(context, input)
@@ -187,51 +187,72 @@ async function authorizeTransfer(context, event: any) {
   try{
     await initiateTransfer(context)
     return { success: true }
-  } catch (error) {
+  } catch (error: any) {
     throw new MachineError(TransferError.TRANSFER_ERROR, error.message)
   }
 }
 
 async function initiateInvite(context: BaseContext) {
   const {
-    data: { transfer: { recipient: { entry } } },
+    data: { transfer },
     user: { account: { phone_number } },
     ussd: { countryCode } } = context
-  const invitee = validatePhoneNumber(countryCode, entry)
+  if (!transfer?.recipient?.entry) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Missing recipient entry.")
+  }
+  const invitee = validatePhoneNumber(countryCode, transfer.recipient.entry)
   try {
     console.debug(`Initiating invite to ${invitee} from ${phone_number}`)
     return { success: true }
-  } catch (error) {
+  } catch (error: any) {
     throw new MachineError(TransferError.INVITE_ERROR, error.message)
   }
 }
 
-function isInviteError(_, event: any) {
+function isInviteError(_: BaseContext, event: any) {
   return event.data.code === TransferError.INVITE_ERROR
 }
 
-function isTransferError(_, event: any) {
+function isTransferError(_: BaseContext, event: any) {
   return event.data.code === TransferError.TRANSFER_ERROR
 }
 
 async function initiateTransfer(context: BaseContext) {
   const {
-    data: { transfer: { amount, recipient: { validated } } },
+    data: { transfer },
     user: {account: {address}, vouchers: { active: {address: voucherAddress}}}
   } = context
 
-  const response = await custodialTransfer({
-      amount: amount * 1000000,
+  if (!transfer?.recipient?.validated || !transfer?.amount) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Missing recipient or amount.")
+  }
+
+  let response;
+  try {
+    response = await custodialTransfer({
+      amount: transfer.amount * 1000000,
       from: address,
-      to: validated,
+      to: transfer.recipient.validated,
       voucherAddress: voucherAddress
     })
+  } catch (error: any) {
+    throw new MachineError(TransferError.TRANSFER_ERROR, error.message)
+  }
 
-  await createTracker(context.resources.db, {
+  if(!response.result){
+    throw new SystemError(`Failed to initiate transfer. ${response?.message}`)
+  }
+
+  try {
+    await createTracker(context.resources.db, {
       address: address,
       task_type: CustodialTaskType.TRANSFER,
       task_reference: response.result.trackingId
     })
+    return { success: true }
+  } catch (error: any) {
+    throw new SystemError(`Failed to create tracker. ${error.message}`)
+  }
 }
 
 function isValidAmount(context: BaseContext, event: any) {
@@ -294,6 +315,9 @@ export async function transferTranslations(context: BaseContext, state: string, 
       return await translate(state, translator, { spendable: balance, symbol });
     case 'enteringPin':
     case 'transferInitiated':
+      if (!data?.transfer?.amount || !data?.transfer?.recipient?.tag){
+        throw new MachineError(ContextError.MALFORMED_CONTEXT, "Missing transfer amount or recipient tag.")
+      }
       return await translate(state, translator, {
         amount: data.transfer.amount,
         recipient: data.transfer.recipient.tag,
@@ -301,9 +325,15 @@ export async function transferTranslations(context: BaseContext, state: string, 
         symbol: symbol,
       });
     case 'invalidRecipient':
+      if(!data?.transfer?.recipient?.entry){
+        throw new MachineError(ContextError.MALFORMED_CONTEXT, "Missing recipient entry.")
+      }
       return await translate(state, translator, { recipient: data.transfer.recipient.entry });
     case 'inviteError':
     case 'inviteSuccess':
+      if(!data?.transfer?.recipient?.entry){
+        throw new MachineError(ContextError.MALFORMED_CONTEXT, "Missing recipient entry.")
+      }
       return await translate(state, translator, { invitee: data.transfer.recipient.entry });
     default:
       return await translate(state, translator);

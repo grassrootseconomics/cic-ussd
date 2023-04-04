@@ -10,17 +10,18 @@ import {
   isOption9,
   isSuccess,
   MachineId,
+  menuPages,
   translate,
   updateErrorMessages
-} from '@src/machines/utils';
+} from '@machines/utils';
 import { ActiveVoucher } from '@lib/ussd/voucher';
-import { isBlocked, validatePin } from '@src/machines/auth';
+import { isBlocked, validatePin } from '@machines/auth';
 import { Cache } from '@utils/redis';
 import { Voucher } from '@lib/graph/voucher';
-import { findById } from '@db/models/account';
 import { Transaction, TransactionType } from '@machines/statement';
-import { tHelpers } from '@src/i18n/translator';
-import { MachineError } from '@lib/errors';
+import { tHelpers } from '@i18n/translators';
+import { ContextError, MachineError } from '@lib/errors';
+import { Locales } from '@i18n/i18n-types';
 
 enum VouchersError {
   SET_FAILED = "SET_FAILED",
@@ -216,7 +217,7 @@ async function authorizeSelection(context: BaseContext, event: any) {
   try {
     await setActiveVoucher(context)
     return { success: true }
-  } catch (error) {
+  } catch (error: any) {
     throw new MachineError(VouchersError.SET_FAILED, error.message)
   }
 
@@ -227,48 +228,36 @@ function isSetError(context: BaseContext, event: any) {
 }
 
 async function loadHeldVouchers(context: BaseContext) {
-  const { user: { transactions, vouchers: { active, held } } } = context;
+  const { user } = context;
   const info = await loadVoucherInfo(context);
-  const formatted = await formatVouchers(active, held, transactions);
+  if (!user.vouchers.active) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Active voucher is missing from context.");
+  }
+  const held = user?.vouchers?.held || [];
+  const transactions = user?.transactions || [];
+  const formatted = await formatVouchers(user.vouchers.active, held, user.account.language, transactions);
   return { held: formatted, info };
 }
 
 async function loadVoucherInfo(context: BaseContext) {
-  const { resources: { db, p_redis }, user: { vouchers: {active: { address } } } } = context;
+  const { resources: { p_redis }, user: { vouchers: {active: { address } } } } = context;
 
-  // attempt to fetch voucher information from cache.
-  const iCache = new Cache(p_redis, `address-info:${address}`);
-  let info = await iCache.getJSON();
+  const cache = new Cache<Voucher>(p_redis, address);
+  const voucher = await cache.getJSON();
 
-  // if cache is empty, build info from cache and db and save to cache.
-  if (!info) {
-    // get voucher metadata from cache.
-    const vCache = new Cache<Voucher>(p_redis, address);
-    const voucher = await vCache.getJSON();
-
-    if (!voucher) {
-      throw new Error("Could not load voucher voucher.");
-    }
-
-    // get backer from database.
-    const backer = await findById(db, voucher.backer);
-
-    // format the voucher info.
-    info = {
-      contact: backer?.phone_number,
-      description: voucher.voucher_description,
-      location: voucher.location_name,
-      name: voucher.voucher_name,
-      symbol: voucher.symbol,
-    };
-
-    // save info to cache.
-    await iCache.setJSON(info);
+  if (!voucher) {
+    throw new Error("Could not load voucher voucher.");
   }
-  return info;
+
+  return {
+    description: voucher.voucher_description,
+    location: voucher.location_name,
+    name: voucher.voucher_name,
+    symbol: voucher.symbol,
+  };
 }
 
-async function formatVouchers(active: ActiveVoucher, held: ActiveVoucher[], transactions: Transaction[]) {
+async function formatVouchers(active: ActiveVoucher, held: ActiveVoucher[], language: Locales, transactions: Transaction[]) {
 
   if (!transactions) {
     transactions = [];
@@ -314,15 +303,21 @@ async function formatVouchers(active: ActiveVoucher, held: ActiveVoucher[], tran
   orderedHeld.push(...filteredHeld);
 
   // format the vouchers
-  return orderedHeld
-    .slice(0, 9)
-    .map((voucher, index) => `${index + 1}. ${voucher.symbol} ${voucher.balance.toFixed(2)}`);
+  const formattedVouchers = orderedHeld
+    .map((voucher, index) => `${index + 1}. ${voucher?.symbol} ${voucher?.balance.toFixed(2)}`);
+  const placeholder = tHelpers("noMoreTransactions", language)
+  return await menuPages(formattedVouchers, placeholder)
 }
 
 function isValidVoucherOption(context: BaseContext, event: any) {
-  const { held } = context.data.vouchers;
+  const { vouchers } = context.data;
+
+  if (!vouchers?.held) {
+    return false;
+  }
+
   const input = event.input.toLowerCase();
-  const selection = held.find((voucher) => {
+  const selection = vouchers.held.find((voucher) => {
     const [index, symbol] = voucher.split('. ');
     return index === input || symbol.split(" ")[0].toLowerCase() === input;
   });
@@ -332,8 +327,18 @@ function isValidVoucherOption(context: BaseContext, event: any) {
 
 
 async function setActiveVoucher(context: BaseContext) {
-  const { resources: { p_redis }, user: { account: { phone_number }, vouchers: { held } } } = context
-  const { selected } = context.data.vouchers
+  const { data, resources: { p_redis }, user: { account: { phone_number }, vouchers } } = context
+
+  if (!data.vouchers?.selected) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Selected voucher is missing from context.");
+  }
+  const selected = data.vouchers.selected
+
+  if(!vouchers?.held) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Held vouchers are missing from context.");
+  }
+  const held = vouchers.held
+
   const voucher = held.find(v => v.symbol === selected.toUpperCase())
   const cache = new Cache(p_redis, phone_number)
   await cache.updateJSON({
@@ -367,8 +372,13 @@ function saveVoucherInfo(context: BaseContext, event: any) {
 }
 
 function saveVoucherSelection(context: BaseContext, event: any) {
-  const vouchers = context.data.vouchers.held;
   const input = event.input.toLowerCase();
+
+  if (!context.data.vouchers?.held) {
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Held vouchers are missing from context data.");
+  }
+
+  const vouchers = context.data.vouchers.held;
 
   const selectedVoucher = vouchers.find((voucher) => {
     const [index, symbol] = voucher.split('. ');
@@ -393,48 +403,43 @@ function updateActiveVoucher(context: BaseContext, event: any) {
 }
 
 export async function voucherTranslations(context: BaseContext, state: string, translator: any) {
-  const { data,
-    user: { account: { language }, vouchers: { active: { balance, symbol } } } } = context;
-  const noMoreVouchers = tHelpers("noMoreVouchers", language)
+  const { data, user: { vouchers } } = context;
 
-  let result;
   switch (state) {
     case "firstVoucherSet":
-      result = await translate(state, translator, { vouchers: data.vouchers.held[0] });
-      break;
+      if(!data.vouchers?.held) {
+        throw new MachineError(ContextError.MALFORMED_CONTEXT, "Held vouchers are missing from context data.");
+      }
+      return await translate(state, translator, { vouchers: data.vouchers.held[0] });
     case "secondVoucherSet":
-      if (data.vouchers.held.length > 3){
-        result = await translate(state, translator, { vouchers: data.vouchers.held[1] });
-      } else {
-        result = noMoreVouchers;
+      if(!data.vouchers?.held) {
+        throw new MachineError(ContextError.MALFORMED_CONTEXT, "Held vouchers are missing from context data.");
       }
-      break;
+      return await translate(state, translator, { vouchers: data.vouchers.held[1] });
     case "thirdVoucherSet":
-      if (data.vouchers.held.length > 6){
-        result = await translate(state, translator, { vouchers: data.vouchers.held[2] });
-      } else {
-        result = noMoreVouchers;
+      if(!data.vouchers?.held) {
+        throw new MachineError(ContextError.MALFORMED_CONTEXT, "Held vouchers are missing from context data.");
       }
-      break;
+      return await translate(state, translator, { vouchers: data.vouchers.held[2] });
     case "enteringPin":
     case "displayVoucherInfo":
-      result = await translate(state, translator, {
-        contact: data.vouchers.info.contact,
+      if(!data.vouchers?.info) {
+        throw new MachineError(ContextError.MALFORMED_CONTEXT, "Voucher info is missing from context data.");
+      }
+      return await translate(state, translator, {
         description: data.vouchers.info.description,
         location: data.vouchers.info.location,
         name: data.vouchers.info.name,
-        symbol: symbol
+        symbol: vouchers.active.symbol
       });
-      break;
     case "setSuccess":
-      result = await translate(state, translator, { symbol: data.vouchers.selected });
-      break;
+      if (!data.vouchers?.selected) {
+        throw new MachineError(ContextError.MALFORMED_CONTEXT, "Selected voucher is missing from context data.");
+      }
+      return await translate(state, translator, { symbol: data.vouchers.selected });
     case "mainMenu":
-      result = await translate(state, translator, { balance: balance, symbol: symbol });
-      break;
+      return await translate(state, translator, { balance: vouchers.active.balance, symbol: vouchers.active.symbol });
     default:
-      result = await translate(state, translator);
+      return await translate(state, translator);
   }
-
-  return result;
 }
