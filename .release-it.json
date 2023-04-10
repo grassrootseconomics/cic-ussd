@@ -1,0 +1,34 @@
+{
+  "git": {
+    "commit": true,
+    "commitMessage": "chore(release): Release v${version}",
+    "requireCleanWorkingDir": false,
+    "tagName": "v${version}"
+  },
+  "github": {
+    "preRelease": true,
+    "release": true,
+    "releaseName": "Release v${version}",
+    "token": "${GITHUB_TOKEN}"
+  },
+  "npm": {
+    "publish": false
+  },
+  "options": {
+    "name": "cic-ussd",
+    "noAssets": true,
+    "preRelease": true,
+    "release": true,
+    "tagPrefix": "v"
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "header": "# Changelog",
+      "infile": "CHANGELOG.md",
+      "preset": "angular",
+      "releaseNotes": {
+        "outputUnreleased": true
+      }
+    }
+  }
+}
