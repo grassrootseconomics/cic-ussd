@@ -1,49 +1,66 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
-import { connect, ConnectionOptions, Msg, NatsError } from 'nats';
-import { processMessage } from '@lib/natsHandler';
-
+import { AckPolicy, connect, consumerOpts, DeliverPolicy, JsMsg } from 'nats';
+import { processMessage } from '@lib/nats';
+import { config } from '@/config';
 
 interface NatsPluginOptions {
-  connOpts: ConnectionOptions;
-  subjects: string[];
+  durableName: string;
+  server: string;
+  streamName: string;
+  subject: string;
+}
+
+async function handleMessage(fastify: any, message: JsMsg | null) {
+  if(message){
+      try {
+      await processMessage(fastify.pg, fastify.graphql, message, fastify.provider, fastify.p_redis);
+    } catch (error: any) {
+      fastify.log.error(`Error processing NATS message: ${error.message}`);
+      // requeue message after 50 seconds
+      message.nak(50000);
+    }
+  }
 }
 
 const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, options) => {
+  const natsConnection = await connect({ debug: config.DEV, servers: [options.server] });
+  fastify.log.debug(`Connected to NATS server at: ${options.server}`);
+  const jetStreamManager = await natsConnection.jetstreamManager();
+  const jetStreamClient = natsConnection.jetstream();
 
-  let { connOpts, subjects } = options;
+  const consumerConfig = {
+    ack_policy: AckPolicy.Explicit,
+    deliver_subject: `deliver-${options.durableName}`,
+    durable_name: options.durableName,
+    deliver_policy: DeliverPolicy.All,
+  };
 
-  if (connOpts.servers?.length === 0) {
-    throw new Error("NATS server URL not specified.");
-  }
+  await jetStreamManager.consumers.add(options.streamName, consumerConfig);
 
-  const nc = await connect( connOpts);
-  fastify.log.debug(`Connected to NATS server at ${connOpts?.servers?[0]: []}.`);
+  const opts = consumerOpts(consumerConfig);
 
-  const handler = async (err: NatsError | null, msg: Msg) => {
-    if (err) {
-      fastify.log.error(err);
-      return;
+  opts.callback((error, msg) => {
+    if (error) {
+      fastify.log.error(`Error processing NATS message: ${error.message}`);
+      msg?.nak();
+    } else {
+      handleMessage(fastify, msg);
     }
-    await processMessage(fastify.pg, fastify.graphql, msg, fastify.provider, fastify.p_redis)
-  }
+  });
 
-  for (const subject of subjects) {
-    fastify.log.debug(`Subscribing to subject ${subject}.`);
-    nc.subscribe(subject, {
-      callback: handler,
-    });
-  }
+  opts.bind(options.streamName, options.durableName)
 
-  fastify.addHook("onClose", async (_) => {
-    await nc.drain();
-    await nc.close();
+  await jetStreamClient.subscribe(`${options.streamName}.${options.subject}`, opts)
+
+  fastify.addHook("onClose", async (instance) => {
+    await natsConnection.drain();
+    await natsConnection.close();
   })
 
-}
-
+};
 
 export default fp(natsPlugin, {
   fastify: '4.x',
-  name: 'nats-plugin'
-})
+  name: 'nats-plugin',
+});
