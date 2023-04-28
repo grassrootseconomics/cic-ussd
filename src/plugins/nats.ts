@@ -11,18 +11,6 @@ interface NatsPluginOptions {
   subject: string;
 }
 
-async function handleMessage(fastify: any, message: JsMsg | null) {
-  if(message){
-      try {
-      await processMessage(fastify.pg, fastify.graphql, message, fastify.provider, fastify.p_redis);
-    } catch (error: any) {
-      fastify.log.error(`Error processing NATS message: ${error.message}`);
-      // requeue message after 50 seconds
-      message.nak(50000);
-    }
-  }
-}
-
 const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, options) => {
   const natsConnection = await connect({ debug: config.DEV, servers: [options.server] });
   fastify.log.debug(`Connected to NATS server at: ${options.server}`);
@@ -40,20 +28,30 @@ const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, option
 
   const opts = consumerOpts(consumerConfig);
 
-  opts.callback((error, msg) => {
-    if (error) {
-      fastify.log.error(`Error processing NATS message: ${error.message}`);
-      msg?.nak();
-    } else {
-      handleMessage(fastify, msg);
-    }
-  });
-
   opts.bind(options.streamName, options.durableName)
 
-  await jetStreamClient.subscribe(`${options.streamName}.${options.subject}`, opts)
+  const subscription = await jetStreamClient.subscribe(`${options.streamName}.${options.subject}`, opts)
+  const done = async () => {
+      for await (const message of subscription) {
+        if(message){
+          try {
+          await processMessage(fastify.pg, fastify.graphql, message, fastify.provider, fastify.p_redis);
+          // Add delay before processing the next message
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+        } catch (error: any) {
+          fastify.log.error(`Error processing NATS message: ${error.message}`);
+          // requeue message after 50 seconds
+          message.nak(50000);
+        }
+      }
+    }
+  }
 
-  fastify.addHook("onClose", async (instance) => {
+  done().catch((err) => {
+    fastify.log.error(`Error processing NATS message: ${err.message}`);
+  });
+
+  fastify.addHook("onClose", async (_) => {
     await natsConnection.drain();
     await natsConnection.close();
   })

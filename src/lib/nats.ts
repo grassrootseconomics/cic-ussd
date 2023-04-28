@@ -6,10 +6,10 @@ import { Codec, JsMsg, JSONCodec } from 'nats';
 import { RegistrationEvent, TransferEvent } from '@lib/custodail';
 import { AccountService, getPhoneNumberFromAddress } from '@services/account';
 import { SystemError } from '@lib/errors';
-import { retrieveWalletBalance } from '@lib/ussd';
+import { getVoucherSymbol, retrieveWalletBalance } from '@lib/ussd';
 import { config } from '@/config';
-import { generateUserTag, UserService } from '@services/user';
-import { processTransaction } from '@services/transfer';
+import { generateUserTag, User, UserService } from '@services/user';
+import { formatTransferData, updateHeldVouchers, updateStatement } from '@services/transfer';
 import { logger } from '@/app';
 
 type EventHandler<T> = (
@@ -41,14 +41,75 @@ async function processTransferEvent(
   provider: Provider,
   redis: RedisClient
 ): Promise<void> {
-  const { success} = data;
-  if (success) {
-    await Promise.all([
-      processTransaction(data.from, db, graphql, provider, redis, data),
-      processTransaction(data.to, db, graphql, provider, redis, data),
-    ])
+  if (!data.success) {
+    logger.error(`Transfer failed: ${data.transactionHash}`);
+    return;
+  }
+
+  const symbol = await getVoucherSymbol(data.contractAddress, graphql, redis);
+  if (!symbol) {
+    throw new SystemError(`Could not find symbol for contract address: ${data.contractAddress}`);
+  }
+
+  const [sender, senderService] = await getUser(db, redis, data.from, true);
+  const [recipient, recipientService] = await getUser(db, redis, data.to, false);
+
+  if (!sender && recipient) {
+    await updateUser(recipient, recipientService, sender, symbol, data, provider);
+    return;
+  }
+
+  if (sender && recipient) {
+    await updateUser(sender, senderService, recipient, symbol, data, provider);
+    await updateUser(recipient, recipientService, sender, symbol, data, provider);
   }
 }
+
+async function getUser(
+  db: PostgresDb,
+  redis: RedisClient,
+  address: string,
+  isSender: boolean,
+  counterparty?: any
+): Promise<[null, null] | [User, UserService]> {
+  const phoneNumber = await getPhoneNumberFromAddress(address, db, redis);
+
+  if (isSender && !phoneNumber) {
+    return [null, null];
+  } else if (!phoneNumber) {
+    throw new SystemError(`Could not find phone number for address: ${address}`);
+  }
+
+  const userService = new UserService(phoneNumber, redis);
+  const user = await userService.get();
+
+  if (!user) {
+    throw new SystemError(`Could not find recipient: ${phoneNumber}`);
+  }
+  return [user as User, userService];
+}
+
+async function updateUser(
+  user: User,
+  userService: UserService,
+  counterparty: Partial<User> | null | undefined,
+  symbol: string,
+  data: TransferEvent,
+  provider: Provider
+) {
+  const transaction = await formatTransferData(data, user, counterparty, symbol);
+  const statement = await updateStatement(user.statement || [], transaction);
+  const balance = await retrieveWalletBalance(user.account.address, data.contractAddress, provider);
+  const heldVouchers = await updateHeldVouchers(user.vouchers?.held || [], { address: data.contractAddress, balance, symbol });
+
+  await userService.update({
+    statement,
+    vouchers: {
+      held: heldVouchers,
+    },
+  });
+}
+
 
 async function processRegistrationEvent(
   db: PostgresDb,
@@ -98,6 +159,7 @@ export async function processMessage(db: PostgresDb, graphql: GraphQLClient, mes
     }
   } else if (message.subject === `${config.NATS.STREAM_NAME}.transfer`) {
     try {
+      console.log('Handling transfer')
       await handleTransfer(db, graphql, message, provider, redis);
       message.ack()
     } catch (error: any) {
