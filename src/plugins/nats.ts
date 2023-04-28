@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
-import { AckPolicy, connect, consumerOpts, DeliverPolicy, JsMsg } from 'nats';
+import { AckPolicy, connect, consumerOpts, DeliverPolicy } from 'nats';
 import { processMessage } from '@lib/nats';
 import { config } from '@/config';
 
@@ -31,31 +31,33 @@ const natsPlugin: FastifyPluginAsync<NatsPluginOptions> = async (fastify, option
   opts.bind(options.streamName, options.durableName)
 
   const subscription = await jetStreamClient.subscribe(`${options.streamName}.${options.subject}`, opts)
+  let processing = true;
+
   const done = async () => {
-      for await (const message of subscription) {
-        if(message){
-          try {
-          await processMessage(fastify.pg, fastify.graphql, message, fastify.provider, fastify.p_redis);
-          // Add delay before processing the next message
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-        } catch (error: any) {
-          fastify.log.error(`Error processing NATS message: ${error.message}`);
-          // requeue message after 50 seconds
-          message.nak(50000);
-        }
+    for await (const message of subscription) {
+      if (!processing) break;
+
+      try {
+        await processMessage(fastify.pg, fastify.graphql, message, fastify.provider, fastify.p_redis);
+        message.ack();
+      } catch (error: any) {
+        fastify.log.error(`Error processing NATS message: ${error.message}`);
+        message.nak(50000);
       }
     }
-  }
+  };
 
   done().catch((err) => {
     fastify.log.error(`Error processing NATS message: ${err.message}`);
   });
 
-  fastify.addHook("onClose", async (_) => {
+  fastify.addHook('onClose', async (_) => {
+    processing = false;
+    await subscription.drain();
+    subscription.unsubscribe();
     await natsConnection.drain();
     await natsConnection.close();
-  })
-
+  });
 };
 
 export default fp(natsPlugin, {

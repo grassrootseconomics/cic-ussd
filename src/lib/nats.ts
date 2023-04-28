@@ -150,23 +150,22 @@ const handleRegistration = createHandler(
 );
 
 export async function processMessage(db: PostgresDb, graphql: GraphQLClient, message: JsMsg, provider: Provider, redis: RedisClient) {
-  if (message.subject === `${config.NATS.STREAM_NAME}.register`) {
-    try {
-      await handleRegistration(db, graphql, message, provider, redis);
-      message.ack()
-    } catch (error: any) {
-      throw new SystemError(`Error handling registration: ${error.message}`);
+  const subjectHandlers = {
+    [`${config.NATS.STREAM_NAME}.register`]: handleRegistration,
+    [`${config.NATS.STREAM_NAME}.transfer`]: handleTransfer,
+  };
+
+  const handler = subjectHandlers[message.subject];
+
+  try {
+    if (handler) {
+      await handler(db, graphql, message, provider, redis);
+    } else {
+      logger.debug(`Unsupported subject: ${message.subject}`);
+      message.ack();
     }
-  } else if (message.subject === `${config.NATS.STREAM_NAME}.transfer`) {
-    try {
-      console.log('Handling transfer')
-      await handleTransfer(db, graphql, message, provider, redis);
-      message.ack()
-    } catch (error: any) {
-      throw new SystemError(`Error handling transfer: ${error.message}`);
-    }
-  } else {
-    logger.debug(`Unsupported subject: ${message.subject}`);
-    message.ack()
+  } catch (error: any) {
+    throw new SystemError(`Error handling ${message.subject}: ${error.message}`);
   }
 }
+
