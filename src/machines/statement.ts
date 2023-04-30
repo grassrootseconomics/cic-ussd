@@ -1,49 +1,34 @@
 import { createMachine, raise } from 'xstate';
 import {
-  BaseContext,
-  BaseEvent,
   isOption00,
   isOption11,
   isOption22,
   isSuccess,
+  MachineEvent,
   MachineId,
-  menuPages,
-  translate,
-  updateErrorMessages
+  MachineInterface,
+  updateErrorMessages,
+  UserContext
 } from '@machines/utils';
 import { isBlocked, validatePin } from '@machines/auth';
-import { ContextError, MachineError } from '@lib/errors';
-import { Address, cashRounding, getTag } from '@lib/ussd/utils';
-import { tHelpers } from '@i18n/translators';
-import moment from 'moment-timezone';
+import { MachineError } from '@lib/errors';
+import { tHelpers, translate } from '@i18n/translators';
 import { Redis as RedisClient } from 'ioredis';
 import { GraphQLClient } from 'graphql-request';
-import { config } from '@/config';
-import { ethers } from 'ethers';
 import { Locales } from '@i18n/i18n-types';
+import { Transaction, TransactionType } from '@services/transfer';
+import { menuPages } from '@lib/ussd';
 
-
-export enum TransactionType {
-  CREDIT = "CREDIT",
-  DEBIT = "DEBIT",
-}
-
-export interface Transaction {
-  block: number;
-  from: Address;
-  symbol: string;
-  time: number;
-  to: Address;
-  transactionHash: string;
-  type: TransactionType;
-  value: number;
-}
 
 enum StatementError {
   LOAD_ERROR = "LOAD_ERROR"
 }
 
-export const statementMachine = createMachine<BaseContext, BaseEvent>({
+export interface StatementContext extends UserContext {
+  statement: Transaction[]
+}
+
+export const stateMachine = createMachine<StatementContext, MachineEvent>({
   id: MachineId.STATEMENT,
   initial: "enteringPin",
   predictableActionArguments: true,
@@ -147,82 +132,58 @@ export const statementMachine = createMachine<BaseContext, BaseEvent>({
   }
 })
 
-function isLoadError(context: BaseContext, event: any) {
+function isLoadError(context: StatementContext, event: any) {
   return event.data.code === StatementError.LOAD_ERROR;
 }
 
-async function authorizeStatementView(context: BaseContext, event: any) {
-  const { resources: { graphql, p_redis }, user: { account: { language }, transactions } } = context
-  const { input } = event
+async function authorizeStatementView(context: StatementContext, event: any) {
+  const { connections: { graphql, redis }, user: { account: { language }, statement } } = context
 
-  await validatePin(context, input)
+  await validatePin(context, event.input)
 
   try {
-    const statement = await generateStatement(graphql, language, p_redis, transactions || [])
-    return { success: true, statement: statement }
+    const formattedStatement = await formatStatement(graphql, language, redis.persistent, statement || [])
+    return { success: true, statement: formattedStatement }
   } catch (error) {
     throw new MachineError(StatementError.LOAD_ERROR, `Error loading statement.`)
   }
 }
 
-async function generateStatement( graphql: GraphQLClient, language: Locales, redis: RedisClient, transactions: Transaction[]){
+async function formatStatement( graphql: GraphQLClient, language: Locales, redis: RedisClient, transactions: Transaction[]){
   const placeholder = tHelpers("noMoreTransactions", language)
-  const sortedTransactions = [...transactions].sort((a, b) => b.time - a.time)
-  const formattedTransactions = await Promise.all(sortedTransactions
-    .map(async (transaction) => {
-     return formatTransaction(transaction, language, redis)
+  const formattedTransactions = await Promise.all(transactions.map(async (transaction) => {
+      const transactionType = transaction.type === TransactionType.CREDIT ? "credit" : "debit"
+     return tHelpers(transactionType, language, {
+       value: transaction.value,
+       time: transaction.timestamp,
+       sender: transaction.sender,
+       recipient: transaction.recipient,
+       symbol: transaction.symbol,
+     })
   }))
   return await menuPages(formattedTransactions, placeholder)
 }
 
-async function formatTransaction(transaction: Transaction, language: Locales, redis: RedisClient){
-  const { from, symbol, time, to, type, value } = transaction
-  const transactionType = type === TransactionType.CREDIT ? "credit" : "debit"
-  const [recipient, sender] = await Promise.all([
-    getTransactionActor(to, language, redis),
-    getTransactionActor(from, language, redis)
-  ])
-
-  const data = {
-    value: cashRounding(ethers.formatUnits(value, 6)),
-    symbol: symbol,
-    time: moment(new Date(time)).tz(config.TIMEZONE).format("DD-MM-YYYY HH:mm A"),
-    sender: sender,
-    recipient: recipient
-  }
-  return tHelpers(transactionType, language, data)
-}
-
-async function getTransactionActor(address: string, language: Locales, redis: RedisClient){
-  let actor = tHelpers("unknownAddress", language)
-  const phoneNumber = await redis.get(`address-phone-${address}`)
-  if (phoneNumber) {
-    actor = await getTag(phoneNumber, redis)
-  }
-  return actor
-}
-
-function saveStatement(context: BaseContext, event: any) {
-  context.data = {
-    ...(context.data || {}),
-    statement: event.data.statement
-  }
+function saveStatement(context: StatementContext, event: any) {
+  context.data.statement = event.data.statement
   return context;
 }
 
-export async function statementTranslations(context: BaseContext, state: string, translator: any){
+async function statementTranslations(context: StatementContext, state: string, translator: any){
   const { data: { statement } } = context
   switch (state) {
     case "firstTransactionSet":
-      if(!statement) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Statement missing in context object data.")
       return await translate(state, translator, {transactions: statement[0]})
     case "secondTransactionSet":
-      if(!statement) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Statement missing in context object data.")
       return await translate(state, translator, {transactions: statement[1]})
     case "thirdTransactionSet":
-      if(!statement) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Statement missing in context object data.")
       return await translate(state, translator, {transactions: statement[2]})
     default:
       return await translate(state, translator)
   }
+}
+
+export const statementMachine: MachineInterface = {
+  stateMachine,
+  translate: statementTranslations
 }

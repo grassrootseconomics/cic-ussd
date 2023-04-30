@@ -1,10 +1,18 @@
 import { createMachine, raise } from 'xstate';
-import { AccountStatus, activateOnUssd, blockOnUssd, updatePinAttempts } from '@db/models/account';
-import { BaseContext, BaseEvent, isOption00, MachineId, translate, updateErrorMessages } from '@machines/utils';
-import { ContextError, MachineError, SystemError } from '@lib/errors';
+import { AccountStatus } from '@db/models/account';
+import { ContextError, MachineError } from '@lib/errors';
 import { PostgresDb } from '@fastify/postgres';
 import { Redis as RedisClient } from 'ioredis';
-import { updateGraphUser } from '@lib/graph/user';
+import {
+  isOption00,
+  MachineEvent,
+  MachineId,
+  MachineInterface,
+  updateErrorMessages,
+  UserContext
+} from '@machines/utils';
+import { AccountService } from '@services/account';
+import { translate } from '@i18n/translators';
 
 const bcrypt = require('bcrypt');
 
@@ -14,8 +22,13 @@ enum AuthErrors {
   UNAUTHORIZED = "UNAUTHORIZED"
 }
 
+export interface AuthContext extends UserContext {
+  data: {
+    initialPin?: string,
+  }
+}
 
-export const authMachine = createMachine<BaseContext, BaseEvent>({
+const stateMachine = createMachine<AuthContext, MachineEvent>({
   id: MachineId.AUTH,
   initial: "authenticating",
   predictableActionArguments: true,
@@ -116,28 +129,20 @@ export const authMachine = createMachine<BaseContext, BaseEvent>({
       }
     })
 
-export async function activateAccount (context: BaseContext) {
-  const { resources: { db, graphql, p_redis }, user: { account: { phone_number }, graph: { user: { id } } } } =  context
-  const initial = context.data?.pins?.initial
-
-  if (!initial) {
-      throw new SystemError(`Malformed context data. Expected 'pins.initial' to be defined.`)
+export async function activateAccount (context: AuthContext) {
+  const { connections: { db, graphql, redis }, user: { account: { phone_number }, graph: { user: { id } } } } =  context
+  if(!context.data?.initialPin){
+    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Context data is missing initialPin.");
   }
-
-  if(!id) {
-    throw new MachineError(ContextError.MALFORMED_CONTEXT, "Graph user id missing from context object.")
-  }
-
-  const hashedInput = await hashValue(initial)
-  await activateOnUssd(db, hashedInput, phone_number, p_redis)
-  await updateGraphUser(id, graphql, { activated: true })
+  const hashedPin = await hashValue(context.data.initialPin)
+  await new AccountService(db, redis.persistent).activateOnUssd(graphql, id, phone_number, hashedPin)
 }
 
 export async function blockAccount (db: PostgresDb, phoneNumber: string, redis: RedisClient) {
-  await blockOnUssd(db, phoneNumber, redis)
+  await new AccountService(db, redis).block(phoneNumber)
 }
 
-export async function hashValue(value: string) {
+export async function hashValue(value: string){
   try {
     return await bcrypt.hash(value, 8);
   } catch (err) {
@@ -145,74 +150,67 @@ export async function hashValue(value: string) {
   }
 }
 
-export function isBlocked (context: BaseContext) {
+export function isBlocked (context: UserContext) {
   const { user: { account: { status } } } = context
   return status === AccountStatus.BLOCKED
 }
 
-export function isPendingOnChain (context: BaseContext, _: any) {
+export function isPendingOnChain (context: AuthContext) {
   const { user: { account: { activated_on_chain, status } } } = context
   return !activated_on_chain && status === AccountStatus.PENDING
 }
 
-export function isPendingOnUssd (context: BaseContext) {
+export function isPendingOnUssd (context: AuthContext) {
   const { user: { account: { activated_on_chain, activated_on_ussd, status } } } = context
   return (
     status === AccountStatus.PENDING && activated_on_chain && !activated_on_ussd
+    || status === AccountStatus.RESETTING_PIN && !activated_on_ussd
   )
 }
 
-export function isValidPin (_: BaseContext, event: any) {
+export function isValidPin (_: UserContext, event: any) {
   return /^\d{4}$/.test(event.input)
 }
 
-export function pinsMatch (context: BaseContext, event: any) {
-  const initial = context.data?.pins?.initial
-
-  if (!initial) {
-      throw new SystemError(`Malformed context data. Expected 'pins.initial' to be defined.`)
-  }
-
-  return initial === event.input
+export function pinsMatch (context: AuthContext, event: any) {
+  return context.data.initialPin === event.input
 }
 
-export function savePin (context: BaseContext, event: any) {
-  context.data = {
-    ...(context.data || {}),
-    pins: {
-      ...(context.data?.pins || {}),
-      initial: event.input
-    }
-  }
+export function savePin (context: AuthContext, event: any) {
+  context.data = { initialPin: event.input }
   return context
 }
 
 export async function updateAttempts(attempts: number, db: PostgresDb, phoneNumber: string, redis: RedisClient, status: AccountStatus) {
   if (status === AccountStatus.BLOCKED) return
   const updatedAttempts = attempts + 1
-  await updatePinAttempts(db, phoneNumber, updatedAttempts, redis)
+  await new AccountService(db, redis).updatePinAttempts(phoneNumber, updatedAttempts)
   updatedAttempts === 3 && await blockAccount(db, phoneNumber, redis)
 }
 
-export async function validatePin(context: BaseContext, input: string) {
-  const { user: { account: { pin, phone_number, pin_attempts, status } }, resources: { db, p_redis } } = context
+export async function validatePin(context: UserContext, input: string) {
+  const { connections: { db, redis }, user: { account: { pin, phone_number, pin_attempts, status } } } = context
   const isValidPin = /^\d{4}$/.test(input)
   if (!isValidPin) {
     throw new MachineError(AuthErrors.INVALID, "Invalid pin format.")
   }
   const isMatch = await bcrypt.compare(input, pin)
   if (!isMatch) {
-    await updateAttempts(pin_attempts, db, phone_number, p_redis, status)
+    await updateAttempts(pin_attempts, db, phone_number, redis.persistent, status)
     throw new MachineError(AuthErrors.UNAUTHORIZED, "Unauthorized pin.")
   }
-  await updatePinAttempts(db, phone_number, 0, p_redis)
+  await new AccountService(db, redis.persistent).updatePinAttempts(phone_number, 0)
 }
 
-export async function authTranslations(context: BaseContext, state: string, translator: any) {
+async function authTranslations(context: AuthContext, state: string, translator: any){
   if (state === "mainMenu"){
     const { user: { vouchers: { active: { balance, symbol } } } } = context
-    return await translate(state, translator, { balance: balance, symbol: symbol })
-  } else {
-    return await translate(state, translator)
+    return translate(state, translator, { balance: balance, symbol: symbol })
   }
+  return translate(state, translator)
+}
+
+export const authMachine: MachineInterface = {
+  stateMachine: stateMachine,
+  translate: authTranslations
 }
