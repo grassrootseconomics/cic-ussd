@@ -36,13 +36,15 @@
     "xstate": "^4.34.0"
   },
   "devDependencies": {
+    "@release-it/conventional-changelog": "^5.1.1",
     "@types/node": "^18.11.9",
     "@types/pg": "^8.6.6",
     "@types/qs": "^6.9.7",
+    "auto-changelog": "^2.4.0",
+    "release-it": "^15.10.1",
     "ts-node-dev": "^2.0.0"
   },
   "optionalDependencies": {
-    "@semantic-release/npm": "^10.0.2",
     "@xstate/cli": "^0.4.2",
     "dotenv": "^16.0.3",
     "eslint": "^8.35.0",
