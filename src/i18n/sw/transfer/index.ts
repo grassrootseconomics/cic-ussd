@@ -14,8 +14,10 @@ const sw_transfer: NamespaceTransferTranslation = {
     enteringRecipient:
       'CON Weka nambari ya simu:\n0. Rudi',
     exit: exit,
-    invalidRecipient:
+    invalidRecipientWithInvite:
       'CON {recipient} haijasajiliwa au sio sahihi, tafadhali weka tena:\n1.Karibisha kwa matandao wa Sarafu.\n9. Ondoka',
+    invalidRecipient:
+      'CON {recipient} haijasajiliwa au sio sahihi, tafadhali weka tena:\n0. Rudi',
     inviteError:
       'END Ombi lako la kumwalika {invitee} kwa matandao wa Sarafu halikufaulu. Tafadhali jaribu tena baadaye.',
     inviteSuccess:

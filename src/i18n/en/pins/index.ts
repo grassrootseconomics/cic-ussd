@@ -13,7 +13,7 @@ const en_pins: NamespacePinsTranslation = {
     "CON Enter a new four number PIN:\n0. Back",
   enteringOldPin:
     "CON Enter your old PIN:\n0. Back",
-  enteringPinR:
+  enteringPinWR:
     "CON Enter your PIN to initiate reset:\n0. Back",
   enteringWard:
     "CON Enter ward's phone number:\n0. Back",
