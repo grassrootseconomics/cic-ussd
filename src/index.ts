@@ -1,6 +1,6 @@
 import app from '@/app';
 import { config } from '@/config';
-import { loadSystemVouchers } from '@lib/ussd/utils';
+import { loadSystemVouchers } from '@lib/ussd';
 
 
 app.ready(async (error) => {

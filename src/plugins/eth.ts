@@ -9,32 +9,11 @@ declare module 'fastify' {
   }
 }
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:49:36 AM
- *
- * @interface EthPluginOptions
- * @typedef {EthPluginOptions}
- */
+
 interface EthPluginOptions {
-  /**
-   * Description placeholder
-   * @date 3/3/2023 - 10:49:36 AM
-   *
-   * @type {string}
-   */
   endpoint: string
 }
 
-/**
- * Description placeholder
- * @date 3/3/2023 - 10:49:36 AM
- *
- * @async
- * @param {*} fastify
- * @param {*} opts
- * @returns {*}
- */
 const ethPlugin: FastifyPluginAsync<EthPluginOptions> = async (fastify, opts) => {
   const { endpoint } = opts
   const rpcProvider = new ethers.JsonRpcProvider(endpoint)
