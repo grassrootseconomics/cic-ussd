@@ -1,5 +1,5 @@
-import { getCountryCode } from '@utils/phoneNumber';
 import { SystemError } from '@lib/errors';
+import { getCountryCode } from '@lib/ussd';
 import { SessionRequest } from '@services/session';
 
 export const ATRequestBody = {
