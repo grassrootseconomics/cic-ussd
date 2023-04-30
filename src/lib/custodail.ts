@@ -1,6 +1,25 @@
 import { config } from '@/config';
 import { logger } from '@/app';
 
+export enum TxType {
+  REGISTER = "register",
+  TRANSFER = "transfer",
+  TRANSFER_FROM = "transferFrom",
+  MINT_TO = "mintTo",
+}
+
+export interface CustodialEvent {
+  block: number;
+  contractAddress: string;
+  timestamp: number;
+  to: string;
+  transactionHash: string;
+  transactionIndex: number;
+  txType: TxType;
+}
+
+export interface RegistrationEvent extends CustodialEvent {}
+
 interface RegistrationResponse {
   errorCode?: string
   message?: string
@@ -10,6 +29,12 @@ interface RegistrationResponse {
     publicKey: string
     trackingId: string
   }
+}
+
+export interface TransferEvent extends CustodialEvent {
+  from: string;
+  success: boolean;
+  value: number;
 }
 
 interface TransferPayload {
@@ -29,7 +54,7 @@ interface TransferResponse {
 }
 
 export async function createWallet(): Promise<RegistrationResponse> {
-  const response = await fetch(config.CIC_CUSTODIAL.REGISTER_ENDPOINT, {
+  const response = await fetch(`${config.CIC.CUSTODIAL}/api/account/create`, {
     method: 'POST'
   })
 
@@ -44,7 +69,7 @@ export async function createWallet(): Promise<RegistrationResponse> {
 
 export async function custodialTransfer (payload: TransferPayload): Promise<TransferResponse> {
   logger.debug('Initiating transfer...')
-  const response = await fetch(config.CIC_CUSTODIAL.TRANSFER_ENDPOINT, {
+  const response = await fetch(`${config.CIC.CUSTODIAL}/api/sign/transfer`, {
     method: 'POST',
     body: JSON.stringify(payload),
     headers: {
