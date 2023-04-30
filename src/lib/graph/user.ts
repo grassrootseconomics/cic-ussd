@@ -1,12 +1,12 @@
 import { GraphQLClient } from 'graphql-request';
 import { Redis as RedisClient } from 'ioredis';
-import { Address } from '@lib/ussd/utils';
-import { Cache } from '@utils/redis';
+import { UserService } from '@services/user';
 
 
-export enum Gender {
-  MALE = 'MALE',
-  FEMALE = 'FEMALE',
+export enum Gender { MALE = 'MALE', FEMALE = 'FEMALE' }
+
+export enum GraphAccountTypes {
+  CUSTODIAL_PERSONAL = 'CUSTODIAL_PERSONAL'
 }
 
 export const personalInformationFields = `
@@ -15,13 +15,6 @@ export const personalInformationFields = `
  given_names
  location_name
  year_of_birth`
-
-export const graphUserFields = `
-  id
-  activated
-  personal_information {
-    ${personalInformationFields}
-  }`
 
 export interface PersonalInformation {
   family_name: string
@@ -33,12 +26,53 @@ export interface PersonalInformation {
   year_of_birth: number
 }
 
+export interface GraphAccount {
+  account_type: string
+  blockchain_address: string
+  id: number
+  marketplace: GraphMarketplace
+  tills: GraphTill[]
+  vpas: GraphVpa[]
+  user_identifier: number
+}
+
+export interface GraphMarketplace {
+  account: number;
+  id: number;
+  marketplace_name: string;
+}
+
+export interface GraphTransaction {
+  sender_address: string;
+  date_block: number;
+  recipient_address: string;
+  tx_hash: string;
+  tx_value: number;
+  voucher_address: string;
+}
+
+export interface GraphIdentifier {
+  account: GraphAccount
+  id: number;
+  linked_account: number;
+}
+
+export interface GraphTill extends GraphIdentifier {
+  till: string;
+}
+
+export interface GraphVpa extends GraphIdentifier{
+  vpa: string;
+}
+
+
 export interface GraphUser {
   activated: boolean
+  accounts: GraphAccount[]
   id: number
   interface_identifier: string
   interface_type: string
-  personal_information: Partial<PersonalInformation>
+  personal_information: PersonalInformation
 }
 
 function getRequestedFields(personalInformation: Partial<PersonalInformation>) {
@@ -54,17 +88,6 @@ function getRequestedFields(personalInformation: Partial<PersonalInformation>) {
   return requestedFields.trim();
 }
 
-export async function getPersonalInformation(address: Address, graphql: GraphQLClient){
-  const query = `query GetPersonalInformation($address: String!) {
-   personal_information(where: {user: {accounts: {blockchain_address: {_eq: $address}}}}) {${personalInformationFields}}}`
-
-  const variables = {
-    address
-  }
-  const data = await graphql.request<{ personal_information: Partial<PersonalInformation>[] }>(query, variables)
-  return data.personal_information[0]
-}
-
 export async function createGraphUser(graphql: GraphQLClient, user: Partial<GraphUser>): Promise<Partial<GraphUser>> {
   const query = `mutation CreateUser($user: users_insert_input!) {
     insert_users_one(object: $user) {id}
@@ -76,7 +99,142 @@ export async function createGraphUser(graphql: GraphQLClient, user: Partial<Grap
   return data.insert_users_one
 }
 
-export async function updateGraphUser(id: number, graphql: GraphQLClient, user: Partial<GraphUser>): Promise<Partial<GraphUser>> {
+export async function createGraphAccount(graphql: GraphQLClient, account: Partial<GraphAccount>): Promise<Partial<GraphAccount>> {
+  const query = `mutation CreateAccount($account: accounts_insert_input!) {
+    insert_accounts_one(object: $account) {id}
+  }`
+
+  const variables = {
+    account,
+  }
+  const data = await graphql.request<{ insert_accounts_one: Partial<GraphAccount>  }>(query, variables)
+  return data.insert_accounts_one
+}
+
+export async function createGraphMarketplace(graphql: GraphQLClient, marketplace: Partial<GraphMarketplace>, phoneNumber: string, redis: RedisClient) {
+  const query = `mutation CreateMarketplace($marketplace: marketplaces_insert_input!) {
+    insert_marketplaces_one(object: $marketplace) {id account marketplace_name}
+  }`
+
+  const variables = {
+    marketplace,
+  }
+  const data = await graphql.request<{ insert_marketplaces_one: GraphMarketplace  }>(query, variables)
+  await new UserService(phoneNumber, redis).update({
+    graph: {
+      account: {
+        marketplace: data.insert_marketplaces_one
+      }
+    }
+  })
+  return data.insert_marketplaces_one
+}
+
+export async function createGraphPersonalInformation(
+  address: string,
+  graphql: GraphQLClient,
+  personal_information: Partial<PersonalInformation>,
+  phoneNumber: string,
+  redis: RedisClient
+) {
+  const insertedFields = getRequestedFields(personal_information);
+  const query = `
+    mutation InsertPersonalInformation($personal_information: personal_information_insert_input!) {
+      insert_personal_information_one(object: $personal_information) {
+        ${insertedFields}
+      }
+    }`;
+
+  const variables = { personal_information };
+  const result = await graphql.request<{ insert_personal_information_one: Partial<PersonalInformation> }>(query, variables);
+  await new UserService(phoneNumber, redis).update({
+    graph: {
+      personalInformation: result.insert_personal_information_one,
+    }
+  })
+  return result.insert_personal_information_one;
+}
+
+export async function getGraphAddressFromTill(graphql: GraphQLClient, till: string) {
+  const query = `query GetAddressFromTill($till: String!) {
+    till(where: {till: {_eq: $till}}) {
+      account {blockchain_address}
+    }
+  }`
+
+  const variables = {
+    till,
+  }
+  const data = await graphql.request<{ till: GraphTill[]}>(query, variables)
+  return data.till[0].account.blockchain_address
+}
+
+export async function getGraphAddressFromVpa(graphql: GraphQLClient, vpa: string) {
+  const query = `query GetAddressFromVpa($vpa: String!) {
+      vpa(where: {vpa: {_eq: $vpa}}) {
+        account {
+          blockchain_address
+      }
+    }`
+
+  const variables = {
+    vpa,
+  }
+  const data = await graphql.request<{ vpa: GraphVpa[] }>(query, variables)
+  return data.vpa[0].account.blockchain_address
+}
+
+export async function getGraphPersonalInformation(address: string, graphql: GraphQLClient){
+  const query = `query GetPersonalInformation($address: String!) {
+   personal_information(where: {user: {accounts: {blockchain_address: {_eq: $address}}}}) {${personalInformationFields}}}`
+
+  const variables = {
+    address
+  }
+  const data = await graphql.request<{ personal_information: Partial<PersonalInformation>[] }>(query, variables)
+  return data.personal_information[0]
+}
+
+export async function getFullGraphUserData(
+  address: string,
+  graphql: GraphQLClient,
+  interfaceIdentifier: string,
+  activated = true,
+  transactionsLimit = 9,
+  transactionSuccess = true){
+  const query = `query retrieveFullUserGraphData($activated: Boolean!, $address: String!, $interfaceIdentifier: String!, $transactionSuccess: Boolean!, $transactionsLimit: Int!) {
+    users(where: {interface_identifier: {_eq: $interfaceIdentifier}, activated: {_eq: $activated}, interface_type: {_eq: USSD}}) {
+      id
+      accounts(limit: 1){
+        id
+        marketplace { marketplace_name }
+        tills { till }
+        vpas { vpa }
+      }
+      personal_information{ ${personalInformationFields} }
+    }
+    transactions(where: {_or: [{recipient_address: {_eq: $address}}, {sender_address: {_eq: $address}}], success: {_eq: $transactionSuccess}}, limit: $transactionsLimit, order_by: {date_block: desc}) {
+      recipient_address
+      sender_address
+      tx_type
+      tx_value
+      voucher_address
+      date_block
+      tx_hash
+    }
+  }`;
+
+  const variables = {
+    activated,
+    address,
+    interfaceIdentifier,
+    transactionSuccess,
+    transactionsLimit
+  }
+  return await graphql.request<{ users: GraphUser[], transactions: GraphTransaction[] }>(query, variables)
+}
+
+export async function updateGraphUser(graphql: GraphQLClient, id: number, user: Partial<GraphUser>): Promise<Partial<GraphUser>> {
   const query = `mutation UpdateUser($user: users_set_input!, $id: Int!) {
     update_users_by_pk(pk_columns: {id: $id}, _set: $user) {id}
   }`
@@ -88,8 +246,34 @@ export async function updateGraphUser(id: number, graphql: GraphQLClient, user: 
   return data.update_users_by_pk
 }
 
-// upsert only the provided fields in the personal information based on the user identifier
-export async function upsertPersonalInformation(
+export async function updateGraphMarketplace(
+  id: number,
+  graphql: GraphQLClient,
+  marketplace: Partial<GraphMarketplace>,
+  phoneNumber: string,
+  redis: RedisClient){
+  const query = `mutation UpdateMarketplace($marketplace: marketplaces_set_input!, $id: Int!) {
+    update_marketplaces_by_pk(pk_columns: {id: $id}, _set: $marketplace) {marketplace_name}
+  }`
+  const variables = {
+    marketplace,
+    id: id
+  }
+  const data = await graphql.request<{ update_marketplaces_by_pk: Pick<GraphMarketplace, 'marketplace_name'> }>(query, variables)
+  await new UserService(phoneNumber, redis).update({
+    graph: {
+      account: {
+        marketplace: {
+          marketplace_name: data.update_marketplaces_by_pk.marketplace_name
+        }
+      }
+    }
+  })
+  return data.update_marketplaces_by_pk
+}
+
+
+export async function updateGraphPersonalInformation(
   address: string,
   graphql: GraphQLClient,
   personal_information: Partial<PersonalInformation>,
@@ -99,7 +283,7 @@ export async function upsertPersonalInformation(
   const updatedFields = getRequestedFields(personal_information);
   const constraint = 'personal_information_user_identifier_key';
   const query = `
-    mutation UpsertPersonalInformation($personal_information: personal_information_insert_input!) {
+    mutation UpdatePersonalInformation($personal_information: personal_information_insert_input!) {
       insert_personal_information_one(
         object: $personal_information,
         on_conflict: { constraint: ${constraint}, update_columns: [${updatedFields}] }
@@ -107,17 +291,12 @@ export async function upsertPersonalInformation(
     }`;
 
   const variables = { personal_information };
-  const { insert_personal_information_one: updatedPersonalInformation } = await graphql.request<{ insert_personal_information_one: Partial<PersonalInformation> }>(query, variables);
-  await updateCacheUser(updatedPersonalInformation, phoneNumber, redis);
+  const result = await graphql.request<{ insert_personal_information_one: Partial<PersonalInformation> }>(query, variables);
+
+  await new UserService(phoneNumber, redis).update({
+    graph:{
+      personalInformation: result.insert_personal_information_one
+    }
+  })
+  return result.insert_personal_information_one;
 }
-
-export async function updateCacheUser(personalInformation: Partial<PersonalInformation>, phoneNumber: string, redis: RedisClient) {
-  const cache = new Cache(redis, phoneNumber);
-  const tag = personalInformation.given_names && personalInformation.family_name
-    ? `${personalInformation.given_names} ${personalInformation.family_name} ${phoneNumber}`
-    : phoneNumber;
-
-  await cache.updateJSON({ graph: { personal_information: personalInformation }, tag });
-}
-
-

@@ -24,8 +24,8 @@ export const voucherFields = `
     voucher_description
     voucher_name`
 
-export async function getActiveVouchers(graphql: GraphQLClient): Promise<Voucher[]> {
-  const query = `query getActiveVouchers($active: Boolean!) {
+export async function getActiveGraphVouchers(graphql: GraphQLClient): Promise<Voucher[]> {
+  const query = `query getActiveGraphVouchers($active: Boolean!) {
     vouchers(where: {active: {_eq: $active}}) {
       ${voucherFields}
       }
@@ -42,8 +42,8 @@ export async function getActiveVouchers(graphql: GraphQLClient): Promise<Voucher
   }
 }
 
-export async function getVouchersByAddress(graphql: GraphQLClient, address: string): Promise<Voucher | null> {
-  const query = `query getVouchersByAddress($address: String!) {
+export async function getGraphVoucherByAddress(graphql: GraphQLClient, address: string): Promise<Voucher | null> {
+  const query = `query getGraphVoucherByAddress($address: String!) {
     vouchers(where: {voucher_address: {_eq: $address}}) {
       ${voucherFields}
     }
