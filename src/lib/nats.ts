@@ -69,8 +69,7 @@ async function getUser(
   db: PostgresDb,
   redis: RedisClient,
   address: string,
-  isSender: boolean,
-  counterparty?: any
+  isSender: boolean
 ): Promise<[null, null] | [User, UserService]> {
   const phoneNumber = await getPhoneNumberFromAddress(address, db, redis);
 
@@ -86,7 +85,7 @@ async function getUser(
   if (!user) {
     throw new SystemError(`Could not find recipient: ${phoneNumber}`);
   }
-  return [user as User, userService];
+  return [user, userService];
 }
 
 async function updateUser(
@@ -109,7 +108,6 @@ async function updateUser(
     },
   });
 }
-
 
 async function processRegistrationEvent(
   db: PostgresDb,
