@@ -6,51 +6,54 @@
   "bugs": "https://github.com/grassrootseconomics/cic-ussd/issues",
   "license": "AGPL-3.0-or-later",
   "scripts": {
-    "build": "rimraf dist && tsc -p tsconfig.json",
+    "build": "rimraf dist && tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "dev": " ts-node-dev --exit-child --require dotenv/config  -r tsconfig-paths/register src/index.ts -r pino-debug src/index.ts | pino-pretty -c -t",
-    "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register dist/index.js dist/index.js",
+    "start": "node dist/index.js",
     "typesafe-i18n": "typesafe-i18n"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@fastify/cors": "^8.2.0",
-    "@fastify/formbody": "^7.3.0",
+    "@types/node": "^18.16.2",
+    "@types/pg": "^8.6.6",
+    "@types/qs": "^6.9.7",
+    "@fastify/cors": "^8.2.1",
+    "@fastify/formbody": "^7.4.0",
     "@fastify/postgres": "^5.2.0",
-    "@fastify/sensible": "^5.1.1",
+    "@fastify/sensible": "^5.2.0",
     "bcrypt": "^5.1.0",
-    "ethers": "^6.0.8",
-    "fastify": "^4.9.2",
+    "ethers": "^6.3.0",
+    "fastify": "^4.17.0",
     "fastify-plugin": "^4.5.0",
-    "graphql-request": "^5.1.0",
-    "ioredis": "^5.2.4",
-    "libphonenumber-js": "^1.10.14",
-    "moment-timezone": "^0.5.41",
-    "nats": "^2.11.0",
+    "graphql-request": "^5.2.0",
+    "ioredis": "^5.3.2",
+    "libphonenumber-js": "^1.10.28",
+    "moment-timezone": "^0.5.43",
+    "nats": "^2.13.1",
     "pino": "^8.11.0",
-    "qs": "^6.11.0",
+    "qs": "^6.11.1",
     "redis-json": "^6.0.3",
-    "tsconfig-paths": "^4.1.2",
-    "typesafe-i18n": "^5.24.1",
-    "xstate": "^4.34.0"
+    "tsc-alias": "^1.8.6",
+    "ts-essentials": "^9.3.1",
+    "typesafe-i18n": "^5.24.3",
+    "xstate": "^4.37.2"
   },
   "devDependencies": {
     "@release-it/conventional-changelog": "^5.1.1",
-    "@types/node": "^18.11.9",
-    "@types/pg": "^8.6.6",
-    "@types/qs": "^6.9.7",
     "auto-changelog": "^2.4.0",
+    "madge": "^6.0.0",
     "release-it": "^15.10.1",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0"
   },
   "optionalDependencies": {
     "@xstate/cli": "^0.4.2",
     "dotenv": "^16.0.3",
-    "eslint": "^8.35.0",
+    "eslint": "^8.39.0",
     "pino-debug": "^2.0.0",
     "pino-pretty": "^10.0.0",
-    "prettier": "^2.8.4",
+    "prettier": "^2.8.8",
     "ts-standard": "^12.0.2"
   }
 }
