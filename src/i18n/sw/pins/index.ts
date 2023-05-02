@@ -13,7 +13,7 @@ const sw_pins: NamespacePinsTranslation = {
     "CON Weka PIN mpya ya nne nambari:\n0. Rudi",
   enteringOldPin:
     "CON Weka PIN yako ya zamani:\n0. Rudi",
-  enteringPinR:
+  enteringPinWR:
     "CON Weka PIN yako ili uanze kubadili:\n0. Rudi",
   enteringWard:
     "CON Weka nambari ya simu ya mwenzio:\n0. Rudi",

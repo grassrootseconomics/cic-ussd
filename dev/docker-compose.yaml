@@ -20,7 +20,7 @@ services:
     ports:
       - '5432:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: [ "CMD-SHELL", "pg_isready" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,12 +30,15 @@ services:
     volumes:
       - cic-ussd-redis:/data
     ports:
-        - '6379:6379'
+      - '6379:6379'
     healthcheck:
-        test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
+      test: [ "CMD-SHELL", "redis-cli ping | grep -q PONG" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  migrations:
+    image: cic-ussd:latest
+    command: /bin/tern migrate --migrations "/app/migrations" --config "/app/migrations/tern.conf"
   cic-ussd:
     image: cic-ussd:latest
     env_file:
@@ -46,12 +49,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/cic_ussd
-      - REDIS_URL=redis://redis:6379
-      - NODE_ENV=development
     command: npm run start
-
+    ports:
+      - '9000:9000'
 volumes:
   cic-ussd-pg:
     driver: local

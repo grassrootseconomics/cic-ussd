@@ -8,6 +8,7 @@ dist/*
 
 # ide-user-sepcific files
 .idea
+.vscode
 
 # distribution packaging
 .nyc_output

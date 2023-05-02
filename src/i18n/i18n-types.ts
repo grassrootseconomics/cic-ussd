@@ -306,7 +306,7 @@ export type NamespacePinsTranslation = {
 	 * C​O​N​ ​W​e​k​a​ ​P​I​N​ ​y​a​k​o​ ​i​l​i​ ​u​a​n​z​e​ ​k​u​b​a​d​i​l​i​:​
 ​0​.​ ​R​u​d​i
 	 */
-	enteringPinR: string
+	enteringPinWR: string
 	/**
 	 * C​O​N​ ​W​e​k​a​ ​n​a​m​b​a​r​i​ ​y​a​ ​s​i​m​u​ ​y​a​ ​m​w​e​n​z​i​o​:​
 ​0​.​ ​R​u​d​i
@@ -717,6 +717,12 @@ export type NamespaceTransferTranslation = {
 	 * C​O​N​ ​{​r​e​c​i​p​i​e​n​t​}​ ​h​a​i​j​a​s​a​j​i​l​i​w​a​ ​a​u​ ​s​i​o​ ​s​a​h​i​h​i​,​ ​t​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​t​e​n​a​:​
 ​1​.​K​a​r​i​b​i​s​h​a​ ​k​w​a​ ​m​a​t​a​n​d​a​o​ ​w​a​ ​S​a​r​a​f​u​.​
 ​9​.​ ​O​n​d​o​k​a
+	 * @param {unknown} recipient
+	 */
+	invalidRecipientWithInvite: RequiredParams<'recipient'>
+	/**
+	 * C​O​N​ ​{​r​e​c​i​p​i​e​n​t​}​ ​h​a​i​j​a​s​a​j​i​l​i​w​a​ ​a​u​ ​s​i​o​ ​s​a​h​i​h​i​,​ ​t​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​t​e​n​a​:​
+​0​.​ ​R​u​d​i
 	 * @param {unknown} recipient
 	 */
 	invalidRecipient: RequiredParams<'recipient'>
@@ -1190,7 +1196,7 @@ export type TranslationFunctions = {
 		 * CON Weka PIN yako ili uanze kubadili:
 	0. Rudi
 		 */
-		enteringPinR: () => LocalizedString
+		enteringPinWR: () => LocalizedString
 		/**
 		 * CON Weka nambari ya simu ya mwenzio:
 	0. Rudi
@@ -1566,6 +1572,11 @@ export type TranslationFunctions = {
 		 * CON {recipient} haijasajiliwa au sio sahihi, tafadhali weka tena:
 	1.Karibisha kwa matandao wa Sarafu.
 	9. Ondoka
+		 */
+		invalidRecipientWithInvite: (arg: { recipient: unknown }) => LocalizedString
+		/**
+		 * CON {recipient} haijasajiliwa au sio sahihi, tafadhali weka tena:
+	0. Rudi
 		 */
 		invalidRecipient: (arg: { recipient: unknown }) => LocalizedString
 		/**

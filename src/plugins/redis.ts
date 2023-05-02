@@ -1,7 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import Redis from 'ioredis';
-import { config } from '@/config';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -11,14 +10,12 @@ declare module 'fastify' {
 }
 
 interface RedisPluginOptions {
-
-  host: string
-  port: number
+  ephemeralDsn: string
+  persistentDsn: string
 }
 
 const redisPlugin: FastifyPluginAsync<RedisPluginOptions> = async (fastify, opts) => {
-  const { host, port } = opts
-
+  const { ephemeralDsn, persistentDsn } = opts
   const configs = {
     autoResubscribe: true,
     connectionTimeout: 10000,
@@ -33,15 +30,12 @@ const redisPlugin: FastifyPluginAsync<RedisPluginOptions> = async (fastify, opts
     maxRetriesPerRequest: 5
   }
 
-  fastify.log.debug(`Connecting to redis at: ${host}:${port} ...`)
-  const ephemeralClient = new Redis(port, host, {
+  const ephemeralClient = new Redis(ephemeralDsn, {
     connectionName: "ephemeral",
-    db: config.REDIS.EPHEMERAL_DATABASE,
     keyPrefix: "cic-ussd-e:",
     ...configs
   })
-  const persistentClient = new Redis(port, host, {
-    db: config.REDIS.PERSISTENT_DATABASE,
+  const persistentClient = new Redis(persistentDsn, {
     keyPrefix: "cic-ussd-p:",
     ...configs
   })

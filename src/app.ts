@@ -41,19 +41,21 @@ app.register(fastifySensible)
 app.register(fastifyPostgres, { connectionString: config.DATABASE.URL })
 
 // register custom plugins
-app.register(ethPlugin, { endpoint: config.RPC.ENDPOINT })
+app.register(ethPlugin, { endpoint: config.CIC.RPC })
 app.register(graphqlPlugin, {
-  endpoint: config.CIC_GRAPH.GRAPHQL_ENDPOINT,
-  secret: config.CIC_GRAPH.HASURA_ADMIN_SECRET
+  endpoint: `${config.CIC.GRAPH}/v1/graphql`,
+  secret: config.CIC.GRAPH_SECRET
 })
 app.register(natsPlugin, {
-  connOpts: {
-    name: config.NATS.CLIENT_NAME,
-    servers: [config.NATS.URL],
-  },
-  subjects: [ config.NATS.CHAIN.SUBJECTS ]
+  durableName: config.NATS.DURABLE_NAME,
+  server: config.NATS.SERVER,
+  streamName: config.NATS.STREAM_NAME,
+  subject: config.NATS.SUBJECT,
 })
-app.register(redisPlugin, { host: config.REDIS.HOST, port: config.REDIS.PORT })
+app.register(redisPlugin, {
+  ephemeralDsn: config.REDIS.EPHEMERAL_DSN,
+  persistentDsn: config.REDIS.PERSISTENT_DSN,
+})
 
 // register routes.
 app.register(ussdRoutes, { prefix: `/${config.API.VERSION}/ussd` })

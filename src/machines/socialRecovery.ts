@@ -1,7 +1,5 @@
 import { createMachine, raise } from 'xstate';
 import {
-  BaseContext,
-  BaseEvent,
   isOption00,
   isOption1,
   isOption11,
@@ -10,22 +8,22 @@ import {
   isOption3,
   isOption9,
   isSuccess,
+  isValidPhoneNumber,
+  MachineEvent,
   MachineId,
-  menuPages,
-  translate,
+  MachineInterface,
   updateErrorMessages,
-  User,
+  UserContext,
   validateTargetUser
 } from '@machines/utils';
-import { sanitizePhoneNumber } from '@utils/phoneNumber';
 import { isBlocked, isValidPin, validatePin } from '@machines/auth';
-import { ContextError, MachineError } from '@lib/errors';
-import { addGuardian, removeGuardian } from '@db/models/guardian';
-import { Cache } from '@utils/redis';
-import { tHelpers } from '@i18n/translators';
+import { ContextError, MachineError, SystemError } from '@lib/errors';
+import { tHelpers, translate } from '@i18n/translators';
 import { Redis as RedisClient } from 'ioredis';
-import { getTag } from '@lib/ussd/utils';
 import { Locales } from '@i18n/i18n-types';
+import { getUserTag } from '@services/user';
+import { AccountService } from '@services/account';
+import { menuPages } from '@lib/ussd';
 
 
 enum SocialRecoveryError {
@@ -36,8 +34,18 @@ enum SocialRecoveryError {
   NOT_ADDED = "NOT_ADDED",
 }
 
+export interface SocialRecoveryContext extends UserContext {
+  data: {
+    guardianToAddEntry: string,
+    guardianToRemoveEntry: string,
+    loadedGuardians: string[],
+    validGuardianToAdd: string,
+    validGuardianToRemove?: string,
+  }
+}
 
-export const socialRecoveryMachine = createMachine<BaseContext, BaseEvent>({
+
+export const stateMachine = createMachine<SocialRecoveryContext, MachineEvent>({
   /** @xstate-layout N4IgpgJg5mDOIC5QAoC2BDAxgCwJYDswBKAOnQFcAXbAewCdcAvAqAcXPTol3XwEEI3Srhr4AxBFFgSBAG40A1tIrV6TFu07deAoSPwBtAAwBdRKAAONWLmGjzIAB6IALAE4AzCSM+jAJiMANgCAwIAOFwAaEABPRABGIxc-EjcwzzSwvwj4j0CAX3zotCw8QlIVWgZmfDYOLh5+QVt9MTA6OnoSCwAbdEoAM3pUMioq9VrNBp1mu0NTBysbOYdnBHcvX38gkKCI6LiEeICAdhI-eIBWNKNLv0vAtIKikBKcAmJR1WqNeu0mvSiNodLq9fpDOgjSpqGp1LSNXQtUQGeJmJAgJZI-CrVyeby+UK7cJRWIJDwnS4kE4eDKJS7uQJGMKFYoYd7lL7jWFTf6IubAzp0bp9QbDTkw37wmaAwx+NGWaxYnHrPFbQnbYkHBLhM7UtwuLIuW7pQKXFmvNllT7Qn6TP6NABKYFQNFk6B6EikMnw8iU4ttcOm+CdLrdPWM8oxipW6LWfhciRINNuJ1T8ROfguJy1CA8Hhc3jyeaNHni6UzLnNbytFTGErtUuDztd7oFoJFEKhdYDPMdzbDEcW0f0yvjieTl1TJ3TmfTOcSYTObkCjPTl3puVuVctH1r3wmgf+IZbHvaguF4LFNoPvd4x4HqKHyxHscQY6MSbcKbTGazObH3hhB4fh5vq-ggYElYvNWu7+je9p3v2rZnu2l6QnB3IIU2obugYcpPkqr4IO+n7ftOv5zqSRzAfiPjxFc06BPETFQaypSwdesIAGq4GAADut74LAnqEN6vrKN2B48fxgmwIO6KYjGoBrBstEakS+xUQE64kGE1zMamWSlqa27sRynEsNJAlYcJKFCmCoroRZtRWbJ8kKs+9hEapao7BqmmHMc9JUlcX6QeEQHuKZ7LWpJ3G8dZja2SC9kdlecWWQlbmPgpw5ecpuKbASfmhAFb7MR+iRuBVwThCB0U1hhmUyTZbapWhXb7vFLVJXhkaKS+BUqkVPjqqVJKHH4wRhCQVUBEYuSeGWZrQTuHJgPglDtJKQYACo0PeYBiAAQnwADCADS7lRp52JEX4JyQSQBouAaIEeEYH2BPOn1nC4K6fek9HAYEJwNbBG1bQwDZ7Qd-ZHbtDp8AAcgAygAkrt10DflThvicRokIy+r6h4RmXPEE2IBmBYgfqLgE8EZN+OD62bdttTIz1QYnedV0LLlt2jo9BYvW9eafUE84Gmc9JuFNJxuNObiXMyq1mZ8kMc1AXOJTziMoxjWMCx5hFDQ9hPE+4LjMx4FNU0ci5nBcLHxG48vHG4rOa+z0NQAACgQfCsLzl3Y3ld3mwmH4TlOM5-lR6b0c9K70aajzvWD6sxaQWt+4H-AhwbaOY+HQtEWulIPCBBMJgEbvzpcNIhdcYSgwEealt7ue+ywBcOiHp1hybN1m3jRwM2cE5ky41z-Q9OaMl4Br6qrlNGDcHjdyQed9wQA9iMXRtl2PayU6mpFNxEc-BNmVH5vERPTYu67kiBK1sTnO+97UBdcYPfMT5KXHg9J6YsjIfS+v+ZIbgSCqyYgEBMj0VxZ0-o1Xev8CD-0PkjEuxt+oR1HKaSq04gKlgpKDKWWkDQfiZIye4wQrgmWzo1KAWE+T6FRuQTAmA4DCSHvzAh5chrnynl+K+s99S32lmTFuYQsjrkeKFbebDGwcNEFwnhfCcGG1LiPHGkdx6iMvjPG+C8qLrhSGkfUit3BhHTMwtBsFVFBnvO6TRvDYD8MAfowh90RbPQiOLSBVDDjJECKkdIDMmQ2wWnmD+FoNakBcUeJCPQPHaKPnooRp9EB5mnGpfMdiLhuBzAmR+K9Xr2PXCcW4W8WGwTkO6XAEAC7BzEA6AAoojAAmkAwaRjJ4mOvlI8xgVakzWXExZiDx5b5m3k0noLT+4hy6b0-puM4wUinscG28j5F+CmTmexz13bu2CBvO2Ss1ZOI5Is5ZWDVndIdH03xwijFKwLBOScG9alXH-JBWB8TIofSmg8beFgCCyQADI0HQBASAodBEEWAWfIZ08RnzzvoFFe5xQr5kCGTYIs8IVQpsrC+FiKsn4JRQMtFF8MWSKxf+DeH5qrVQuPGYkD1t6wBoJgHgPQnSYFdO0GIABZDa5AkUbMMXGaOl844UWxWSNucD3DMTJkyekRhUGJK-nygV7phWiroBKqVOi8GytHAq2OP5ZwqonuSbw7gLiqy-PGTwvL+WCpNbIMVkr8DSupSiHJqK3y2vEUqh1OYnipFNE8LIy4yz1NuZ8Q1vqwAiv9WawNwbcHH3woLXJxFI1kXjpRSa5JYHao9rPexMtt5hhaf0Ha-x9q6BEtIOQihpDNogK2mG7aaC6GtRXdF4jTGjMdWuWB-16HpmpLkbITbmkDuEEOxoHbBBtQvI5EY-bB2Hi3SOwQY6RETrqZi6Rid3ZLgBqvMCJw26rqWeuttJ7DpdrEr2kgh6N3Ht4PtQ657x4+WKhc8aOZVZWKiZcJIrc7gswaRyf9H6gNw1DEdOye7Ox-rXUewSwH4agZUqqCDGkHZBMiaTUGQFn1QRePgGgCL4DohguUWlmzEAAFpvpUR45SM5wmRP0e3lgEV5BNrHR6PypQEAuNyrfIuGtvgrhtyCCg+cZYUjTlbm7FWIF0ziYypu6UY8DHKmSPOFi6r6Y-OAsxVi+rGrOUA9hE8inlRuwJpfH5SsFqXH-HiOuel5YXGvvMlDsUurNT1v8Njptw3rD8P+dcBZ2WaptiuGe28MHueI1hrz90VNqXU4yFcoNjmvRTtccLQQ6vOY4z7KGLBdaCWK+bUrWxyuaaq4ncIsDGK-SyIuY4eWf4ByDqwTrID-BVwetkexZYjT8cCoNkKS9n3ZGnMhtNPdWuYODDN4tyX6IUl0j4aci0vzVTCNB64VIaSz0sc+q+E3DtTfwP-WbcZutqfgX1x18YKaFmmeEBNoQ8uOFsL9vJ1wY6M38ISg0jxoOHJo9E1uG94gqPYbMfQnSUpw4QCrGO4i3ZZDdokB2uRqTxrnjtzwuq9XNeSfjmUGSvEk-opTOB8jiw0nloS1LickgpH+tcek9xjiHLx42NxPQieChJ0zsrgPKvA+bh9a5k5II-OpPL1xaSueJdHslw5jJUjJAJh9BjekcxkyG895IekjQC6a2tT49zWnTZJ2Ty+lOSk05s1b+dC1QH0UXJ7pJYk10rNV-9uiGutNUSyLpRIzEIj+DJm3VNLnGk+nj48nnl6JFmOB4yD8QFrjbffpTfPbOSCyfhcr+g-v4OB7SMHpI-51NJjtrt2eacVakvwDCuFCKFOnbpQkeiNamEgXuDA+7WlbiUniYrFcr1fpj-FbwdAMBUCQzzYnxW6uNOa-nEWOzVx3AxMsd6o1Qqs2mvNUG1XiQPyPXS3pMIOwVZpY7gqR3Z7hMxMw9IghX0W0AMiNT1p8ktZ8jgkhH4Jx0wgJ5Z1xV9JopovAa9ttO4kgvVotSA0MzN8BCtRUSdrMqJts5EhdztHgVpCggA */
   id: MachineId.SOCIAL_RECOVERY,
   initial: "socialRecoveryMenu",
@@ -301,151 +309,94 @@ export const socialRecoveryMachine = createMachine<BaseContext, BaseEvent>({
   }
 })
 
-function isLoadError(context: BaseContext, event: any) {
+function isLoadError(context: SocialRecoveryContext, event: any) {
   return event.data.code === SocialRecoveryError.LOAD_ERROR;
 }
 
-function isAdditionError(context: BaseContext, event: any) {
+function isAdditionError(context: SocialRecoveryContext, event: any) {
   return event.data.code === SocialRecoveryError.GUARDIAN_ADDITION_ERROR;
 }
 
-function isRemovalError(context: BaseContext, event: any) {
+function isRemovalError(context: SocialRecoveryContext, event: any) {
   return event.data.code === SocialRecoveryError.GUARDIAN_REMOVAL_ERROR;
 }
 
-function isValidPhoneNumber(context: BaseContext, event: any) {
-  const { ussd: { countryCode } } = context;
-  try {
-    sanitizePhoneNumber(event.input, countryCode);
-    return true
-  } catch (e) {
-    return false;
-  }
-}
-
-function saveValidatedGuardianToAdd(context: BaseContext, event: any) {
-  context.data = {
-    ...(context.data || {}),
-    guardians: {
-      ...(context.data?.guardians || {}),
-      validated: {
-        ...(context.data?.guardians?.validated || {}),
-        toAdd: event.data.guardian
-      }
-    }
-  }
+function saveValidatedGuardianToAdd(context: SocialRecoveryContext, event: any) {
+  context.data.validGuardianToAdd = event.data.guardian;
   return context;
 }
 
-function saveValidatedGuardianToRemove(context: BaseContext, event: any) {
-  context.data = {
-    ...(context.data || {}),
-    guardians: {
-      ...(context.data?.guardians || {}),
-      validated: {
-        ...(context.data?.guardians?.validated || {}),
-        toRemove: event.data.guardian
-      }
-    }
-  }
+function saveValidatedGuardianToRemove(context: SocialRecoveryContext, event: any) {
+  context.data.validGuardianToRemove = event.data.guardian;
   return context;
 }
 
-function saveLoadedGuardians(context: BaseContext, event: any) {
-  context.data = {
-    ...(context.data || {}),
-    guardians: {
-      ...(context.data?.guardians || {}),
-      loaded: event.data.guardians
-    }
-  }
+function saveLoadedGuardians(context: SocialRecoveryContext, event: any) {
+  context.data.loadedGuardians = event.data.guardians;
   return context;
 }
 
-function saveGuardianToAddEntry(context: BaseContext, event: any) {
-  context.data = {
-    ...(context.data || {}),
-    guardians: {
-      ...(context.data?.guardians || {}),
-      entry: {
-        ...(context.data?.guardians?.entry || {}),
-        toAdd: event.input
-      }
-    }
-  }
+function saveGuardianToAddEntry(context: SocialRecoveryContext, event: any) {
+  context.data.guardianToAddEntry = event.input;
   return context;
 }
 
-function saveGuardianToRemoveEntry(context: BaseContext, event: any) {
-  context.data = {
-    ...(context.data || {}),
-    guardians: {
-      ...(context.data?.guardians || {}),
-      entry: {
-        ...(context.data?.guardians?.entry || {}),
-        toRemove: event.input
-      }
-    }
-  }
+function saveGuardianToRemoveEntry(context: SocialRecoveryContext, event: any) {
+  context.data.guardianToRemoveEntry = event.input;
   return context;
 }
 
-async function initiateGuardianAddition(context: BaseContext, event: any) {
+async function initiateGuardianAddition(context: SocialRecoveryContext, event: any) {
   const {
-    data: { guardians },
-    resources: { db, p_redis },
+    data,
+    connections: { db, redis },
     user: { account: { phone_number } } } = context
   const { input } = event
 
   await validatePin(context, input)
 
-  if(!guardians?.validated?.toAdd) {
+  if(!data.validGuardianToAdd) {
     throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardian to add missing from context.")
   }
 
   try {
-    await addGuardian(db, guardians.validated.toAdd, p_redis, phone_number)
+    await new AccountService(db, redis.persistent).addGuardian(data.validGuardianToAdd, phone_number)
     return { success: true }
   } catch (error: any) {
     throw new MachineError(SocialRecoveryError.GUARDIAN_ADDITION_ERROR, error.message)
   }
 }
 
-async function initiateGuardianRemoval(context: BaseContext, event: any) {
+async function initiateGuardianRemoval(context: SocialRecoveryContext, event: any) {
   const {
-    data: { guardians },
-    resources: { db, p_redis },
+    data,
+    connections: { db, redis },
     user: { account: { phone_number } } } = context
   const { input } = event
 
   await validatePin(context, input)
 
-  if(!guardians?.validated?.toRemove) {
+  if(!data.validGuardianToRemove) {
     throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardian to remove missing from context.")
   }
 
   try {
-    await removeGuardian(db, guardians.validated.toRemove, p_redis, phone_number)
+    await new AccountService(db, redis.persistent).removeGuardian(data.validGuardianToRemove, phone_number)
     return { success: true }
   } catch (error: any) {
     throw new MachineError(SocialRecoveryError.GUARDIAN_REMOVAL_ERROR, error.message)
   }
 }
 
-async function loadPinGuardians(context: BaseContext, event: any) {
-  const { resources: { p_redis }, user: { account: { language, phone_number } } } = context
+async function loadPinGuardians(context: SocialRecoveryContext, event: any) {
+  const { connections: { db, redis }, user: { account: { language, phone_number } } } = context
   const { input } = event
 
   await validatePin(context, input)
 
-  // load guardians from redis.
   try {
-    const cache = new Cache<User>(p_redis, phone_number);
-    const user = await cache.getJSON()
-
-    const guardians = user?.guardians || []
-
-    const formattedGuardians = await formatGuardians(guardians, language, p_redis)
+    const guardians = await new AccountService(db, redis.persistent).getAllGuardians(phone_number) || []
+    const formattedGuardians = await formatGuardians(guardians, language, redis.persistent)
     return { guardians: formattedGuardians, success: true }
   } catch (error: any) {
     throw new MachineError(SocialRecoveryError.LOAD_ERROR, error.message)
@@ -457,69 +408,68 @@ async function formatGuardians(guardians: string[], language: Locales, redis: Re
   const placeholder = tHelpers("noMoreGuardians", language)
   const formattedGuardians = []
   for (const guardian of guardians) {
-    const tag = await getTag(guardian, redis)
+    const tag = await getUserTag(guardian, redis)
     formattedGuardians.push(tag)
   }
   return await menuPages(formattedGuardians, placeholder)
 }
 
-async function validateGuardianToAdd(context: BaseContext, event: any) {
-  const { input } = event
+async function validateGuardianToAdd(context: SocialRecoveryContext, event: any) {
+  const guardians = context.user.account.guardians || [];
+  const guardian = await validateTargetUser(context, event.input)
 
-  const guardianUser = await validateTargetUser(context, input)
-  const { account: guardianAccount } = guardianUser
-  const guardian = guardianAccount.phone_number
-  const guardians = context.user.guardians || [];
-  if (guardians.includes(guardian)) {
+  if(!guardian?.account?.phone_number) {
+    throw new SystemError("Guardian phone number missing.")
+  }
+
+  if (guardians.includes(guardian.account.phone_number)) {
     throw new MachineError(SocialRecoveryError.ALREADY_ADDED, "Already a guardian.")
   }
-  return { guardian: guardian, success: true }
+  return { guardian: guardian.account.phone_number, success: true }
 }
 
-async function validateGuardianToRemove(context: BaseContext, event: any) {
-  const { input } = event
+async function validateGuardianToRemove(context: SocialRecoveryContext, event: any) {
+  const guardians = context.user.account.guardians || [];
+  const guardian = await validateTargetUser(context, event.input)
 
-  const guardianUser = await validateTargetUser(context, input)
-  const { account: guardianAccount } = guardianUser
-  const guardian = guardianAccount.phone_number
-  const guardians = context.user.guardians || [];
-  if (!guardians.includes(guardian)) {
+  if(!guardian?.account?.phone_number) {
+    throw new SystemError("Guardian phone number missing.")
+  }
+  if (!guardians.includes(guardian.account.phone_number)) {
     throw new MachineError(SocialRecoveryError.NOT_ADDED, "Not a guardian.")
   }
-  return { guardian: guardian, success: true }
+  return { guardian: guardian.account.phone_number, success: true }
 }
 
-export async function socialRecoveryTranslations(context: BaseContext, state: string, translator: any){
-  const { data: { guardians }, resources: { p_redis } } = context
+async function socialRecoveryTranslations(context: SocialRecoveryContext, state: string, translator: any){
+  const { data} = context
 
   switch (state) {
     case 'guardianAdditionSuccess':
     case 'guardianAdditionError': {
-      if (!guardians?.validated?.toAdd) throw new MachineError(ContextError.MALFORMED_CONTEXT, 'Validated guardian to add missing from context.');
-      const guardian = await getTag(guardians.validated.toAdd, p_redis);
-      return await translate(state, translator, { guardian: guardian });
+      return await translate(state, translator, { guardian: data.validGuardianToAdd });
     }
 
     case 'guardianRemovalSuccess':
     case 'guardianRemovalError': {
-      if (!guardians?.validated?.toRemove) throw new MachineError(ContextError.MALFORMED_CONTEXT, 'Validated guardian to remove missing from context.');
-      const guardian = await getTag(guardians.validated.toRemove, p_redis);
-      return await translate(state, translator, { guardian: guardian });
+      return await translate(state, translator, { guardian: data.validGuardianToRemove });
     }
 
     case "firstGuardiansSet": {
-      if (!guardians?.loaded) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardians missing from context.")
-      return await translate(state, translator, { guardians: guardians.loaded[0] });
+      return await translate(state, translator, { guardians: data.loadedGuardians[0] });
     }
     case "secondGuardiansSet": {
-      if (!guardians?.loaded) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardians missing from context.")
-      return await translate(state, translator, { guardians: guardians.loaded[1] });
+      return await translate(state, translator, { guardians: data.loadedGuardians[1] });
     }
     case "thirdGuardiansSet": {
-      if (!guardians?.loaded) throw new MachineError(ContextError.MALFORMED_CONTEXT, "Guardians missing from context.")
-      return await translate(state, translator, { guardians: guardians.loaded[2] });
+      return await translate(state, translator, { guardians: data.loadedGuardians[2] });
     }
     default:
       return await translate(state, translator)
   }
+}
+
+export const socialRecoveryMachine: MachineInterface = {
+  stateMachine,
+  translate: socialRecoveryTranslations
 }

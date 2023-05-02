@@ -1,24 +1,23 @@
 {
   "git": {
     "commit": true,
-    "commitMessage": "chore(release): Release v${version}",
+    "commitMessage": "chore(release): Release v${version}${options.preReleaseTag}",
     "requireCleanWorkingDir": false,
-    "tagName": "v${version}"
+    "tagName": "v${version}${options.preReleaseTag ? '-' + options.preReleaseTag : ''}"
   },
   "github": {
-    "preRelease": true,
+    "preRelease": false,
     "release": true,
-    "releaseName": "Release v${version}",
+    "releaseName": "Release ${version}${options.preReleaseTag ? ' ' + options.preReleaseTag : ''}",
     "token": "${GITHUB_TOKEN}"
   },
   "npm": {
-    "publish": false
+    "publish": false,
+    "version": "auto"
   },
   "options": {
     "name": "cic-ussd",
     "noAssets": true,
-    "preRelease": true,
-    "release": true,
     "tagPrefix": "v"
   },
   "plugins": {
