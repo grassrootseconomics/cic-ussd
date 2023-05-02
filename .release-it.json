@@ -2,7 +2,7 @@
   "git": {
     "commit": true,
     "commitMessage": "chore(release): Release v${version}${options.preReleaseTag}",
-    "requireCleanWorkingDir": false,
+    "requireCleanWorkingDir": true,
     "tagName": "v${version}${options.preReleaseTag ? '-' + options.preReleaseTag : ''}"
   },
   "github": {
