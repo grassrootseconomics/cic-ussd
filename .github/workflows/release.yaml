@@ -39,11 +39,16 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set outputs
+        run: |
+          echo "RELEASE_TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV \
+          && echo "RELEASE_SHORT_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
       - name: Build Docker image
         run: |
           docker buildx build \
             --progress plain \
-            --tag ${{ env.IMAGE_TAG }}:${{ github.sha }} \
+            --tag ${{ env.IMAGE_TAG }}:${{ env.RELEASE_TAG }} \
             --tag ${{ env.IMAGE_TAG }}:latest \
             --cache-from type=local,src=/tmp/.buildx-cache \
             --cache-to type=local,dest=/tmp/.buildx-cache \
@@ -54,22 +59,22 @@ jobs:
         with:
           context: .
           push: false
-          tags: ${{ env.IMAGE_TAG }}:${{ github.ref }}
+          tags: ${{ env.IMAGE_TAG }}:${{ env.RELEASE_TAG }}
           labels: |
-            org.opencontainers.image.title=cic-ussd
+            org.opencontainers.image.title=${{ env.DOCKER_IMAGE_NAME }}
             org.opencontainers.image.description=${{ env.DOCKER_DESCRIPTION }}
-            org.opencontainers.image.version=${{ github.ref }}
+            org.opencontainers.image.version=${{ env.RELEASE_TAG }}
 
       - name: Push Docker image with version tag
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: ${{ env.IMAGE_TAG }}:${{ github.ref }}
+          tags: ${{ env.IMAGE_TAG }}:${{ env.RELEASE_TAG }}
           labels: |
-            org.opencontainers.image.title=cic-ussd
+            org.opencontainers.image.title=${{ env.DOCKER_IMAGE_NAME }}
             org.opencontainers.image.description=${{ env.DOCKER_DESCRIPTION }}
-            org.opencontainers.image.version=${{ github.ref }}
+            org.opencontainers.image.version=${{ env.RELEASE_TAG }}
 
       - name: Push Docker image with latest tag
         uses: docker/build-push-action@v2
@@ -78,6 +83,6 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_TAG }}:latest
           labels: |
-            org.opencontainers.image.title=cic-ussd
+            org.opencontainers.image.title=${{ env.DOCKER_IMAGE_NAME }}
             org.opencontainers.image.description=${{ env.DOCKER_DESCRIPTION }}
             org.opencontainers.image.version=latest
