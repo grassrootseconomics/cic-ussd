@@ -15,6 +15,5 @@ RUN npm run build
 # final stage
 FROM base AS final
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/migrations ./migrations
 EXPOSE 9000
 CMD ["npm", "start"]
