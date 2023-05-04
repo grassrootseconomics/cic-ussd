@@ -1,5 +1,10 @@
 --- ACCOUNT_STATUS enum
-CREATE TYPE ACCOUNT_STATUS AS ENUM ('ACTIVE', 'BLOCKED', 'PENDING', 'RESETTING_PIN', 'DELETED');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'account_status') THEN
+        CREATE TYPE ACCOUNT_STATUS AS ENUM ('ACTIVE', 'BLOCKED', 'PENDING', 'RESETTING_PIN', 'DELETED');
+    END IF;
+END$$;
 
 --- accounts table
 CREATE TABLE IF NOT EXISTS accounts (
@@ -17,7 +22,12 @@ CREATE TABLE IF NOT EXISTS accounts (
 );
 
 --- TASK_TYPE enum
-CREATE TYPE TASK_TYPE AS ENUM ('REGISTER', 'TRANSFER');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_type') THEN
+        CREATE TYPE TASK_TYPE AS ENUM ('REGISTER', 'TRANSFER');
+    END IF;
+END$$;
 
 --- custodial_tasks table
 CREATE TABLE IF NOT EXISTS custodial_tasks (
@@ -29,7 +39,12 @@ CREATE TABLE IF NOT EXISTS custodial_tasks (
 );
 
 --- SESSION_TYPE enum
-CREATE TYPE SESSION_TYPE AS ENUM ('ACTIVE', 'COMPLETED', 'EXPIRED', 'INITIAL');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'session_type') THEN
+        CREATE TYPE SESSION_TYPE AS ENUM ('ACTIVE', 'COMPLETED', 'EXPIRED', 'INITIAL');
+    END IF;
+END$$;
 
 --- sessions table
 CREATE TABLE IF NOT EXISTS "sessions" (
@@ -53,13 +68,3 @@ CREATE TABLE IF NOT EXISTS guardians (
     guardian TEXT NOT NULL CHECK (guardian <> '' AND char_length(guardian) = 13),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-
-
----- create above / drop below ----
-
-DROP TYPE IF EXISTS ACCOUNT_STATUS;
-DROP TYPE IF EXISTS TASK_TYPE;
-DROP TABLE IF EXISTS custodial_tasks;
-DROP TABLE IF EXISTS ussd_sessions;
-DROP TABLE IF EXISTS accounts;

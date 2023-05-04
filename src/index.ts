@@ -1,6 +1,7 @@
 import app from '@/app';
 import { config } from '@/config';
 import { loadSystemVouchers } from '@lib/ussd';
+import migrate from '@db/migrate';
 
 
 app.ready(async (error) => {
@@ -8,7 +9,7 @@ app.ready(async (error) => {
     app.log.error(error);
     process.exit(1);
   }
-
+  await migrate(app)
   await loadSystemVouchers(app.graphql, app.p_redis)
 });
 
