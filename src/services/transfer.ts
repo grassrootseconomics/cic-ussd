@@ -57,7 +57,7 @@ export async function generateStatement(
     }),
   );
 
-  const userTagMap = new Map<string, string>(handleResults(userTags));
+  const userTagMap = new Map<string, string>(await handleResults(userTags));
 
   const symbols = await Promise.allSettled(
     Array.from(voucherAddressSet).map(async (voucherAddress) => {
@@ -66,7 +66,7 @@ export async function generateStatement(
     }),
   );
 
-  const symbolMap = new Map<string, string>(handleResults(symbols));
+  const symbolMap = new Map<string, string>(await handleResults(symbols));
 
   const results = await Promise.allSettled(
     transactions.map(async (transaction) => {
@@ -101,7 +101,7 @@ export async function generateSymbolMap(graphql: GraphQLClient, redis: RedisClie
   })
 
   const symbols = await Promise.allSettled(symbolPromises);
-  return new Map(handleResults(symbols));
+  return new Map(await handleResults(symbols));
 }
 
 export async function formatTransferData(data: TransferEvent, recipient: Partial<User>, sender: Partial<User> | null | undefined, symbol: string) {
