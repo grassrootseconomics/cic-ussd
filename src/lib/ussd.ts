@@ -101,7 +101,7 @@ export async function getVoucherSymbol(address: string, graphql: GraphQLClient, 
         await redis.set(`address-symbol-${address}`, symbol),
         await cache.set(voucher)
       ])
-      handleResults(results)
+      await handleResults(results)
     }
     return symbol
   } catch (error){
@@ -136,7 +136,7 @@ export async function getAddressFromVpa(graphql: GraphQLClient, redis: RedisClie
   return address
 }
 
-export function handleResults<T = any>(results: PromiseSettledResult<any>[]) {
+export async function handleResults<T = any>(results: PromiseSettledResult<any>[]) {
   const errors = results
     .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
     .map((result) => result.reason);
@@ -177,7 +177,7 @@ export async function loadSystemVouchers (graphql: GraphQLClient, redis: RedisCl
       })
     })
     const results = await Promise.allSettled(promises)
-    handleResults(results)
+    await handleResults(results)
   } catch (error) {
     logger.error(`Error loading system vouchers: ${error}`)
   }

@@ -1,6 +1,6 @@
 import { SystemError } from '@lib/errors';
-import { getCountryCode } from '@lib/ussd';
 import { SessionRequest } from '@services/session';
+import { getCountryCode } from '@lib/ussd';
 
 export const ATRequestBody = {
   type: 'object',
@@ -28,7 +28,7 @@ export async function ATOnRequestHook(request: SessionRequest) {
 export async function ATPreHandlerHook(request: SessionRequest) {
   const { phoneNumber, sessionId, serviceCode, text } = request.body as ATRequest;
 
-  const countryCode = await getCountryCode(phoneNumber);
+  const countryCode = await getCountryCode(phoneNumber)
   if (!countryCode) {
     throw new SystemError(`Could not determine country code from phone number: ${phoneNumber}`);
   }

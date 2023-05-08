@@ -8,7 +8,7 @@ interface GuardianInterface {
 
 export class Guardian {
 
-  constructor(private db: PostgresDb) {}
+  constructor(private db: PostgresDb) { }
 
   public async deleteGuardian(guardian: string, phoneNumber: string) {
     const client = await this.db.connect()
@@ -17,23 +17,25 @@ export class Guardian {
         `DELETE FROM guardians WHERE account_phone_number = $1 AND guardian = $2`,
         [phoneNumber, guardian]
       )
-    } catch (error) {
+    } catch (error: any) {
+      logger.error(`Error deleting guardian: ${error.message}, stack: ${error.stack}`)
+    } finally {
       client.release()
-      logger.error(`Error deleting guardian: ${error}`)
     }
   }
 
   public async insertGuardian(guardian: string, phoneNumber: string) {
     const client = await this.db.connect()
     try {
-        await client.query(
-          `INSERT INTO guardians (account_phone_number, guardian)
+      await client.query(
+        `INSERT INTO guardians (account_phone_number, guardian)
             VALUES ($1, $2)`,
-          [phoneNumber, guardian]
-        )
-    } catch (error) {
+        [phoneNumber, guardian]
+      )
+    } catch (error: any) {
+      logger.error(`Error inserting guardian: ${error.message}, stack: ${error.stack}.`)
+    } finally {
       client.release()
-      logger.error(`Error inserting guardian: ${error}`)
     }
   }
 
@@ -46,12 +48,14 @@ export class Guardian {
       )
       console.log(rows)
       return rows.length > 0 ? rows[0].guardian : null;
+    } catch (error: any){
+      logger.error(`Error selecting guardian: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
   }
 
-  public async selectAllGuardians(phoneNumber: string): Promise<string[]> {
+  public async selectAllGuardians(phoneNumber: string){
     const client = await this.db.connect()
     try {
       const { rows } = await client.query<GuardianInterface>(
@@ -59,6 +63,8 @@ export class Guardian {
         [phoneNumber]
       )
       return rows.map((row: GuardianInterface) => row.guardian)
+    } catch (error: any) {
+      logger.error(`Error selecting all guardians: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }

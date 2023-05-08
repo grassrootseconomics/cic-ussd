@@ -257,7 +257,7 @@ async function loadHeldVouchers(context: VouchersContext) {
     return null
   })
   const results = await Promise.allSettled(voucherInfoPromises)
-  const voucherInfo = handleResults<VoucherInfo>(results).filter(result => result !== null)
+  const voucherInfo = await handleResults<VoucherInfo>(results)
   let heldVouchersInfo: { [key: string]: VoucherInfo } = {}
   voucherInfo.forEach(info => {
     heldVouchersInfo[info.symbol] = info

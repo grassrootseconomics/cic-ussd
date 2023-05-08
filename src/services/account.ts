@@ -18,7 +18,7 @@ export class AccountService {
       new Account(this.db).setActivityOnChain(activeVoucherAddress, phoneNumber),
       this.updateCache(phoneNumber, { account: { activated_on_chain: true } })
     ])
-    const [dbResult] = handleResults(results)
+    const [dbResult] = await handleResults(results)
     return dbResult
   }
 
@@ -30,7 +30,7 @@ export class AccountService {
         this.updateCache(phoneNumber, { account: { activated_on_ussd: activatedOnUssd, pin, status } }),
         updateGraphUser(graphql, graphUserId, { activated: activatedOnUssd })
       ])
-      handleResults(results)
+      await handleResults(results)
     } catch (error) {
       logger.error(`Error activating account on ussd: ${error}`)
     }
@@ -43,7 +43,7 @@ export class AccountService {
       new Guardian(this.db).insertGuardian(guardianPhoneNumber, phoneNumber),
       this.updateCache(phoneNumber, { account: { guardians: updated } })
     ])
-    handleResults(results)
+    await handleResults(results)
   }
 
   public async block(phoneNumber: string) {
@@ -73,7 +73,7 @@ export class AccountService {
       }),
       this.redis.set(`address-phone-${data.address}`, data.phone_number)
     ])
-    const [dbResult] = handleResults(results)
+    const [dbResult] = await handleResults(results)
     return dbResult
   }
 
@@ -117,7 +117,7 @@ export class AccountService {
       new Guardian(this.db).deleteGuardian(guardianPhoneNumber, phoneNumber),
       this.updateCache(phoneNumber, { account: { guardians: updated } })
     ])
-    handleResults(results)
+    await handleResults(results)
   }
 
   public async reset(phoneNumber: string) {
@@ -142,7 +142,7 @@ export class AccountService {
       new Account(this.db).setLanguage(phoneNumber, language),
       this.updateCache(phoneNumber, { account: { language } })
     ])
-    handleResults(results)
+    await handleResults(results)
   }
 
   public async updatePin(phoneNumber: string, pin: string) {
@@ -150,7 +150,7 @@ export class AccountService {
       new Account(this.db).setPin(phoneNumber, pin),
       this.updateCache(phoneNumber, { account: { pin } })
     ])
-    handleResults(results)
+    await handleResults(results)
   }
 
   public async updatePinAttempts(phoneNumber: string, pinAttempts: number) {
@@ -158,7 +158,7 @@ export class AccountService {
       new Account(this.db).setPinAttempts(phoneNumber, pinAttempts),
       this.updateCache(phoneNumber, { account: { pin_attempts: pinAttempts } })
     ])
-    handleResults(results)
+    await handleResults(results)
   }
 }
 

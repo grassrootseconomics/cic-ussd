@@ -9,7 +9,6 @@ import { Connections } from '@machines/utils';
 import { UserService } from '@services/user';
 import { buildResponse, MachineContext } from '@services/machine';
 import { fallbackLanguage, tHelpers } from '@i18n/translators';
-import { logger } from '@/app';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -100,7 +99,6 @@ export async function sessionHandler(request: SessionRequest, reply: FastifyRepl
     const response = await buildResponse(context, session)
     reply.send(response)
   } catch (error: any){
-    logger.error(`EXIT LEVEL ERROR: ${error.message} STACK: ${error.stack}`)
     const response = tHelpers("systemError", fallbackLanguage())
     reply.send(response)
   }
@@ -119,7 +117,7 @@ export class SessionService {
       new Session(this.db).insertSession(data),
       this.cache.set(data, 180)
     ])
-    const [dbResult] = handleResults(results)
+    const [dbResult] = await handleResults(results)
     return dbResult
   }
 
@@ -132,6 +130,6 @@ export class SessionService {
       new Session(this.db).setSession(data),
       this.cache.update(data)
     ])
-    handleResults(results)
+    await handleResults(results)
   }
 }

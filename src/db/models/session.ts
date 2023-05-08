@@ -1,5 +1,6 @@
 import { PostgresDb } from '@fastify/postgres';
 import { MachineId } from '@machines/utils';
+import { logger } from '@/app';
 
 export enum SessionType {
   ACTIVE = 'ACTIVE',
@@ -35,6 +36,8 @@ export class Session {
   [data.extId, data.inputs, data.phoneNumber, data.sessionType, data.serviceCode, data.version]
       )
       return rows[0]
+    } catch (error: any) {
+      logger.error(`Error inserting session: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -47,6 +50,8 @@ export class Session {
         `UPDATE sessions SET inputs = $1, machine_state = $2, machines = $3, responses = $4, session_type = $5, version = $6 WHERE ext_id = $7`,
         [data.inputs, data.machineState, data.machines, data.responses, data.sessionType, data.version, data.extId]
       )
+    } catch (error: any) {
+      logger.error(`Error updating session: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }

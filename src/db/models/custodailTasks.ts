@@ -1,5 +1,7 @@
 import { PostgresDb } from '@fastify/postgres';
 
+import { logger } from '@/app';
+
 export enum TaskType {
   REGISTER = 'REGISTER',
   TRANSFER = 'TRANSFER'
@@ -11,7 +13,7 @@ export interface CustodialTask {
   task_type: TaskType
 }
 
-export async function createTracker (db: PostgresDb, custodialTask: CustodialTask) {
+export async function createTracker(db: PostgresDb, custodialTask: CustodialTask) {
   const client = await db.connect()
   try {
     const { rows } = await client.query<CustodialTask>(
@@ -19,7 +21,9 @@ export async function createTracker (db: PostgresDb, custodialTask: CustodialTas
       [custodialTask.address, custodialTask.task_reference, custodialTask.task_type]
     )
     return rows[0]
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(`Error inserting custodial task: ${error.message}, stack: ${error.stack}.`)
+  } finally {
     client.release()
   }
 }
