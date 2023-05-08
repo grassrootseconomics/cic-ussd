@@ -27,9 +27,9 @@ export interface AccountInterface {
 
 export class Account {
 
-  constructor(private db: PostgresDb) {}
+  constructor(private db: PostgresDb) { }
 
-  public async findByAddress(address: string){
+  public async findByAddress(address: string) {
     const client = await this.db.connect()
     try {
       const { rows } = await client.query<AccountInterface>(`
@@ -38,8 +38,9 @@ export class Account {
       )
       return rows[0]
     } catch (error) {
-      client.release()
       logger.error(`Error finding account by address: ${error}`)
+    } finally {
+      client.release()
     }
   }
 
@@ -52,8 +53,9 @@ export class Account {
       )
       return rows[0]
     } catch (error) {
-      client.release()
       logger.error(`Error finding account by phone number: ${error}`)
+    } finally {
+      client.release()
     }
   }
 
@@ -68,44 +70,47 @@ export class Account {
         [phoneNumber]
       )
       const account = rows[0]
-      if(account){
+      if (account) {
         account.guardians = rows.filter(row => row.guardian).map(row => row.guardian)
         return account
       }
       return null
     } catch (error) {
-      client.release()
       logger.error(`Error finding account and guardians: ${error}`)
+    } finally {
+      client.release()
     }
   }
 
-  public async insertAccount(data: Pick<AccountInterface, 'address' | 'language' | 'phone_number'>){
-  const { address, language, phone_number } = data
-  const client = await this.db.connect()
-  try {
-    const { rows } = await client.query(`
+  public async insertAccount(data: Pick<AccountInterface, 'address' | 'language' | 'phone_number'>) {
+    const { address, language, phone_number } = data
+    const client = await this.db.connect()
+    try {
+      const { rows } = await client.query(`
       INSERT INTO accounts (address, language, phone_number) VALUES ($1, $2, $3) RETURNING id`,
-      [address, language, phone_number]
-    )
-    return rows[0].id
-  } catch (error) {
-    client.release()
-    logger.error(`Error inserting account: ${error}`)
+        [address, language, phone_number]
+      )
+      return rows[0].id
+    } catch (error) {
+      logger.error(`Error inserting account: ${error}`)
+    } finally {
+      client.release()
+    }
   }
-}
 
-  public async setActivityOnChain(activeVoucherAddress: string, phoneNumber: string){
-  const client = await this.db.connect()
-  try {
-    await client.query(`
+  public async setActivityOnChain(activeVoucherAddress: string, phoneNumber: string) {
+    const client = await this.db.connect()
+    try {
+      await client.query(`
       UPDATE accounts SET active_voucher_address = $1, activated_on_chain = true WHERE phone_number = $2`,
-      [activeVoucherAddress, phoneNumber]
-    )
-  } catch (error: any) {
-    client.release()
-    logger.error(`Error updating account activity on chain: ${error}: ${error.stack}`)
+        [activeVoucherAddress, phoneNumber]
+      )
+    } catch (error: any) {
+      logger.error(`Error updating account activity on chain: ${error}: ${error.stack}`)
+    } finally {
+      client.release()
+    }
   }
-}
 
   public async setActivityOnUssd(activity: boolean, phoneNumber: string, status: AccountStatus, pin?: string, pinAttempts?: number) {
     const client = await this.db.connect();
@@ -126,14 +131,13 @@ export class Account {
 
       await client.query(query, params);
     } catch (error: any) {
-      client.release();
       logger.error(`Error updating account activity on ussd: ${error}: ${error.stack}`);
     } finally {
       client.release();
     }
-}
+  }
 
-  public async setLanguage(phoneNumber: string, language: string){
+  public async setLanguage(phoneNumber: string, language: string) {
     const client = await this.db.connect()
     try {
       await client.query(`
@@ -141,12 +145,14 @@ export class Account {
         [language, phoneNumber]
       )
     } catch (error) {
-      client.release()
       logger.error(`Error updating language: ${error}`)
+    } finally {
+      client.release()
     }
+
   }
 
-  public async setPin(phoneNumber: string, pin: string){
+  public async setPin(phoneNumber: string, pin: string) {
     const client = await this.db.connect()
     try {
       await client.query(`
@@ -154,12 +160,13 @@ export class Account {
         [pin, phoneNumber]
       )
     } catch (error) {
-      client.release()
       logger.error(`Error updating pin: ${error}`)
+    } finally {
+      client.release()
     }
   }
 
-  public async setPinAttempts(phoneNumber: string, attempts: number){
+  public async setPinAttempts(phoneNumber: string, attempts: number) {
     const client = await this.db.connect()
     try {
       await client.query(`
@@ -167,8 +174,9 @@ export class Account {
         [attempts, phoneNumber]
       )
     } catch (error) {
-      client.release()
       logger.error(`Error updating pin attempts: ${error}`)
+    } finally {
+      client.release()
     }
   }
 }

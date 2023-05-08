@@ -8,7 +8,7 @@ interface GuardianInterface {
 
 export class Guardian {
 
-  constructor(private db: PostgresDb) {}
+  constructor(private db: PostgresDb) { }
 
   public async deleteGuardian(guardian: string, phoneNumber: string) {
     const client = await this.db.connect()
@@ -18,22 +18,24 @@ export class Guardian {
         [phoneNumber, guardian]
       )
     } catch (error) {
-      client.release()
       logger.error(`Error deleting guardian: ${error}`)
+    } finally {
+      client.release()
     }
   }
 
   public async insertGuardian(guardian: string, phoneNumber: string) {
     const client = await this.db.connect()
     try {
-        await client.query(
-          `INSERT INTO guardians (account_phone_number, guardian)
+      await client.query(
+        `INSERT INTO guardians (account_phone_number, guardian)
             VALUES ($1, $2)`,
-          [phoneNumber, guardian]
-        )
+        [phoneNumber, guardian]
+      )
     } catch (error) {
-      client.release()
       logger.error(`Error inserting guardian: ${error}`)
+    } finally {
+      client.release()
     }
   }
 
