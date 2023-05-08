@@ -21,8 +21,8 @@ export async function createTracker(db: PostgresDb, custodialTask: CustodialTask
       [custodialTask.address, custodialTask.task_reference, custodialTask.task_type]
     )
     return rows[0]
-  } catch (error) {
-    logger.error(`Error custodial task: ${error}`)
+  } catch (error: any) {
+    logger.error(`Error inserting custodial task: ${error.message}, stack: ${error.stack}.`)
   } finally {
     client.release()
   }

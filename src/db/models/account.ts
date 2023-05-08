@@ -37,8 +37,8 @@ export class Account {
         [address]
       )
       return rows[0]
-    } catch (error) {
-      logger.error(`Error finding account by address: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error finding account by address: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -52,8 +52,8 @@ export class Account {
         [phoneNumber]
       )
       return rows[0]
-    } catch (error) {
-      logger.error(`Error finding account by phone number: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error finding account by phone number: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -75,8 +75,8 @@ export class Account {
         return account
       }
       return null
-    } catch (error) {
-      logger.error(`Error finding account and guardians: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error finding account and guardians: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -91,8 +91,8 @@ export class Account {
         [address, language, phone_number]
       )
       return rows[0].id
-    } catch (error) {
-      logger.error(`Error inserting account: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error inserting account: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -106,7 +106,7 @@ export class Account {
         [activeVoucherAddress, phoneNumber]
       )
     } catch (error: any) {
-      logger.error(`Error updating account activity on chain: ${error}: ${error.stack}`)
+      logger.error(`Error updating account activity on chain: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -131,7 +131,7 @@ export class Account {
 
       await client.query(query, params);
     } catch (error: any) {
-      logger.error(`Error updating account activity on ussd: ${error}: ${error.stack}`);
+      logger.error(`Error updating account activity on ussd: ${error.message}, stack: ${error.stack}.`);
     } finally {
       client.release();
     }
@@ -144,8 +144,8 @@ export class Account {
         UPDATE accounts SET language = $1 WHERE phone_number = $2`,
         [language, phoneNumber]
       )
-    } catch (error) {
-      logger.error(`Error updating language: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error updating language: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -159,8 +159,8 @@ export class Account {
         UPDATE accounts SET pin = $1 WHERE phone_number = $2`,
         [pin, phoneNumber]
       )
-    } catch (error) {
-      logger.error(`Error updating pin: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error updating pin: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -173,8 +173,8 @@ export class Account {
         UPDATE accounts SET pin_attempts = $1 WHERE phone_number = $2`,
         [attempts, phoneNumber]
       )
-    } catch (error) {
-      logger.error(`Error updating pin attempts: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error updating pin attempts: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }

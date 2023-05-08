@@ -17,8 +17,8 @@ export class Guardian {
         `DELETE FROM guardians WHERE account_phone_number = $1 AND guardian = $2`,
         [phoneNumber, guardian]
       )
-    } catch (error) {
-      logger.error(`Error deleting guardian: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error deleting guardian: ${error.message}, stack: ${error.stack}`)
     } finally {
       client.release()
     }
@@ -32,8 +32,8 @@ export class Guardian {
             VALUES ($1, $2)`,
         [phoneNumber, guardian]
       )
-    } catch (error) {
-      logger.error(`Error inserting guardian: ${error}`)
+    } catch (error: any) {
+      logger.error(`Error inserting guardian: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
@@ -48,12 +48,14 @@ export class Guardian {
       )
       console.log(rows)
       return rows.length > 0 ? rows[0].guardian : null;
+    } catch (error: any){
+      logger.error(`Error selecting guardian: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
   }
 
-  public async selectAllGuardians(phoneNumber: string): Promise<string[]> {
+  public async selectAllGuardians(phoneNumber: string){
     const client = await this.db.connect()
     try {
       const { rows } = await client.query<GuardianInterface>(
@@ -61,6 +63,8 @@ export class Guardian {
         [phoneNumber]
       )
       return rows.map((row: GuardianInterface) => row.guardian)
+    } catch (error: any) {
+      logger.error(`Error selecting all guardians: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }
