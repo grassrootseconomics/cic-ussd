@@ -1,5 +1,4 @@
 import fastifyCors from '@fastify/cors';
-import formBody from '@fastify/formbody';
 import fastifyPostgres from '@fastify/postgres';
 import fastifySensible from '@fastify/sensible';
 import ethPlugin from '@plugins/eth';
@@ -8,7 +7,7 @@ import natsPlugin from '@plugins/nats';
 import redisPlugin from '@plugins/redis';
 import ussdRoutes from '@routes/ussd';
 import fastify, { FastifyServerOptions } from 'fastify';
-import qs from 'qs';
+import querystring from 'querystring';
 
 import { config } from '@/config';
 import pino from 'pino';
@@ -32,10 +31,20 @@ let serverOptions: FastifyServerOptions = {
 
 const app = fastify(serverOptions)
 
+// add a content-type parser for 'application/x-www-form-urlencoded'.
+app.addContentTypeParser('application/x-www-form-urlencoded',
+  { parseAs: 'string' },
+  function (request, body, done) {
+  try {
+    const parsed = querystring.parse(body instanceof Buffer ? body.toString() : body);
+    done(null, parsed);
+  } catch (error: any) {
+    error.statusCode = 400;
+    done(error, undefined);
+  }
+});
+
 // register third-party plugins.
-app.register(formBody, {
-  parser: (str) => qs.parse(str)
-})
 app.register(fastifyCors, { origin: true })
 app.register(fastifySensible)
 app.register(fastifyPostgres, { connectionString: config.DATABASE.URL })
