@@ -6,18 +6,20 @@ import { Codec, JsMsg, JSONCodec } from 'nats';
 import { RegistrationEvent, TransferEvent } from '@lib/custodail';
 import { AccountService, getPhoneNumberFromAddress } from '@services/account';
 import { SystemError } from '@lib/errors';
-import { getVoucherSymbol, retrieveWalletBalance } from '@lib/ussd';
+import { getVoucherSymbol, Notifier, retrieveWalletBalance, sendSMS } from '@lib/ussd';
 import { config } from '@/config';
 import { generateUserTag, User, UserService } from '@services/user';
 import { formatTransferData, updateHeldVouchers, updateStatement } from '@services/transfer';
 import { logger } from '@/app';
+import { tSMS } from '@i18n/translators';
 
 type EventHandler<T> = (
   db: PostgresDb,
   graphql: GraphQLClient,
   data: T,
   provider: Provider,
-  redis: RedisClient
+  redis: RedisClient,
+  args?: any
 ) => Promise<void>;
 
 
@@ -27,10 +29,11 @@ function createHandler<T>(codec: Codec<T>, eventHandler: EventHandler<T>) {
     graphql: GraphQLClient,
     message: JsMsg,
     provider: Provider,
-    redis: RedisClient
+    redis: RedisClient,
+    args?: any
   ) {
     const data = codec.decode(message.data);
-    await eventHandler(db, graphql, data, provider, redis);
+    await eventHandler(db, graphql, data, provider, redis, args);
   };
 }
 
@@ -114,7 +117,8 @@ async function processRegistrationEvent(
   graphql: GraphQLClient,
   data: RegistrationEvent,
   provider: Provider,
-  redis: RedisClient
+  redis: RedisClient,
+  notifier?: Notifier
 ): Promise<void> {
   const phoneNumber = await getPhoneNumberFromAddress(data.to, db, redis)
   if (!phoneNumber) {
@@ -123,7 +127,7 @@ async function processRegistrationEvent(
   const tag = await generateUserTag(data.to, graphql, phoneNumber)
   await new AccountService(db, redis).activateOnChain(config.DEFAULT_VOUCHER.ADDRESS, phoneNumber)
   const balance = await retrieveWalletBalance(data.to, config.DEFAULT_VOUCHER.ADDRESS, provider)
-  await new UserService(phoneNumber, redis).update({
+  const user = await new UserService(phoneNumber, redis).update({
     account: {
       active_voucher_address: config.DEFAULT_VOUCHER.ADDRESS,
     },
@@ -136,6 +140,21 @@ async function processRegistrationEvent(
       }
     }
   })
+
+  if (!notifier) {
+    logger.warn(`No notifier provided, skipping sending SMS to ${phoneNumber}.`)
+    return
+  }
+
+  const supportPhone = config.KE.SUPPORT_PHONE
+  const creationReceipt = tSMS('accountCreated', user.account.language, { supportPhone })
+  const termsAndConditions = tSMS('termsAndConditions', user.account.language, { supportPhone })
+
+  await Promise.all([
+    sendSMS(creationReceipt, notifier, [phoneNumber]),
+    sendSMS(termsAndConditions, notifier, [phoneNumber])
+  ])
+
 }
 
 const handleTransfer = createHandler(
@@ -147,23 +166,18 @@ const handleRegistration = createHandler(
   processRegistrationEvent
 );
 
-export async function processMessage(db: PostgresDb, graphql: GraphQLClient, message: JsMsg, provider: Provider, redis: RedisClient) {
-  const subjectHandlers = {
-    [`${config.NATS.STREAM_NAME}.register`]: handleRegistration,
-    [`${config.NATS.STREAM_NAME}.transfer`]: handleTransfer,
-  };
-
-  const handler = subjectHandlers[message.subject];
-
-  try {
-    if (handler) {
-      await handler(db, graphql, message, provider, redis);
-    } else {
-      logger.debug(`Unsupported subject: ${message.subject}`);
-      message.ack();
-    }
-  } catch (error: any) {
-    throw new SystemError(`Error handling ${message.subject}: ${error.message}`);
+export async function processMessage(db: PostgresDb, graphql: GraphQLClient, message: JsMsg, provider: Provider, redis: RedisClient, notifier?: Notifier) {
+  const subject = message.subject;
+  switch (subject) {
+    case `${config.NATS.STREAM_NAME}.register`:
+      await handleRegistration(db, graphql, message, provider, redis, notifier);
+      break;
+    case `${config.NATS.STREAM_NAME}.transfer`:
+      await handleTransfer(db, graphql, message, provider, redis);
+      break;
+    default:
+      logger.warn(`Unknown subject: ${subject}.`);
+      message.nak()
   }
 }
 

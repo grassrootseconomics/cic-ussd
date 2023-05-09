@@ -17,6 +17,7 @@ import en_pins from './en/pins'
 import en_profile from './en/profile'
 import en_registration from './en/registration'
 import en_settings from './en/settings'
+import en_sms from './en/sms'
 import en_socialRecovery from './en/socialRecovery'
 import en_statement from './en/statement'
 import en_transfer from './en/transfer'
@@ -30,6 +31,7 @@ import sw_pins from './sw/pins'
 import sw_profile from './sw/profile'
 import sw_registration from './sw/registration'
 import sw_settings from './sw/settings'
+import sw_sms from './sw/sms'
 import sw_socialRecovery from './sw/socialRecovery'
 import sw_statement from './sw/statement'
 import sw_transfer from './sw/transfer'
@@ -47,6 +49,7 @@ const localeTranslations = {
 		profile: en_profile,
 		registration: en_registration,
 		settings: en_settings,
+		sms: en_sms,
 		socialRecovery: en_socialRecovery,
 		statement: en_statement,
 		transfer: en_transfer,
@@ -63,6 +66,7 @@ const localeTranslations = {
 		profile: sw_profile,
 		registration: sw_registration,
 		settings: sw_settings,
+		sms: sw_sms,
 		socialRecovery: sw_socialRecovery,
 		statement: sw_statement,
 		transfer: sw_transfer,

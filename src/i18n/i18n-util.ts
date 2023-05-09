@@ -25,6 +25,7 @@ export const namespaces: Namespaces[] = [
 	'profile',
 	'registration',
 	'settings',
+	'sms',
 	'socialRecovery',
 	'statement',
 	'transfer',
