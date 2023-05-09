@@ -8,16 +8,17 @@ function stringToList (value: string | undefined): string[] | void {
   }
 }
 
-
 export const config = {
-  AFRICASTALKING: {
-    VALID_IPS: stringToList(process.env.AFRICASTALKING_VALID_IPS) ?? [
+  AT: {
+    API_KEY: process.env.AT_API_KEY ?? 'x',
+    SENDER_ID: process.env.AT_SENDER_ID ?? 'x',
+    SMS_WEBHOOK_SECRET: process.env.AT_SMS_WEBHOOK_SECRET ?? 'xD',
+    USERNAME: process.env.AT_USERNAME ?? 'x',
+    USSD_ENDPOINT_SECRET: process.env.AT_USSD_ENDPOINT_SECRET ?? 'xE',
+    VALID_IPS: stringToList(process.env.AT_VALID_IPS) ?? [
       '0.0.0.0',
       '127.0.0.1'
     ]
-  },
-  API: {
-    VERSION: process.env.API_VERSION ?? 'v1'
   },
   CIC: {
     CUSTODIAL: process.env.CIC_CUSTODIAL ?? 'http://localhost:5002',

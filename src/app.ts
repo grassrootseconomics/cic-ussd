@@ -67,8 +67,7 @@ app.register(redisPlugin, {
 })
 
 // register routes.
-app.register(ussdRoutes, { prefix: `/${config.API.VERSION}/ussd` })
-
+app.register(ussdRoutes, { prefix: `/ussd` })
 
 // set up error handler.
 app.setErrorHandler<Error>(function (error, request, reply) {
