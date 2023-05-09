@@ -16,7 +16,9 @@ export interface CachedVoucher {
   symbol: string
 }
 
-export type Address = `0x${string & { length: 42 }}`
+export interface Notifier {
+  send(message: string, recipients: string[]): Promise<void>;
+}
 
 export interface Ussd {
   countryCode: CountryCode,
@@ -221,6 +223,10 @@ export function sanitizePhoneNumber (phoneNumber: string, countryCode?: CountryC
     }
   }
   return phoneNumber
+}
+
+export function sendSMS(message: string, notifier: Notifier, recipient: string[]) {
+  return notifier.send(message, recipient)
 }
 
 export function validatePhoneNumber(countryCode: CountryCode, phoneNumber: string, ) {

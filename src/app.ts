@@ -12,6 +12,7 @@ import querystring from 'querystring';
 import { config } from '@/config';
 import pino from 'pino';
 import moment from 'moment-timezone';
+import atNotifier from '@plugins/atNotifier';
 
 export const logger = pino({
   name: config.LOG.NAME,
@@ -50,6 +51,12 @@ app.register(fastifySensible)
 app.register(fastifyPostgres, { connectionString: config.DATABASE.URL })
 
 // register custom plugins
+app.register(atNotifier, {
+  apiKey: config.AT.API_KEY,
+  senderId: config.AT.SENDER_ID,
+  url: config.AT.URL,
+  username: config.AT.USERNAME,
+})
 app.register(ethPlugin, { endpoint: config.CIC.RPC })
 app.register(graphqlPlugin, {
   endpoint: `${config.CIC.GRAPH}/v1/graphql`,
