@@ -22,6 +22,7 @@ export type Translations = RootTranslation &
 	profile: NamespaceProfileTranslation,
 	registration: NamespaceRegistrationTranslation,
 	settings: NamespaceSettingsTranslation,
+	sms: NamespaceSmsTranslation,
 	socialRecovery: NamespaceSocialRecoveryTranslation,
 	statement: NamespaceStatementTranslation,
 	transfer: NamespaceTransferTranslation,
@@ -524,6 +525,18 @@ export type NamespaceSettingsTranslation = {
 	mainMenu: RequiredParams<'balance|currency' | 'symbol'>
 }
 
+export type NamespaceSmsTranslation = {
+	/**
+	 * U​m​e​s​a​j​i​l​i​w​a​ ​k​w​a​ ​S​a​r​a​f​u​ ​N​e​t​w​o​r​k​!​ ​K​u​t​u​m​i​a​ ​b​o​n​y​e​z​a​ ​*​3​8​4​*​9​6​#​ ​S​a​f​a​r​i​c​o​m​ ​a​m​a​ ​*​4​8​3​*​4​6​#​ ​k​w​a​ ​u​t​a​n​d​a​o​ ​t​o​f​a​u​t​i​.​ ​K​w​a​ ​U​s​a​i​d​i​z​i​ ​{​s​u​p​p​o​r​t​P​h​o​n​e​}​.
+	 * @param {unknown} supportPhone
+	 */
+	accountCreated: RequiredParams<'supportPhone'>
+	/**
+	 * K​w​a​ ​k​u​t​u​m​i​a​ ​h​i​i​ ​h​u​d​u​m​a​ ​u​m​e​k​u​b​a​l​i​ ​s​h​e​r​i​a​ ​n​a​ ​m​a​s​h​a​r​t​i​ ​y​a​f​u​a​t​a​y​o​ ​h​t​t​p​:​/​/​g​r​a​s​s​e​c​o​n​.​o​r​g​/​t​o​s​.
+	 */
+	termsAndConditions: string
+}
+
 export type NamespaceSocialRecoveryTranslation = {
 	/**
 	 * E​N​D​ ​P​I​N​ ​y​a​k​o​ ​i​m​e​f​u​n​g​w​a​.​ ​K​w​a​ ​u​s​a​i​d​i​z​i​ ​t​a​f​a​d​h​a​l​i​ ​p​i​g​a​ ​s​i​m​u​ ​k​w​a​:​ ​0​7​5​7​6​2​8​8​8​5​.
@@ -861,6 +874,7 @@ export type Namespaces =
 	| 'profile'
 	| 'registration'
 	| 'settings'
+	| 'sms'
 	| 'socialRecovery'
 	| 'statement'
 	| 'transfer'
@@ -920,6 +934,12 @@ type DisallowNamespaces = {
 	 * you need to use the `./settings/index.ts` file instead
 	 */
 	settings?: "[typesafe-i18n] reserved for 'settings'-namespace. You need to use the `./settings/index.ts` file instead."
+
+	/**
+	 * reserved for 'sms'-namespace\
+	 * you need to use the `./sms/index.ts` file instead
+	 */
+	sms?: "[typesafe-i18n] reserved for 'sms'-namespace. You need to use the `./sms/index.ts` file instead."
 
 	/**
 	 * reserved for 'socialRecovery'-namespace\
@@ -1397,6 +1417,16 @@ export type TranslationFunctions = {
 	4. Usaidizi
 		 */
 		mainMenu: (arg: { balance: unknown, symbol: unknown }) => LocalizedString
+	}
+	sms: {
+		/**
+		 * Umesajiliwa kwa Sarafu Network! Kutumia bonyeza *384*96# Safaricom ama *483*46# kwa utandao tofauti. Kwa Usaidizi {supportPhone}.
+		 */
+		accountCreated: (arg: { supportPhone: unknown }) => LocalizedString
+		/**
+		 * Kwa kutumia hii huduma umekubali sheria na masharti yafuatayo http://grassecon.org/tos.
+		 */
+		termsAndConditions: () => LocalizedString
 	}
 	socialRecovery: {
 		/**

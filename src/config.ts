@@ -11,8 +11,9 @@ function stringToList (value: string | undefined): string[] | void {
 export const config = {
   AT: {
     API_KEY: process.env.AT_API_KEY ?? 'x',
-    SENDER_ID: process.env.AT_SENDER_ID ?? 'x',
+    SENDER_ID: process.env.AT_SENDER_ID ?? undefined,
     SMS_WEBHOOK_SECRET: process.env.AT_SMS_WEBHOOK_SECRET ?? 'xD',
+    URL: process.env.AT_URL ?? 'https://api.sandbox.africastalking.com/version1/messaging',
     USERNAME: process.env.AT_USERNAME ?? 'x',
     USSD_ENDPOINT_SECRET: process.env.AT_USSD_ENDPOINT_SECRET ?? 'xE',
     VALID_IPS: stringToList(process.env.AT_VALID_IPS) ?? [
@@ -34,6 +35,9 @@ export const config = {
     SYMBOL: process.env.DEFAULT_VOUCHER_SYMBOL ?? "TRN",
   },
   DEV: process.env.NODE_ENV !== 'production',
+  KE: {
+    SUPPORT_PHONE: process.env.SUPPORT_PHONE ?? '0757628885',
+  },
   LOG: {
     LEVEL: process.env.LOG_LEVEL ?? 'info',
     NAME: process.env.LOG_NAME ?? 'cic-ussd',

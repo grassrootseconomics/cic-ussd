@@ -1,5 +1,5 @@
 import { L } from './i18n-node';
-import { Locales, NamespaceHelpersTranslation } from './i18n-types';
+import { Locales, NamespaceHelpersTranslation, NamespaceSmsTranslation } from './i18n-types';
 import { baseLocale } from './i18n-util';
 import { menuPages } from '@lib/ussd';
 
@@ -27,6 +27,10 @@ export async function languageOptions () {
 
 export function tHelpers<K extends keyof NamespaceHelpersTranslation>(key: K, language: Locales, data?: any) {
   return L[language]["helpers"][key](data)
+}
+
+export function tSMS<K extends keyof NamespaceSmsTranslation>(key: K, language: Locales, data?: any) {
+  return L[language]["sms"][key](data)
 }
 
 export async function translate(state: string, translator: any, data?: Record<string, any>): Promise<string> {
