@@ -1,6 +1,7 @@
 import { ATOnRequestHook, ATPreHandlerHook, ATRequestBody } from '@services/africasTalking';
 import { FastifyInstance } from 'fastify';
 import { sessionHandler } from '@services/session';
+import { config } from '@/config';
 
 export default async function ussdRoutes (fastify: FastifyInstance) {
   fastify.route<{
@@ -13,7 +14,7 @@ export default async function ussdRoutes (fastify: FastifyInstance) {
     schema: {
       body: ATRequestBody
     },
-    url: '/africasTalking'
+    url: `/${config.AT.USSD_ENDPOINT_SECRET}`
   })
 
   fastify.route({
