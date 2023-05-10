@@ -3,11 +3,11 @@
 import type { BaseTranslation as BaseTranslationType, LocalizedString, RequiredParams } from 'typesafe-i18n'
 
 export type BaseTranslation = BaseTranslationType & DisallowNamespaces
-export type BaseLocale = 'sw'
+export type BaseLocale = 'swa'
 
 export type Locales =
-	| 'en'
-	| 'sw'
+	| 'eng'
+	| 'swa'
 
 export type Translation = RootTranslation & DisallowNamespaces
 

@@ -160,11 +160,7 @@ async function initiateAccountCreation(context: RegistrationContext) {
   }
 
   try {
-    graphUser = await createGraphUser(graphql, {
-      activated: false,
-      interface_identifier: phoneNumber,
-      interface_type: "USSD",
-    })
+    graphUser = await createGraphUser( false, graphql, phoneNumber, "USSD", selectedLanguage)
   } catch (error: any) {
     throw new SystemError(`Graph user creation failed. ${error.message}- ${error.stack}`)
   }

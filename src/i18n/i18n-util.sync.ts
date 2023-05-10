@@ -5,72 +5,72 @@ import { initFormatters } from './formatters'
 import type { Locales, Translations } from './i18n-types'
 import { loadedFormatters, loadedLocales, locales } from './i18n-util'
 
-import en from './en'
-import sw from './sw'
+import eng from './eng'
+import swa from './swa'
 
-import en_auth from './en/auth'
-import en_balances from './en/balances'
-import en_helpers from './en/helpers'
-import en_languages from './en/languages'
-import en_main from './en/main'
-import en_pins from './en/pins'
-import en_profile from './en/profile'
-import en_registration from './en/registration'
-import en_settings from './en/settings'
-import en_sms from './en/sms'
-import en_socialRecovery from './en/socialRecovery'
-import en_statement from './en/statement'
-import en_transfer from './en/transfer'
-import en_voucher from './en/voucher'
-import sw_auth from './sw/auth'
-import sw_balances from './sw/balances'
-import sw_helpers from './sw/helpers'
-import sw_languages from './sw/languages'
-import sw_main from './sw/main'
-import sw_pins from './sw/pins'
-import sw_profile from './sw/profile'
-import sw_registration from './sw/registration'
-import sw_settings from './sw/settings'
-import sw_sms from './sw/sms'
-import sw_socialRecovery from './sw/socialRecovery'
-import sw_statement from './sw/statement'
-import sw_transfer from './sw/transfer'
-import sw_voucher from './sw/voucher'
+import eng_auth from './eng/auth'
+import eng_balances from './eng/balances'
+import eng_helpers from './eng/helpers'
+import eng_languages from './eng/languages'
+import eng_main from './eng/main'
+import eng_pins from './eng/pins'
+import eng_profile from './eng/profile'
+import eng_registration from './eng/registration'
+import eng_settings from './eng/settings'
+import eng_sms from './eng/sms'
+import eng_socialRecovery from './eng/socialRecovery'
+import eng_statement from './eng/statement'
+import eng_transfer from './eng/transfer'
+import eng_voucher from './eng/voucher'
+import swa_auth from './swa/auth'
+import swa_balances from './swa/balances'
+import swa_helpers from './swa/helpers'
+import swa_languages from './swa/languages'
+import swa_main from './swa/main'
+import swa_pins from './swa/pins'
+import swa_profile from './swa/profile'
+import swa_registration from './swa/registration'
+import swa_settings from './swa/settings'
+import swa_sms from './swa/sms'
+import swa_socialRecovery from './swa/socialRecovery'
+import swa_statement from './swa/statement'
+import swa_transfer from './swa/transfer'
+import swa_voucher from './swa/voucher'
 
 const localeTranslations = {
-	en: {
-		...en,
-		auth: en_auth,
-		balances: en_balances,
-		helpers: en_helpers,
-		languages: en_languages,
-		main: en_main,
-		pins: en_pins,
-		profile: en_profile,
-		registration: en_registration,
-		settings: en_settings,
-		sms: en_sms,
-		socialRecovery: en_socialRecovery,
-		statement: en_statement,
-		transfer: en_transfer,
-		voucher: en_voucher
+	eng: {
+		...eng,
+		auth: eng_auth,
+		balances: eng_balances,
+		helpers: eng_helpers,
+		languages: eng_languages,
+		main: eng_main,
+		pins: eng_pins,
+		profile: eng_profile,
+		registration: eng_registration,
+		settings: eng_settings,
+		sms: eng_sms,
+		socialRecovery: eng_socialRecovery,
+		statement: eng_statement,
+		transfer: eng_transfer,
+		voucher: eng_voucher
 	},
-	sw: {
-		...sw,
-		auth: sw_auth,
-		balances: sw_balances,
-		helpers: sw_helpers,
-		languages: sw_languages,
-		main: sw_main,
-		pins: sw_pins,
-		profile: sw_profile,
-		registration: sw_registration,
-		settings: sw_settings,
-		sms: sw_sms,
-		socialRecovery: sw_socialRecovery,
-		statement: sw_statement,
-		transfer: sw_transfer,
-		voucher: sw_voucher
+	swa: {
+		...swa,
+		auth: swa_auth,
+		balances: swa_balances,
+		helpers: swa_helpers,
+		languages: swa_languages,
+		main: swa_main,
+		pins: swa_pins,
+		profile: swa_profile,
+		registration: swa_registration,
+		settings: swa_settings,
+		sms: swa_sms,
+		socialRecovery: swa_socialRecovery,
+		statement: swa_statement,
+		transfer: swa_transfer,
+		voucher: swa_voucher
 	},
 }
 

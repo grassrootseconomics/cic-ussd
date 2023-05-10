@@ -5,8 +5,8 @@ import { menuPages } from '@lib/ussd';
 
 
 export const supportedLanguages = {
-  en: 'English',
-  sw: 'Swahili'
+  eng: 'English',
+  swa: 'Swahili'
 }
 
 export function fallbackLanguage(){

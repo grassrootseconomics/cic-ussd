@@ -6,42 +6,42 @@ import type { Locales, Namespaces, Translations } from './i18n-types'
 import { loadedFormatters, loadedLocales, locales } from './i18n-util'
 
 const localeTranslationLoaders = {
-	en: () => import('./en'),
-	sw: () => import('./sw'),
+	eng: () => import('./eng'),
+	swa: () => import('./swa'),
 }
 
 const localeNamespaceLoaders = {
-	en: {
-		auth: () => import('./en/auth'),
-		balances: () => import('./en/balances'),
-		helpers: () => import('./en/helpers'),
-		languages: () => import('./en/languages'),
-		main: () => import('./en/main'),
-		pins: () => import('./en/pins'),
-		profile: () => import('./en/profile'),
-		registration: () => import('./en/registration'),
-		settings: () => import('./en/settings'),
-		sms: () => import('./en/sms'),
-		socialRecovery: () => import('./en/socialRecovery'),
-		statement: () => import('./en/statement'),
-		transfer: () => import('./en/transfer'),
-		voucher: () => import('./en/voucher')
+	eng: {
+		auth: () => import('./eng/auth'),
+		balances: () => import('./eng/balances'),
+		helpers: () => import('./eng/helpers'),
+		languages: () => import('./eng/languages'),
+		main: () => import('./eng/main'),
+		pins: () => import('./eng/pins'),
+		profile: () => import('./eng/profile'),
+		registration: () => import('./eng/registration'),
+		settings: () => import('./eng/settings'),
+		sms: () => import('./eng/sms'),
+		socialRecovery: () => import('./eng/socialRecovery'),
+		statement: () => import('./eng/statement'),
+		transfer: () => import('./eng/transfer'),
+		voucher: () => import('./eng/voucher')
 	},
-	sw: {
-		auth: () => import('./sw/auth'),
-		balances: () => import('./sw/balances'),
-		helpers: () => import('./sw/helpers'),
-		languages: () => import('./sw/languages'),
-		main: () => import('./sw/main'),
-		pins: () => import('./sw/pins'),
-		profile: () => import('./sw/profile'),
-		registration: () => import('./sw/registration'),
-		settings: () => import('./sw/settings'),
-		sms: () => import('./sw/sms'),
-		socialRecovery: () => import('./sw/socialRecovery'),
-		statement: () => import('./sw/statement'),
-		transfer: () => import('./sw/transfer'),
-		voucher: () => import('./sw/voucher')
+	swa: {
+		auth: () => import('./swa/auth'),
+		balances: () => import('./swa/balances'),
+		helpers: () => import('./swa/helpers'),
+		languages: () => import('./swa/languages'),
+		main: () => import('./swa/main'),
+		pins: () => import('./swa/pins'),
+		profile: () => import('./swa/profile'),
+		registration: () => import('./swa/registration'),
+		settings: () => import('./swa/settings'),
+		sms: () => import('./swa/sms'),
+		socialRecovery: () => import('./swa/socialRecovery'),
+		statement: () => import('./swa/statement'),
+		transfer: () => import('./swa/transfer'),
+		voucher: () => import('./swa/voucher')
 	}
 }
 
