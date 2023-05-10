@@ -21,6 +21,7 @@ export interface PersonalInformation {
   gender: Gender
   geo: string
   given_names: string
+  language_code: string
   location_name: string
   user_identifier: number
   year_of_birth: number
@@ -72,7 +73,7 @@ export interface GraphUser {
   id: number
   interface_identifier: string
   interface_type: string
-  personal_information: PersonalInformation
+  personal_information: Partial<PersonalInformation>
 }
 
 function getRequestedFields(personalInformation: Partial<PersonalInformation>) {
@@ -88,13 +89,23 @@ function getRequestedFields(personalInformation: Partial<PersonalInformation>) {
   return requestedFields.trim();
 }
 
-export async function createGraphUser(graphql: GraphQLClient, user: Partial<GraphUser>): Promise<Partial<GraphUser>> {
-  const query = `mutation CreateUser($user: users_insert_input!) {
-    insert_users_one(object: $user) {id}
+export async function createGraphUser(
+  activated: boolean,
+  graphql: GraphQLClient,
+  interfaceIdentifier: string,
+  interfaceType: string,
+  languageCode: string): Promise<Partial<GraphUser>> {
+  const query = `mutation CreateUser($activated: Boolean!, $interfaceIdentifier: String!, $interfaceType: interface_type_enum!, $languageCode: String!) {
+    insert_users_one(object: {
+      activated: $activated,
+      interface_identifier: $interfaceIdentifier,
+      interface_type: $interfaceType,
+      personal_information: { 
+        data: { language_code: $languageCode}
+      }
+    }) {id}
   }`
-  const variables = {
-    user,
-  }
+  const variables = { activated, interfaceIdentifier, interfaceType, languageCode }
   const data = await graphql.request<{ insert_users_one: Partial<GraphUser> }>(query, variables)
   return data.insert_users_one
 }
