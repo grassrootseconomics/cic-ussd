@@ -16,6 +16,7 @@ import { ContextError, MachineError } from '@lib/errors';
 import { AccountService } from '@services/account';
 import { translate } from '@i18n/translators';
 import { validatePhoneNumber } from '@lib/ussd';
+import { SystemGuardianService } from '@services/systemGuardian';
 
 
 enum PinsError {
@@ -320,7 +321,8 @@ async function validateWardToReset(context: PinManagementContext, event: any) {
   const { input } = event
   const wardPhoneNumber = validatePhoneNumber(context.ussd.countryCode, input)
   const guardian = await new AccountService(context.connections.db, context.connections.redis.persistent).getGuardian(wardPhoneNumber, phone_number)
-  if (!guardian) {
+  const isSystemGuardian = await new SystemGuardianService(context.connections.db, context.connections.redis.persistent).isSystemGuardian(phone_number)
+  if (!guardian && !isSystemGuardian) {
     throw new MachineError(PinsError.UNAUTHORIZED_GUARDIAN, "You are not a guardian of this account")
   }
   return { success: true, ward: wardPhoneNumber }

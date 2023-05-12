@@ -6,6 +6,10 @@ interface GuardianInterface {
   guardian: string
 }
 
+export interface SystemGuardianInterface {
+  phone_number: string
+}
+
 export class Guardian {
 
   constructor(private db: PostgresDb) { }
@@ -65,6 +69,69 @@ export class Guardian {
       return rows.map((row: GuardianInterface) => row.guardian)
     } catch (error: any) {
       logger.error(`Error selecting all guardians: ${error.message}, stack: ${error.stack}.`)
+    } finally {
+      client.release()
+    }
+  }
+}
+
+export class SystemGuardian {
+
+  constructor(private db: PostgresDb) { }
+
+  deleteGuardian = async (phoneNumber: string) => {
+    const client = await this.db.connect()
+    try {
+      await client.query(
+        `DELETE FROM system_guardians WHERE phone_number = $1`,
+        [phoneNumber]
+      )
+    } catch (error: any) {
+      logger.error(`Error deleting system guardian: ${error.message}, stack: ${error.stack}`)
+    } finally {
+      client.release()
+    }
+  }
+
+  insertGuardian = async (phoneNumber: string) => {
+    const client = await this.db.connect()
+    try {
+      await client.query(
+        `INSERT INTO system_guardians (phone_number)
+            VALUES ($1)`,
+        [phoneNumber]
+      )
+    } catch (error: any) {
+      logger.error(`Error inserting system guardian: ${error.message}, stack: ${error.stack}.`)
+    } finally {
+      client.release()
+    }
+  }
+
+  selectGuardian = async (phoneNumber: string) => {
+    const client = await this.db.connect()
+    try {
+      const { rows } = await client.query<SystemGuardianInterface>(
+        `SELECT phone_number FROM system_guardians WHERE phone_number = $1`,
+        [phoneNumber]
+      )
+      return rows.length > 0 ? rows[0].phone_number : null;
+    } catch (error: any) {
+      logger.error(`Error selecting system guardian: ${error.message}, stack: ${error.stack}.`)
+    } finally {
+      client.release()
+    }
+  }
+
+  selectAllGuardians = async () => {
+    const client = await this.db.connect()
+    try {
+      const { rows } = await client.query<SystemGuardianInterface>(
+        `SELECT phone_number FROM system_guardians`
+      )
+      return rows.map((row: SystemGuardianInterface) => row.phone_number)
+    } catch (error: any) {
+      logger.error(`Error selecting all system guardians: ${error.message}, stack: ${error.stack}.`)
     } finally {
       client.release()
     }

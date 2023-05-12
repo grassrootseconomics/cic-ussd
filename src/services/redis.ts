@@ -20,12 +20,13 @@ export class CacheService<T> {
     }
   }
 
-  async get<K extends keyof T>(keys?: K[]) {
+  async get<K extends keyof T>(keys?: K[]): Promise<T | Pick<T, K>> {
     const cache = new JSONCache<T>(this.client);
-    if (keys) {
+    if (keys && keys?.length > 0) {
       return await cache.get(this.key, ...keys.map(key => key.toString())) as  Pick<T, K>;
+    } else {
+      return await cache.get(this.key) as T;
     }
-    return await cache.get(this.key) as T;
   }
 
   async update(data: DeepPartial<T>) {
