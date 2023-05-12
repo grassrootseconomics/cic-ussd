@@ -78,13 +78,23 @@ app.register(ussdRoutes, { prefix: `/ussd` })
 
 // set up error handler.
 app.setErrorHandler<Error>(function (error, request, reply) {
-  app.log.error({ error: error.toString(), request })
+  app.log.error(`Error: ${error.message}, stack: ${error.stack}, type: ${error.name}`)
 
-  reply.status(500).send({
-    error: 'INTERNAL',
-    message: 'Internal server error.',
-    statusCode: 500
+  // handle system errors.
+  if (error instanceof fastify.errorCodes.FST_ERR_BAD_STATUS_CODE) {
+    reply.status(500).send({
+      error: 'INTERNAL',
+      message: 'Internal server error.',
+      statusCode: 500
+    })
+  }
+
+  return reply.status(400).send({
+    error: 'BAD_REQUEST',
+    message: error.message,
+    statusCode: 400
   })
+
 })
 
 export default app

@@ -58,5 +58,8 @@ export const config = {
     PORT: parseInt(process.env.SERVER_PORT ?? '5000'),
     TRUST_PROXY_ENABLED: !process.env.TRUST_PROXY_ENABLED ?? true
   },
+  SYSTEM: {
+    SECRET: process.env.SYSTEM_SECRET ?? 'x',
+  },
   TIMEZONE: process.env.TIMEZONE ?? 'Africa/Nairobi'
 }
