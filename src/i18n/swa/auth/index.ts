@@ -6,7 +6,7 @@ const swa_auth: NamespaceAuthTranslation  = {
     processingAccount:
         "END Akaunti yako ya Sarafu bado inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.",
     enteringPin:
-        "CON Tafadhali weka PIN yenye nambari nne:\n00. Ondoka",
+        "CON Tafadhali weka pin mpya yenye nambari nne kwa akaunti yako:\n00. Ondoka",
     confirmingPin:
         "CON Weka PIN yako tena:\n00. Ondoka",
     mainMenu:
