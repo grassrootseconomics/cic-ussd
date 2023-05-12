@@ -12,8 +12,7 @@ const swa_helpers: NamespaceHelpersTranslation = {
   noMoreGuardians: 'Hamna walinzi zaidi.',
   noMoreLanguageOptions: 'Hamna lugha zaidi zilizopo.',
   noMoreTransactions: 'Hamna taarifa zaidi ya malipo.',
-  noMoreVouchers:
-    'Hamna Sarafu nyengine zilizopo.\n22. Rudi\n00. Ondoka',
+  noMoreVouchers: 'Hamna Sarafu nyengine zilizopo.',
   notProvided: 'Haipo',
   services: 'Unauza:',
   systemError:

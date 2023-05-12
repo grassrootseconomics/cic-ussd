@@ -12,8 +12,7 @@ const eng_helpers: NamespaceHelpersTranslation = {
 	noMoreGuardians: 'No more guardians.',
 	noMoreLanguageOptions: 'No more language options.',
 	noMoreTransactions: 'No more transactions.',
-	noMoreVouchers:
-		'No more vouchers available.\n22. Back\n00. Exit',
+	noMoreVouchers: 'No more vouchers available',
 	notProvided: 'Not provided',
 	services: 'You provide:',
 	systemError:

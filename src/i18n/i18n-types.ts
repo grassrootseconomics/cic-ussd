@@ -51,7 +51,7 @@ export type NamespaceAuthTranslation = {
 	 */
 	processingAccount: string
 	/**
-	 * C​O​N​ ​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​P​I​N​ ​y​e​n​y​e​ ​n​a​m​b​a​r​i​ ​n​n​e​:​
+	 * C​O​N​ ​T​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​p​i​n​ ​m​p​y​a​ ​y​e​n​y​e​ ​n​a​m​b​a​r​i​ ​n​n​e​ ​k​w​a​ ​a​k​a​u​n​t​i​ ​y​a​k​o​:​
 ​0​0​.​ ​O​n​d​o​k​a
 	 */
 	enteringPin: string
@@ -277,9 +277,7 @@ export type NamespaceHelpersTranslation = {
 	 */
 	noMoreTransactions: string
 	/**
-	 * H​a​m​n​a​ ​S​a​r​a​f​u​ ​n​y​e​n​g​i​n​e​ ​z​i​l​i​z​o​p​o​.​
-​2​2​.​ ​R​u​d​i​
-​0​0​.​ ​O​n​d​o​k​a
+	 * H​a​m​n​a​ ​S​a​r​a​f​u​ ​n​y​e​n​g​i​n​e​ ​z​i​l​i​z​o​p​o​.
 	 */
 	noMoreVouchers: string
 	/**
@@ -1082,7 +1080,7 @@ export type TranslationFunctions = {
 		 */
 		processingAccount: () => LocalizedString
 		/**
-		 * CON Tafadhali weka PIN yenye nambari nne:
+		 * CON Tafadhali weka pin mpya yenye nambari nne kwa akaunti yako:
 	00. Ondoka
 		 */
 		enteringPin: () => LocalizedString
@@ -1283,8 +1281,6 @@ export type TranslationFunctions = {
 		noMoreTransactions: () => LocalizedString
 		/**
 		 * Hamna Sarafu nyengine zilizopo.
-	22. Rudi
-	00. Ondoka
 		 */
 		noMoreVouchers: () => LocalizedString
 		/**
