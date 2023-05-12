@@ -244,7 +244,7 @@ function isSetError(context: VouchersContext, event: any) {
 
 async function loadHeldVouchers(context: VouchersContext) {
   const { connections: { graphql, redis }, user: { account, statement, vouchers: { active, held } } } = context
-  const voucherInfoPromises = (held || []).map(async (voucher) => {
+  const voucherInfoPromises = (held || [active]).map(async (voucher) => {
     const info = await getVoucherByAddress(voucher.address, graphql, redis.persistent)
     if(info){
       return {
