@@ -4,8 +4,8 @@ import { AccountStatus } from '@db/models/account';
 import { AuthContext, authMachine, hashValue } from '@machines/auth';
 import { mainMachine } from '@machines/main';
 import { SessionService } from '@services/session';
-import { interpret, Interpreter } from 'xstate';
-import { fallbackLanguage } from '@i18n/translators';
+import { interpret, Interpreter, StateValue } from 'xstate';
+import { fallbackLanguage, languageOptions, tFeedback } from '@i18n/translators';
 import { BalancesContext, balancesMachine } from '@machines/balances';
 import { LanguagesContext, languagesMachine } from '@machines/languages';
 import { PinManagementContext, pinManagementMachine } from '@machines/pins';
@@ -18,7 +18,7 @@ import { voucherMachine, VouchersContext } from '@machines/voucher';
 import { SystemError } from '@lib/errors';
 import { waitFor } from 'xstate/lib/waitFor';
 import { L } from '@i18n/i18n-node';
-import { Locales } from '@i18n/i18n-types';
+import { Locales, NamespaceFeedbackTranslation } from '@i18n/i18n-types';
 import {
   BaseContext,
   MachineEvent,
@@ -28,6 +28,8 @@ import {
   UserContext
 } from '@machines/utils';
 import { ActorMenu, mainMenu, pinManagementMenu, settingsMenu } from '@lib/menus';
+import { LocalizedString } from 'typesafe-i18n';
+import { config } from '@/config';
 
 export type MachineContext =
   | AuthContext
@@ -75,14 +77,30 @@ class MachineService implements MachineServiceInterface {
     }
   }
 
-  async transition(event: MachineEvent ) {
+  async transition(event: MachineEvent ): Promise<[keyof NamespaceFeedbackTranslation | undefined, boolean, string]> {
+
+    let  feedback: keyof NamespaceFeedbackTranslation | undefined, isRetry: boolean = false, state: StateValue;
+
     this.service.send(event)
+
+    // check whether a retry occurred during the transition
+    this.service.onTransition(async (_, machineEvent) => {
+      if (machineEvent.type === 'RETRY'){
+        isRetry = true;
+        feedback = machineEvent.feedback
+      } else {
+        feedback = undefined
+      }
+    })
+
     const snapshot = this.service.getSnapshot()
     if(snapshot.hasTag('invoked')){
-      return await waitForInvokedService(this.service)
+      state = await waitForInvokedService(this.service)
     } else {
-      return snapshot.value.toString()
+      state = snapshot.value
     }
+
+    return [feedback, isRetry, state.toString()]
   }
 
   async response(context: MachineContext, machineId: MachineId, state: string) {
@@ -108,12 +126,12 @@ export async function buildResponse(context: any, session: SessionInterface) {
   if (machineService.service.getSnapshot().hasTag("encryptInput")) {
     context.ussd.input = await hashValue(input);
   }
-  let state;
+  let feedback, isRetry: boolean = false, response: LocalizedString, state: string;
 
   if (session. machineId === machine.stateMachine.id) {
     const transitionType = input === '0' ? 'BACK' : 'TRANSIT';
     const event: MachineEvent = transitionType === 'TRANSIT'? { type: transitionType, input: input } : { type: transitionType };
-    state = await machineService.transition(event);
+    [feedback, isRetry, state] = await machineService.transition(event);
   } else {
     const snapshot = machineService.service.getSnapshot();
     state = snapshot?.value.toString();
@@ -123,7 +141,11 @@ export async function buildResponse(context: any, session: SessionInterface) {
   const updatedContext = machineService.service?.machine.context;
 
   // build response
-  const response = await machineService.response(updatedContext, machineId, state);
+  if(feedback && isRetry) {
+    response = await resolveErrorResponse(context, feedback)
+  } else {
+    response = await machineService.response(updatedContext, machineId, state);
+  }
   machineService.stop();
 
   const sessionType = response.startsWith('END') ? SessionType.COMPLETED : SessionType.ACTIVE;
@@ -162,6 +184,32 @@ async function handleActiveAccount(input: string, session: SessionInterface){
     return stateHandlers[state].jumpTo(input)
   } else{
     return machines.find(machine => machine.stateMachine.id === session.machineId) || mainMachine
+  }
+}
+
+async function resolveErrorResponse<K extends keyof NamespaceFeedbackTranslation>(context: UserContext, feedback: K){
+  const language = context?.user?.account?.language || fallbackLanguage()
+  switch (feedback) {
+    case 'invalidPinAtRegistration':
+    case 'invalidNewPin':
+    case 'pinMismatch':
+      return tFeedback(feedback, language, { supportPhone: config.KE.SUPPORT_PHONE})
+
+    case 'invalidPin':
+    case 'invalidPinPC':
+    case 'invalidPinPV':
+      const remainingAttempts = 2 - context.user.account.pin_attempts
+      return tFeedback(feedback, language, { remainingAttempts })
+
+    case 'invalidLanguageOption':
+      const languages = await languageOptions()
+      return tFeedback(feedback, language, { languages: languages[0] })
+
+    case 'invalidVoucher':
+      return tFeedback(feedback, language, { vouchers: context.data.heldVouchers[0] })
+
+    default:
+      return tFeedback(feedback, language)
   }
 }
 
@@ -206,7 +254,7 @@ export async function resolveResponseLanguage(context: MachineContext, state: st
   return language || fallbackLanguage();
 }
 
-async function waitForInvokedService(service: any){
+async function waitForInvokedService(service: Interpreter<any, any, MachineEvent, any, any>){
   const resolvedState = await waitFor(service, state => {
       return state.hasTag('resolved') || state.hasTag('error')
   })

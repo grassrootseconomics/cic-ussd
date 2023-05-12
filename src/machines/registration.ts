@@ -1,4 +1,4 @@
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import {
   isOption00,
   isOption11,
@@ -69,7 +69,7 @@ const stateMachine = createMachine<RegistrationContext, MachineEvent>({
     },
     invalidLanguageOption: {
       description: 'Entered language option is invalid. Raises RETRY event to retry language selection.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidLanguageOption' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidLanguageOption' }),
       on: {
         RETRY: 'firstLanguageSet'
       }
@@ -210,13 +210,13 @@ async function registrationTranslations(context: any, state: string, translator:
   const languages = await languageOptions()
   switch(state){
     case "firstLanguageSet":
-      return translate(state, translator,{ languages: languages[0] })
+      return await translate(state, translator,{ languages: languages[0] })
     case "secondLanguageSet":
-      return translate(state, translator,{ languages: languages[1] })
+      return await translate(state, translator,{ languages: languages[1] })
     case "thirdLanguageSet":
-      return translate(state, translator,{ languages: languages[2] })
+      return await translate(state, translator,{ languages: languages[2] })
     default:
-      return translate(state, translator)
+      return await translate(state, translator)
   }
 }
 

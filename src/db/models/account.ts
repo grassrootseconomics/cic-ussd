@@ -166,7 +166,7 @@ export class Account {
     }
   }
 
-  public async setPinAttempts(phoneNumber: string, attempts: number) {
+  public async setPinAttempts(attempts: number, phoneNumber: string) {
     const client = await this.db.connect()
     try {
       await client.query(`

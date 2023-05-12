@@ -1,4 +1,4 @@
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import { AccountStatus } from '@db/models/account';
 import { ContextError, MachineError } from '@lib/errors';
 import { PostgresDb } from '@fastify/postgres';
@@ -88,7 +88,7 @@ const stateMachine = createMachine<AuthContext, MachineEvent>({
     },
     invalidPin: {
       description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPinAtRegistration' }),
       on: {
         RETRY: 'enteringPin'
       }
@@ -100,7 +100,7 @@ const stateMachine = createMachine<AuthContext, MachineEvent>({
     },
     pinMismatch: {
       description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'pinMismatch' }),
+      entry: send({ type: 'RETRY', feedback: 'pinMismatch' }),
       on: {
         RETRY: 'confirmingPin'
       }
@@ -205,9 +205,9 @@ export async function validatePin(context: UserContext, input: string) {
 async function authTranslations(context: AuthContext, state: string, translator: any){
   if (state === "mainMenu"){
     const { user: { vouchers: { active: { balance, symbol } } } } = context
-    return translate(state, translator, { balance: balance, symbol: symbol })
+    return await translate(state, translator, { balance: balance, symbol: symbol })
   }
-  return translate(state, translator)
+  return await translate(state, translator)
 }
 
 export const authMachine: MachineInterface = {

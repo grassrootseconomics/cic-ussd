@@ -1,7 +1,13 @@
 import { L } from './i18n-node';
-import { Locales, NamespaceHelpersTranslation, NamespaceSmsTranslation } from './i18n-types';
+import {
+  Locales,
+  NamespaceFeedbackTranslation,
+  NamespaceHelpersTranslation,
+  NamespaceSmsTranslation
+} from './i18n-types';
 import { baseLocale } from './i18n-util';
 import { menuPages } from '@lib/ussd';
+import { LocalizedString } from 'typesafe-i18n';
 
 
 export const supportedLanguages = {
@@ -33,7 +39,11 @@ export function tSMS<K extends keyof NamespaceSmsTranslation>(key: K, language: 
   return L[language]["sms"][key](data)
 }
 
-export async function translate(state: string, translator: any, data?: Record<string, any>): Promise<string> {
+export function tFeedback<K extends keyof NamespaceFeedbackTranslation>(key: K, language: Locales, data?: any) {
+  return L[language]["feedback"][key](data)
+}
+
+export async function translate(state: string, translator: any, data?: Record<string, any>): Promise<LocalizedString> {
   if (data) {
     return translator[state](data);
   } else {

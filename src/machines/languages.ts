@@ -11,7 +11,7 @@ import {
   updateErrorMessages,
   UserContext
 } from '@machines/utils';
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import { isBlocked, validatePin } from '@machines/auth';
 import { ContextError, MachineError } from '@lib/errors';
 import { Locales } from '@i18n/i18n-types';
@@ -97,14 +97,14 @@ const stateMachine = createMachine<LanguagesContext, MachineEvent>({
     },
     invalidLanguageOption: {
       description: 'The entered language option is invalid. Raises a RETRY event to prompt user to retry language selection.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidLanguage' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidLanguageOption' }),
       on: {
         RETRY: 'firstLanguageSet'
       }
     },
     invalidPin: {
       description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry PIN entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringPin'
       }
