@@ -18,6 +18,7 @@ export const locales: Locales[] = [
 export const namespaces: Namespaces[] = [
 	'auth',
 	'balances',
+	'feedback',
 	'helpers',
 	'languages',
 	'main',

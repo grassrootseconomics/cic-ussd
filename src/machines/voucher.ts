@@ -1,4 +1,4 @@
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import {
   isOption00,
   isOption1,
@@ -106,12 +106,12 @@ export const stateMachine = createMachine<VouchersContext, MachineEvent>({
     },
     invalidPin: {
       description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry PIN entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: { RETRY: 'enteringPin' }
     },
     invalidSelection: {
       description: 'Entered selection is invalid. Raises a RETRY event to prompt user to retry selection.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidVoucher' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidVoucher' }),
       on: { RETRY: 'firstVoucherSet' }
     },
     loadInfoError: {
@@ -244,7 +244,7 @@ function isSetError(context: VouchersContext, event: any) {
 
 async function loadHeldVouchers(context: VouchersContext) {
   const { connections: { graphql, redis }, user: { account, statement, vouchers: { active, held } } } = context
-  const voucherInfoPromises = held.map(async (voucher) => {
+  const voucherInfoPromises = (held || []).map(async (voucher) => {
     const info = await getVoucherByAddress(voucher.address, graphql, redis.persistent)
     if(info){
       return {
@@ -309,7 +309,7 @@ async function formatVouchers(active: CachedVoucher, held: CachedVoucher[], lang
   const activeSymbol = active.symbol;
 
   // sort the held vouchers by balance
-  const sortedHeld = held.slice().sort((a, b) => a.balance - b.balance);
+  const sortedHeld = (held || []).slice().sort((a, b) => a.balance - b.balance);
 
   // if last credit, debit or active voucher are present and not the same as the active voucher or each other, add them to the top of the list
   const lastCreditIndex = lastCreditSymbol && lastCreditSymbol !== activeSymbol && lastCreditSymbol !== lastDebitSymbol ? sortedHeld.findIndex((v) => v.symbol === lastCreditSymbol) : null;
@@ -325,7 +325,8 @@ async function formatVouchers(active: CachedVoucher, held: CachedVoucher[], lang
   }
 
   // add the active voucher
-  orderedHeld.push(sortedHeld.find((v) => v.symbol === activeSymbol));
+  const activeVoucher = sortedHeld.find((v) => v.symbol === activeSymbol) || active;
+  orderedHeld.push(activeVoucher);
 
   // add the rest of the vouchers
   const filteredHeld = sortedHeld

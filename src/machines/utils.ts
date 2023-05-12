@@ -10,6 +10,8 @@ import { CountryCode } from 'libphonenumber-js';
 import { translate } from '@i18n/translators';
 import { StateMachine } from 'xstate';
 import { getPhoneNumberFromAddress } from '@services/account';
+import { NamespaceFeedbackTranslation } from '@i18n/i18n-types';
+import { LocalizedString } from 'typesafe-i18n';
 
 export enum MachineId {
   AUTH = "auth",
@@ -38,7 +40,7 @@ export type Connections = {
 
 export type MachineEvent =
   | { type: "BACK" }
-  | { type: "RETRY", feedback: string }
+  | { type: "RETRY", feedback: keyof NamespaceFeedbackTranslation}
   | { type: "TRANSIT", input: string }
 
 export interface BaseContext {
@@ -50,7 +52,7 @@ export interface BaseContext {
 
 export interface MachineInterface {
   stateMachine: StateMachine<any, any, MachineEvent>,
-  translate: (context: any, state: string, translator: any) => Promise<string>,
+  translate: (context: any, state: string, translator: any) => Promise<LocalizedString>,
 }
 
 export interface MachineServiceInterface {

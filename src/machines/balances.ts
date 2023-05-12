@@ -9,7 +9,7 @@ import {
   updateErrorMessages,
   UserContext
 } from '@machines/utils';
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import { isBlocked, validatePin } from '@machines/auth';
 import { MachineError, SystemError } from '@lib/errors';
 import { getSinkAddress, retrieveWalletBalance } from '@lib/ussd';
@@ -117,14 +117,14 @@ export const stateMachine = createMachine<BalancesContext, MachineEvent>({
     },
     invalidPinA: {
       description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringPinA'
       }
     },
     invalidPinC: {
       description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringPinA'
       }
@@ -217,11 +217,11 @@ async function balancesTranslations(context: BalancesContext, state: string, tra
   const { data, user: { vouchers: { active: { balance, symbol } } } } = context;
   switch (state) {
     case "loadSuccess":
-      return translate(state, translator, { balance, symbol });
+      return await translate(state, translator, { balance, symbol });
     case "fetchSuccess":
-      return translate(state, translator, { balance: data.communityBalance, symbol });
+      return await translate(state, translator, { balance: data.communityBalance, symbol });
     default:
-      return translate(state, translator);
+      return await translate(state, translator);
   }
 }
 

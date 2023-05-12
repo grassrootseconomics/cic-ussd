@@ -15,6 +15,7 @@ export type Translations = RootTranslation &
 {
 	auth: NamespaceAuthTranslation,
 	balances: NamespaceBalancesTranslation,
+	feedback: NamespaceFeedbackTranslation,
 	helpers: NamespaceHelpersTranslation,
 	languages: NamespaceLanguagesTranslation,
 	main: NamespaceMainTranslation,
@@ -42,10 +43,9 @@ type RootTranslation = {
 
 export type NamespaceAuthTranslation = {
 	/**
-	 * E​N​D​ ​P​I​N​ ​y​a​k​o​ ​i​m​e​f​u​n​g​w​a​.​ ​K​w​a​ ​u​s​a​i​d​i​z​i​ ​t​a​f​a​d​h​a​l​i​ ​p​i​g​a​ ​s​i​m​u​ ​k​w​a​:​ ​{​s​u​p​p​o​r​t​P​h​o​n​e​}​.
-	 * @param {unknown} supportPhone
+	 * E​N​D​ ​P​I​N​ ​y​a​k​o​ ​i​m​e​f​u​n​g​w​a​.​ ​K​w​a​ ​u​s​a​i​d​i​z​i​ ​t​a​f​a​d​h​a​l​i​ ​p​i​g​a​ ​s​i​m​u​ ​k​w​a​:​ ​0​7​5​7​6​2​8​8​8​5​.
 	 */
-	accountBlocked: RequiredParams<'supportPhone'>
+	accountBlocked: string
 	/**
 	 * E​N​D​ ​A​k​a​u​n​t​i​ ​y​a​k​o​ ​y​a​ ​S​a​r​a​f​u​ ​b​a​d​o​ ​i​n​a​t​a​y​a​r​i​s​h​w​a​.​ ​U​t​a​p​o​k​e​a​ ​u​j​u​m​b​e​ ​w​a​ ​S​M​S​ ​a​k​a​u​n​t​i​ ​y​a​k​o​ ​i​k​i​w​a​ ​t​a​y​a​r​i​.
 	 */
@@ -76,7 +76,7 @@ export type NamespaceAuthTranslation = {
 	 */
 	activationError: RequiredParams<'supportNumber|phone'>
 	/**
-	 * E​N​D​ ​A​s​a​n​t​e​ ​k​w​a​ ​k​u​t​u​m​i​a​ ​S​a​r​a​f​u​.​ ​K​w​a​h​e​r​i​.
+	 * E​N​D​ ​A​s​a​n​t​e​ ​k​w​a​ ​k​u​t​u​m​i​a​ ​h​u​d​u​m​a​ ​y​a​ ​S​a​r​a​f​u​.​ ​K​w​a​h​e​r​i​!
 	 */
 	exit: string
 }
@@ -131,6 +131,96 @@ export type NamespaceBalancesTranslation = {
 	 * @param {unknown} symbol
 	 */
 	loadSuccess: RequiredParams<'balance|currency' | 'symbol'>
+}
+
+export type NamespaceFeedbackTranslation = {
+	/**
+	 * C​O​N​ ​K​i​a​s​i​ ​u​l​i​c​h​o​t​u​m​a​ ​n​i​ ​k​i​k​u​b​w​a​ ​k​u​l​i​k​o​ ​k​i​a​s​i​ ​u​l​i​c​h​o​n​a​c​h​o​ ​a​u​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​:​
+​0​.​ ​R​u​d​i
+	 */
+	invalidAmount: string
+	/**
+	 * C​O​N​ ​C​h​a​g​u​o​ ​l​a​ ​j​i​n​s​i​a​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​:​
+​1​.​ ​M​w​a​n​a​u​m​e​
+​2​.​ ​M​w​a​n​a​m​k​e​
+​3​.​ ​N​y​i​n​g​i​n​e​
+​0​.​ ​R​u​d​i
+	 */
+	invalidGenderOption: string
+	/**
+	 * C​O​N​ ​C​h​a​g​u​o​ ​l​a​ ​l​u​g​h​a​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​:​
+​{​l​a​n​g​u​a​g​e​s​}​
+​0​.​ ​R​u​d​i​
+​0​0​.​O​n​d​o​k​a​
+​1​1​.​ ​M​b​e​l​e
+	 * @param {unknown} languages
+	 */
+	invalidLanguageOption: RequiredParams<'languages'>
+	/**
+	 * C​O​N​ ​E​n​e​o​ ​u​l​i​l​o​w​e​k​a​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​:​
+​0​.​ ​R​u​d​i
+	 */
+	invalidLocationOption: string
+	/**
+	 * C​O​N​ ​H​u​d​u​m​a​ ​a​u​ ​b​i​d​h​a​a​ ​u​l​i​y​o​w​e​k​a​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​:​
+​0​.​ ​R​u​d​i
+	 */
+	invalidMarketplaceEntry: string
+	/**
+	 * C​O​N​ ​J​i​n​a​ ​u​l​i​l​o​w​e​k​a​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​:​
+​0​.​ ​R​u​d​i
+	 */
+	invalidName: string
+	/**
+	 * C​O​N​ ​P​I​N​ ​u​l​i​y​o​b​o​n​y​e​z​a​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​P​I​N​ ​l​a​z​i​m​a​ ​i​w​e​ ​t​o​f​a​u​t​i​ ​n​a​ ​p​i​n​ ​y​a​k​o​ ​y​a​ ​s​a​s​a​.​ ​K​w​a​ ​u​s​a​i​d​i​z​i​ ​p​i​g​a​ ​s​i​m​u​ ​{​s​u​p​p​o​r​t​P​h​o​n​e​}​.​
+​0​.​ ​R​u​d​i
+	 * @param {unknown} supportPhone
+	 */
+	invalidNewPin: RequiredParams<'supportPhone'>
+	/**
+	 * C​O​N​ ​P​I​N​ ​y​a​k​o​ ​s​i​o​ ​s​a​h​i​h​i​,​ ​u​n​a​ ​m​a​j​i​r​o​b​i​o​:​ ​{​r​e​m​a​i​n​i​n​g​A​t​t​e​m​p​t​s​}​ ​y​a​l​i​y​o​b​a​k​i​.​
+​0​.​ ​R​u​d​i
+	 * @param {unknown} remainingAttempts
+	 */
+	invalidPin: RequiredParams<'remainingAttempts'>
+	/**
+	 * C​O​N​ ​P​I​N​ ​u​l​i​y​o​b​o​n​y​e​z​a​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​P​I​N​ ​l​a​z​i​m​a​ ​i​w​e​ ​n​a​ ​n​a​m​b​a​r​i​ ​n​n​e​.​ ​K​w​a​ ​u​s​a​i​d​i​z​i​ ​p​i​g​a​ ​s​i​m​u​ ​{​s​u​p​p​o​r​t​P​h​o​n​e​}​:​
+​0​0​.​ ​O​n​d​o​k​a
+	 * @param {unknown} supportPhone
+	 */
+	invalidPinAtRegistration: RequiredParams<'supportPhone'>
+	/**
+	 * C​O​N​ ​P​I​N​ ​y​a​k​o​ ​s​i​o​ ​s​a​h​i​h​i​,​ ​u​n​a​ ​m​a​j​i​r​o​b​i​o​:​ ​{​r​e​m​a​i​n​i​n​g​A​t​t​e​m​p​t​s​}​ ​y​a​l​i​y​o​b​a​k​i​.​
+​0​.​ ​R​u​d​i
+	 * @param {unknown} remainingAttempts
+	 */
+	invalidPinPC: RequiredParams<'remainingAttempts'>
+	/**
+	 * C​O​N​ ​P​I​N​ ​y​a​k​o​ ​s​i​o​ ​s​a​h​i​h​i​,​ ​u​n​a​ ​m​a​j​i​r​o​b​i​o​:​ ​{​r​e​m​a​i​n​i​n​g​A​t​t​e​m​p​t​s​}​ ​y​a​l​i​y​o​b​a​k​i​.​
+​0​.​ ​R​u​d​i
+	 * @param {unknown} remainingAttempts
+	 */
+	invalidPinPV: RequiredParams<'remainingAttempts'>
+	/**
+	 * C​O​N​ ​C​h​a​g​u​o​ ​l​a​ ​s​a​r​a​f​u​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​.​
+​{​v​o​u​c​h​e​r​s​}​
+​0​.​ ​R​u​d​i​
+​1​1​.​ ​M​b​e​l​e​
+​0​0​.​ ​O​n​d​o​k​a
+	 * @param {unknown} vouchers
+	 */
+	invalidVoucher: RequiredParams<'vouchers'>
+	/**
+	 * C​O​N​ ​M​w​a​k​a​ ​w​a​ ​k​u​z​a​l​i​w​a​ ​u​l​i​o​w​e​k​a​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​:​
+​0​.​ ​R​u​d​i
+	 */
+	invalidYOBEntry: string
+	/**
+	 * C​O​N​ ​P​I​N​ ​m​p​y​a​ ​n​a​ ​u​d​h​i​b​i​t​i​s​h​o​ ​w​a​ ​p​i​n​ ​m​p​y​a​ ​h​a​z​i​l​i​n​g​a​n​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​.​ ​K​w​a​ ​u​s​a​i​d​i​z​i​ ​p​i​g​a​ ​s​i​m​u​ ​{​s​u​p​p​o​r​t​P​h​o​n​e​}​.​
+​0​.​ ​R​u​d​i
+	 * @param {unknown} supportPhone
+	 */
+	pinMismatch: RequiredParams<'supportPhone'>
 }
 
 export type NamespaceHelpersTranslation = {
@@ -867,6 +957,7 @@ export type NamespaceVoucherTranslation = {
 export type Namespaces =
 	| 'auth'
 	| 'balances'
+	| 'feedback'
 	| 'helpers'
 	| 'languages'
 	| 'main'
@@ -892,6 +983,12 @@ type DisallowNamespaces = {
 	 * you need to use the `./balances/index.ts` file instead
 	 */
 	balances?: "[typesafe-i18n] reserved for 'balances'-namespace. You need to use the `./balances/index.ts` file instead."
+
+	/**
+	 * reserved for 'feedback'-namespace\
+	 * you need to use the `./feedback/index.ts` file instead
+	 */
+	feedback?: "[typesafe-i18n] reserved for 'feedback'-namespace. You need to use the `./feedback/index.ts` file instead."
 
 	/**
 	 * reserved for 'helpers'-namespace\
@@ -977,9 +1074,9 @@ export type TranslationFunctions = {
 	exit: () => LocalizedString
 	auth: {
 		/**
-		 * END PIN yako imefungwa. Kwa usaidizi tafadhali piga simu kwa: {supportPhone}.
+		 * END PIN yako imefungwa. Kwa usaidizi tafadhali piga simu kwa: 0757628885.
 		 */
-		accountBlocked: (arg: { supportPhone: unknown }) => LocalizedString
+		accountBlocked: () => LocalizedString
 		/**
 		 * END Akaunti yako ya Sarafu bado inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.
 		 */
@@ -1007,7 +1104,7 @@ export type TranslationFunctions = {
 		 */
 		activationError: (arg: { supportNumber: unknown }) => LocalizedString
 		/**
-		 * END Asante kwa kutumia Sarafu. Kwaheri.
+		 * END Asante kwa kutumia huduma ya Sarafu. Kwaheri!
 		 */
 		exit: () => LocalizedString
 	}
@@ -1057,6 +1154,87 @@ export type TranslationFunctions = {
 	9. Ondoka
 		 */
 		loadSuccess: (arg: { balance: unknown, symbol: unknown }) => LocalizedString
+	}
+	feedback: {
+		/**
+		 * CON Kiasi ulichotuma ni kikubwa kuliko kiasi ulichonacho au sio sahihi. Tafadhali jaribu tena:
+	0. Rudi
+		 */
+		invalidAmount: () => LocalizedString
+		/**
+		 * CON Chaguo la jinsia sio sahihi. Tafadhali jaribu tena:
+	1. Mwanaume
+	2. Mwanamke
+	3. Nyingine
+	0. Rudi
+		 */
+		invalidGenderOption: () => LocalizedString
+		/**
+		 * CON Chaguo la lugha sio sahihi. Tafadhali jaribu tena:
+	{languages}
+	0. Rudi
+	00.Ondoka
+	11. Mbele
+		 */
+		invalidLanguageOption: (arg: { languages: unknown }) => LocalizedString
+		/**
+		 * CON Eneo uliloweka sio sahihi. Tafadhali jaribu tena:
+	0. Rudi
+		 */
+		invalidLocationOption: () => LocalizedString
+		/**
+		 * CON Huduma au bidhaa uliyoweka sio sahihi. Tafadhali jaribu tena:
+	0. Rudi
+		 */
+		invalidMarketplaceEntry: () => LocalizedString
+		/**
+		 * CON Jina uliloweka sio sahihi. Tafadhali jaribu tena:
+	0. Rudi
+		 */
+		invalidName: () => LocalizedString
+		/**
+		 * CON PIN uliyobonyeza sio sahihi. PIN lazima iwe tofauti na pin yako ya sasa. Kwa usaidizi piga simu {supportPhone}.
+	0. Rudi
+		 */
+		invalidNewPin: (arg: { supportPhone: unknown }) => LocalizedString
+		/**
+		 * CON PIN yako sio sahihi, una majirobio: {remainingAttempts} yaliyobaki.
+	0. Rudi
+		 */
+		invalidPin: (arg: { remainingAttempts: unknown }) => LocalizedString
+		/**
+		 * CON PIN uliyobonyeza sio sahihi. PIN lazima iwe na nambari nne. Kwa usaidizi piga simu {supportPhone}:
+	00. Ondoka
+		 */
+		invalidPinAtRegistration: (arg: { supportPhone: unknown }) => LocalizedString
+		/**
+		 * CON PIN yako sio sahihi, una majirobio: {remainingAttempts} yaliyobaki.
+	0. Rudi
+		 */
+		invalidPinPC: (arg: { remainingAttempts: unknown }) => LocalizedString
+		/**
+		 * CON PIN yako sio sahihi, una majirobio: {remainingAttempts} yaliyobaki.
+	0. Rudi
+		 */
+		invalidPinPV: (arg: { remainingAttempts: unknown }) => LocalizedString
+		/**
+		 * CON Chaguo la sarafu sio sahihi. Tafadhali jaribu tena.
+	{vouchers}
+	0. Rudi
+	11. Mbele
+	00. Ondoka
+		 */
+		invalidVoucher: (arg: { vouchers: unknown }) => LocalizedString
+		/**
+		 * CON Mwaka wa kuzaliwa ulioweka sio sahihi. Tafadhali jaribu tena:
+	0. Rudi
+		 */
+		invalidYOBEntry: () => LocalizedString
+		/**
+		 * CON PIN mpya na udhibitisho wa pin mpya hazilingani. Tafadhali jaribu tena. Kwa usaidizi piga simu {supportPhone}.
+	0. Rudi
+		 */
+		pinMismatch: (arg: { supportPhone: unknown }) => LocalizedString
 	}
 	helpers: {
 		/**

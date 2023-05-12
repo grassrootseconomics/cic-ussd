@@ -1,4 +1,4 @@
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import {
   isOption00,
   isOption1,
@@ -196,21 +196,21 @@ export const stateMachine = createMachine<SocialRecoveryContext, MachineEvent>({
     },
     invalidPinAG: {
       description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringPinAG'
       }
     },
     invalidPinRG: {
       description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringPinRG'
       }
     },
     invalidPinVG: {
       description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringPinVG'
       }

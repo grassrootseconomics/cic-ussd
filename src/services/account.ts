@@ -155,7 +155,7 @@ export class AccountService {
 
   public async updatePinAttempts(phoneNumber: string, pinAttempts: number) {
     const results = await Promise.allSettled([
-      new Account(this.db).setPinAttempts(phoneNumber, pinAttempts),
+      new Account(this.db).setPinAttempts(pinAttempts, phoneNumber),
       this.updateCache(phoneNumber, { account: { pin_attempts: pinAttempts } })
     ])
     await handleResults(results)

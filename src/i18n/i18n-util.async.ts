@@ -14,6 +14,7 @@ const localeNamespaceLoaders = {
 	eng: {
 		auth: () => import('./eng/auth'),
 		balances: () => import('./eng/balances'),
+		feedback: () => import('./eng/feedback'),
 		helpers: () => import('./eng/helpers'),
 		languages: () => import('./eng/languages'),
 		main: () => import('./eng/main'),
@@ -30,6 +31,7 @@ const localeNamespaceLoaders = {
 	swa: {
 		auth: () => import('./swa/auth'),
 		balances: () => import('./swa/balances'),
+		feedback: () => import('./swa/feedback'),
 		helpers: () => import('./swa/helpers'),
 		languages: () => import('./swa/languages'),
 		main: () => import('./swa/main'),

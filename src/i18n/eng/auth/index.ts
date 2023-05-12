@@ -1,8 +1,10 @@
 import type { NamespaceAuthTranslation } from '../../i18n-types';
+import eng from '..';
+
+const { accountBlocked, exit } = eng
 
 const eng_auth: NamespaceAuthTranslation = {
-    accountBlocked:
-        "END Your PIN has been blocked. For assistance please call: {supportPhone}.",
+    accountBlocked: accountBlocked,
     processingAccount:
         "END Your account is still being created. You will receive an SMS when your account is ready.",
     enteringPin:
@@ -13,8 +15,7 @@ const eng_auth: NamespaceAuthTranslation = {
         "CON Balance: {balance|currency} {symbol}\n1. Send\n2. My Vouchers\n3. My Account\n4. Help",
     activationError:
         "END Please try again in a few minutes. If the problem persists, please contact {supportNumber|phone}",
-    exit:
-        "END Thank you for using Sarafu. Goodbye.",
+    exit: exit,
 }
 
 export default eng_auth

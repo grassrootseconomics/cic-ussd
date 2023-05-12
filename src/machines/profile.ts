@@ -13,13 +13,12 @@ import {
   updateErrorMessages,
   UserContext
 } from '@machines/utils';
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import { isBlocked, validatePin } from '@machines/auth';
 import { MachineError } from '@lib/errors';
 import { tHelpers, translate } from '@i18n/translators';
 import {
   createGraphMarketplace,
-  createGraphPersonalInformation,
   Gender,
   GraphMarketplace,
   PersonalInformation,
@@ -166,35 +165,35 @@ export const stateMachine = createMachine<ProfileContext, MachineEvent>({
     },
     invalidGenderOption: {
       description: 'Selected gender option is invalid. Raises a RETRY event to prompt user to retry gender selection.',
-      entry: raise({ type: 'RETRY', feedback: 'inValidGenderOption' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidGenderOption' }),
       on: {
         RETRY: 'selectingGender'
       }
     },
     invalidLocationEntry: {
       description: 'Entered location is invalid. Raises a RETRY event to prompt user to retry location entry.',
-      entry: raise({ type: 'RETRY', feedback: 'inValidLocationOption' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidLocationOption' }),
       on: {
         RETRY: 'enteringLocation'
       }
     },
     invalidName: {
       description: 'Entered name is invalid. Raises a RETRY event to prompt user to retry name entry.',
-      entry: raise({ type: 'RETRY', feedback: 'inValidName' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidName' }),
       on: {
         RETRY: 'enteringGivenNames'
       }
     },
     invalidPinPC: {
       description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry PIN entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPinPC' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPinPC' }),
       on: {
         RETRY: 'enteringProfileChangePin'
       }
     },
     invalidPinPV: {
       description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry PIN entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPinPV' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPinPV' }),
       on: {
         RETRY: 'enteringProfileViewPin'
       },
@@ -202,14 +201,14 @@ export const stateMachine = createMachine<ProfileContext, MachineEvent>({
     },
     invalidMarketplaceEntry: {
       description: 'Entered service is invalid. Raises a RETRY event to prompt user to retry service entry.',
-      entry: raise({ type: 'RETRY', feedback: 'inValidServiceOption' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidMarketplaceEntry' }),
       on: {
         RETRY: 'enteringMarketplace'
       }
     },
     invalidYOBEntry: {
       description: 'Entered year of birth is invalid. Raises a RETRY event to prompt user to retry year of birth entry.',
-      entry: raise({ type: 'RETRY', feedback: 'inValidYOBOption' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidYOBEntry' }),
       on: {
         RETRY: 'enteringYOB'
       }
@@ -323,7 +322,6 @@ async function initiateProfileChange(context: ProfileContext, event: any) {
   await validatePin(context, input)
 
   const isUpdatingMarketplace = (cachedMarketplace?.marketplace_name !== undefined && cachedMarketplace?.marketplace_name !== null)
-  const isUpdatingProfile = (cachedPersonalInformation !== undefined && cachedPersonalInformation !== null)
 
   try {
 
@@ -332,12 +330,7 @@ async function initiateProfileChange(context: ProfileContext, event: any) {
         ...context.data.personalInformation,
         user_identifier: graphUserId
       }
-
-      if(isUpdatingProfile){
-        await updateGraphPersonalInformation(address, graphql, updatedProfile, phone_number, redis.persistent)
-      } else {
-        await createGraphPersonalInformation(address, graphql, updatedProfile, phone_number, redis.persistent)
-      }
+      await updateGraphPersonalInformation(address, graphql, updatedProfile, phone_number, redis.persistent)
     }
 
     if (context?.data?.marketplaceName) {
@@ -390,7 +383,7 @@ function saveGivenNames(context: ProfileContext, event: any) {
 }
 
 
-function isValidGender(context: ProfileContext , event: any) {
+function isValidGender(_: ProfileContext , event: any) {
   return event.input === "1" || event.input === "2"
 }
 
@@ -402,7 +395,7 @@ function saveGender(context: ProfileContext , _: any) {
   return context
 }
 
-function isValidYOB(context: ProfileContext , event: any) {
+function isValidYOB(_: ProfileContext , event: any) {
   const year = parseInt(event.input)
   if (isNaN(year)) return false
   return year >= 1900 && year <= 2100;
@@ -416,7 +409,7 @@ function saveYOB(context: ProfileContext , event: any) {
   return context
 }
 
-function isValidLocation(context: ProfileContext , event: any) {
+function isValidLocation(_: ProfileContext , event: any) {
   return /^[a-zA-Z\s]*$/.test(event.input)
 }
 
@@ -436,24 +429,24 @@ function saveMarketplaceName(context: ProfileContext , event: any) {
   context.data.marketplaceName = event.input
 }
 
-function genderAbsent(context: ProfileContext) {
+function genderAbsent(context: ProfileContext, event: any) {
   const gender = context.user?.graph?.personalInformation?.gender;
-  return gender === null || gender === undefined;
+  return gender === null || gender === undefined && isValidName(context, event);
 }
 
-function YOBAbsent(context: ProfileContext) {
+function YOBAbsent(context: ProfileContext, event: any){
   const yob = context.user?.graph?.personalInformation?.year_of_birth;
-  return yob === null || yob === undefined;
+  return yob === null || yob === undefined && isValidGender(context, event);
 }
 
-function locationAbsent(context: ProfileContext) {
+function locationAbsent(context: ProfileContext, event: any) {
   const location = context.user?.graph?.personalInformation?.location_name;
-  return location === null || location === undefined;
+  return location === null || location === undefined && isValidYOB(context, event);
 }
 
-function marketplaceNameAbsent(context: ProfileContext) {
+function marketplaceNameAbsent(context: ProfileContext, event: any) {
   const services = context.user?.graph?.account?.marketplace?.marketplace_name;
-  return services === null || services === undefined;
+  return services === null || services === undefined && isValidLocation(context, event);
 }
 
 async function loadPersonalInformation(context: ProfileContext, event: any) {

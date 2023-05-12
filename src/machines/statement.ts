@@ -1,4 +1,4 @@
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import {
   isOption00,
   isOption11,
@@ -80,7 +80,7 @@ export const stateMachine = createMachine<StatementContext, MachineEvent>({
     },
     invalidPin: {
       description: 'Entered PIN is invalid. Raises a RETRY event to prompt user to retry PIN entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringPin'
       }

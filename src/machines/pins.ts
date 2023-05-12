@@ -10,7 +10,7 @@ import {
   MachineInterface,
   updateErrorMessages
 } from '@machines/utils';
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import { AuthContext, hashValue, isBlocked, isValidPin, pinsMatch, validatePin } from '@machines/auth';
 import { ContextError, MachineError } from '@lib/errors';
 import { AccountService } from '@services/account';
@@ -132,21 +132,21 @@ const stateMachine = createMachine<PinManagementContext, MachineEvent>({
     },
     invalidNewPin: {
       description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidNewPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidNewPin' }),
       on: {
         RETRY: 'enteringNewPin'
       }
     },
     invalidOldPin: {
       description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringOldPin'
       }
     },
     invalidPinWR: {
       description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+      entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
       on: {
         RETRY: 'enteringPinWR'
       }
@@ -179,7 +179,7 @@ const stateMachine = createMachine<PinManagementContext, MachineEvent>({
     },
     pinMismatch: {
       description: 'Entered PIN does not match the previously entered PIN. Raises a RETRY event to prompt user to retry pin entry.',
-      entry: raise({ type: 'RETRY', feedback: 'pinMismatch' }),
+      entry: send({ type: 'RETRY', feedback: 'pinMismatch' }),
       on: {
         RETRY: 'confirmNewPin'
       }
@@ -328,15 +328,14 @@ async function validateWardToReset(context: PinManagementContext, event: any) {
 
 export async function pinsTranslations(context: PinManagementContext, state: string, translator: any) {
   const { data: { validatedWardEntry, wardEntry } } = context;
-  if (state ===  "wardResetSuccess" ) {
-    return await translate(state, translator, { ward: validatedWardEntry })
+  switch (state) {
+    case 'wardResetSuccess':
+      return await translate(state, translator, { ward: validatedWardEntry });
+    case 'wardResetError':
+      return await translate(state, translator, { ward: wardEntry })
+    default:
+      return await translate(state, translator)
   }
-
-  if (state === "wardResetError") {
-    return await translate(state, translator, { ward: wardEntry })
-  }
-
-  return await translate(state, translator)
 }
 
 export const pinManagementMachine: MachineInterface = {

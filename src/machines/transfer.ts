@@ -1,4 +1,4 @@
-import { createMachine, raise } from 'xstate';
+import { createMachine, send } from 'xstate';
 import {
   isOption1,
   isOption9,
@@ -90,7 +90,7 @@ export const stateMachine = createMachine<TransferContext, MachineEvent>({
       },
       invalidAmount: {
         description: 'Entered amount is invalid. Raise RETRY event to prompt user to re-enter amount.',
-        entry: raise({ type: 'RETRY', feedback: 'invalidAmount' }),
+        entry: send({ type: 'RETRY', feedback: 'invalidAmount' }),
         on: {
           RETRY: 'enteringAmount'
         }
@@ -152,7 +152,7 @@ export const stateMachine = createMachine<TransferContext, MachineEvent>({
       },
       invalidPin: {
         description: 'Entered pin is invalid. Raise RETRY event to prompt user to re-enter pin.',
-        entry: raise({ type: 'RETRY', feedback: 'invalidPin' }),
+        entry: send({ type: 'RETRY', feedback: 'invalidPin' }),
         on: {
           RETRY: 'enteringPin'
         },
