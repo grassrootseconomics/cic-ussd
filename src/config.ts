@@ -2,7 +2,7 @@ import * as process from 'process';
 
 function stringToList (value: string | undefined): string[] | void {
   if (value === undefined) {
-    throw new Error('Value is undefined')
+    console.error('Error parsing string to list.')
   } else {
     return value.split(',')
   }
@@ -17,8 +17,7 @@ export const config = {
     USERNAME: process.env.AT_USERNAME ?? 'x',
     USSD_ENDPOINT_SECRET: process.env.AT_USSD_ENDPOINT_SECRET ?? 'xE',
     VALID_IPS: stringToList(process.env.AT_VALID_IPS) ?? [
-      '0.0.0.0',
-      '127.0.0.1'
+      '0.0.0.0', '127.0.0.1'
     ]
   },
   CIC: {
@@ -37,6 +36,9 @@ export const config = {
   DEV: process.env.NODE_ENV !== 'production',
   KE: {
     SUPPORT_PHONE: process.env.SUPPORT_PHONE ?? '0757628885',
+    SERVICE_CODES: stringToList(process.env.KE_SERVICE_CODES) ?? [
+      '*384*96#', '*483*061#', '*483*46#'
+    ],
   },
   LOG: {
     LEVEL: process.env.LOG_LEVEL ?? 'info',
