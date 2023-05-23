@@ -7,8 +7,7 @@ const { mainMenu } = eng_main
 
 const eng_voucher: NamespaceVoucherTranslation = {
   accountBlocked: accountBlocked,
-  displayVoucherInfo:
-    'CON {symbol} {name}\n{contact} {location}\n{description}\n0. Back',
+  displayVoucherInfo: 'CON {symbol} {name}\n{contact} {location}\n{description}\n0. Back',
   enteringPin:
     'CON Enter PIN to confirm selection:\n{symbol} {name}\n{contact} {location}\n{description}\n0. Back\n00. Exit',
   exit: exit,

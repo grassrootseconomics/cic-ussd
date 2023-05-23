@@ -12,6 +12,12 @@ export const baseLocale: Locales = 'swa'
 
 export const locales: Locales[] = [
 	'eng',
+	'fra',
+	'gax',
+	'kam',
+	'kik',
+	'luo',
+	'mij',
 	'swa'
 ]
 

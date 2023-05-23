@@ -2,7 +2,7 @@ import { NamespaceRegistrationTranslation } from '../../i18n-types';
 
 const swa_registration: NamespaceRegistrationTranslation = {
   accountCreationError:
-    'END Sarafu ina hitilafu za kimitambo. Tafadhali jaribu tena baadaye.',
+    'END Ombi lako la kusajiliwa haliwezi kukamilishwa. Tafadhali jaribu tena baadaye.',
   accountCreationSuccess:
     'END Akaunti yako ya Sarafu inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.',
   exit: 'END Asante kwa kutumia huduma ya Sarafu.',

@@ -12,7 +12,13 @@ import { LocalizedString } from 'typesafe-i18n';
 
 export const supportedLanguages = {
   eng: 'English',
-  swa: 'Swahili'
+  swa: 'Swahili',
+  kam: 'Kamba',
+  kik: 'Kikuyu',
+  luo: 'Luo',
+  mij: 'Mijikenda',
+  gax: 'Borana',
+  fra: 'Francais'
 }
 
 export function fallbackLanguage(){

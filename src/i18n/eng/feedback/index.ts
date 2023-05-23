@@ -14,11 +14,11 @@ const eng_feedback: NamespaceFeedbackTranslation = {
   invalidName:
     'CON The name you entered is invalid. Please try again:\n0. Back',
   invalidNewPin:
-    'CON The PIN you entered is invalid. The PIN must be different from your current PIN. For help, call {supportPhone}.\n0. Back',
+    'CON The PIN you entered is invalid. The PIN must be different from your current PIN. For help, call {supportPhone|phone}.\n0. Back',
   invalidPin:
     'Your PIN is incorrect, you have {remainingAttempts} attempts remaining.\n0. Back',
   invalidPinAtRegistration:
-    'CON The PIN you have entered is invalid. PIN must consist of 4 digits. For help, call {supportPhone}:\n00. Exit',
+    'CON The PIN you have entered is invalid. PIN must consist of 4 digits. For help, call {supportPhone|phone}:\n00. Exit',
   invalidPinPC:
     'CON Your PIN is incorrect, you have {remainingAttempts} attempts remaining.\n0. Back',
   invalidPinPV:
@@ -28,7 +28,7 @@ const eng_feedback: NamespaceFeedbackTranslation = {
   invalidYOBEntry:
     'CON The year of birth you entered is invalid. Please try again:\n0. Back',
   pinMismatch:
-    'CON The new PIN does not match the one you entered. Please try again. For help, call {supportPhone}\n0. Back',
+    'CON The new PIN does not match the one you entered. Please try again. For help, call {supportPhone|phone}\n0. Back',
 }
 
 export default eng_feedback

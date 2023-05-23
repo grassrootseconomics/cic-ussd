@@ -14,11 +14,11 @@ const swa_feedback: NamespaceFeedbackTranslation = {
   invalidName:
     'CON Jina uliloweka sio sahihi. Tafadhali jaribu tena:\n0. Rudi',
   invalidNewPin:
-    'CON PIN uliyobonyeza sio sahihi. PIN lazima iwe tofauti na pin yako ya sasa. Kwa usaidizi piga simu {supportPhone}.\n0. Rudi',
+    'CON PIN uliyobonyeza sio sahihi. PIN lazima iwe tofauti na pin yako ya sasa. Kwa usaidizi piga simu {supportPhone|phone}.\n0. Rudi',
   invalidPin:
     'CON PIN yako sio sahihi, una majirobio: {remainingAttempts} yaliyobaki.\n0. Rudi',
   invalidPinAtRegistration:
-    'CON PIN uliyobonyeza sio sahihi. PIN lazima iwe na nambari nne. Kwa usaidizi piga simu {supportPhone}:\n00. Ondoka',
+    'CON PIN uliyobonyeza sio sahihi. PIN lazima iwe na nambari nne. Kwa usaidizi piga simu {supportPhone|phone}:\n00. Ondoka',
   invalidPinPC:
     'CON PIN yako sio sahihi, una majirobio: {remainingAttempts} yaliyobaki.\n0. Rudi',
   invalidPinPV:
@@ -28,7 +28,7 @@ const swa_feedback: NamespaceFeedbackTranslation = {
   invalidYOBEntry:
     'CON Mwaka wa kuzaliwa ulioweka sio sahihi. Tafadhali jaribu tena:\n0. Rudi',
   pinMismatch:
-    'CON PIN mpya na udhibitisho wa pin mpya hazilingani. Tafadhali jaribu tena. Kwa usaidizi piga simu {supportPhone}.\n0. Rudi',
+    'CON PIN mpya na udhibitisho wa pin mpya hazilingani. Tafadhali jaribu tena. Kwa usaidizi piga simu {supportPhone|phone}.\n0. Rudi',
 }
 
 export default swa_feedback

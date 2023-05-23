@@ -12,9 +12,9 @@ const eng_socialRecovery: NamespaceSocialRecoveryTranslation = {
   enteringNewGuardian:
     'CON Enter phone number of the guardian to add:\n0. Back',
   enteringPinAG:
-    'CON Enter your PIN to add guardian:\n0. Back',
+    'CON Enter your PIN to add {guardian} as a guardian:\n0. Back',
   enteringPinRG:
-    'CON Enter your PIN to remove guardian:\n0. Back',
+    'CON Enter your PIN to remove {guardian} from guardians:\n0. Back',
   enteringPinVG:
     'CON Enter your PIN to view your guardians:\n0. Back',
   exit: exit,
