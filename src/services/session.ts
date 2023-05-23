@@ -9,6 +9,8 @@ import { Connections } from '@machines/utils';
 import { UserService } from '@services/user';
 import { buildResponse, MachineContext } from '@services/machine';
 import { fallbackLanguage, tHelpers } from '@i18n/translators';
+import { logger } from '@/app';
+import { Locales } from '@i18n/i18n-types';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -78,7 +80,7 @@ async function buildContext(request: SessionRequest): Promise<MachineContext> {
   return {...context, user}
 }
 
-export async function sessionHandler(request: SessionRequest, reply: FastifyReply){
+export async function sessionHandler(request: SessionRequest, reply: FastifyReply) {
   try {
     const context = await buildContext(request)
     const sessionService = new SessionService(context.connections.db, context.ussd.requestId, context.connections.redis.ephemeral)
@@ -97,12 +99,30 @@ export async function sessionHandler(request: SessionRequest, reply: FastifyRepl
       context.data = session.data
     }
     const response = await buildResponse(context, session)
-    reply.send(response)
+    let language = fallbackLanguage();
+    if ('user' in context && context.user) {
+      language = context.user.account.language
+    }
+    await handleResponse(language, reply, response)
   } catch (error: any){
-    const response = tHelpers("systemError", fallbackLanguage())
-    reply.send(response)
+    logger.error(`Error handling session: ${error.message}`)
+    await handleError(reply)
   }
 }
+
+async function handleResponse(language: Locales, reply: FastifyReply, response: string) {
+  if (!response || !response.startsWith("CON") && !response.startsWith("END")) {
+    logger.error(`Error building response. Invalid response: ${response}`)
+    await handleError(reply, language)
+    return
+  }
+  reply.send(response)
+}
+
+async function handleError(reply: FastifyReply, language = fallbackLanguage()) {
+  reply.send(tHelpers("systemError", language))
+}
+
 
 export class SessionService {
 

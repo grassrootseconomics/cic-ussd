@@ -1,6 +1,7 @@
 import { SystemError } from '@lib/errors';
 import { SessionRequest } from '@services/session';
 import { getCountryCode } from '@lib/ussd';
+import { config } from '@/config';
 
 export const ATRequestBody = {
   type: 'object',
@@ -31,6 +32,10 @@ export async function ATPreHandlerHook(request: SessionRequest) {
   const countryCode = await getCountryCode(phoneNumber)
   if (!countryCode) {
     throw new SystemError(`Could not determine country code from phone number: ${phoneNumber}`);
+  }
+
+  if(!config.KE.SERVICE_CODES.includes(serviceCode)) {
+    throw new SystemError(`Invalid service code: ${serviceCode}`);
   }
 
   request.uContext.ussd = {
