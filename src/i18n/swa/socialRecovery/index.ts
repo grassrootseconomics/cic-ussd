@@ -12,9 +12,9 @@ const swa_socialRecovery: NamespaceSocialRecoveryTranslation = {
   enteringNewGuardian:
     'CON Weka namba ya simu ya mlinzi unayetaka kuongeza:\n0. Rudi',
   enteringPinAG:
-    'CON Weka PIN yako ili kuongeza mlinzi:\n0. Rudi',
+    'CON Weka PIN yako ili kuongeza {guardian} kama mlinzi:\n0. Rudi',
   enteringPinRG:
-    'CON Weka PIN yako ili kuondoa mlinzi:\n0. Rudi',
+    'CON Weka PIN yako ili kuondoa {guardian} kama mlinzi:\n0. Rudi',
   enteringPinVG:
     'CON Weka PIN yako ili kuona walinzi wako:\n0. Rudi',
   exit: exit,

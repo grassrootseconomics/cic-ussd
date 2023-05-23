@@ -10,7 +10,7 @@ const swa_languages: NamespaceLanguagesTranslation = {
   changeSuccess:
     'CON Ombi lako la kubadilisha lugha limefanikiwa.\n0. Rudi\n9. Ondoka',
   enteringPin:
-    'CON Tafadhali weka PIN yenye nambari nne:\n0. Rudi',
+    'CON Tafadhali weka PIN:\n0. Rudi',
   exit: exit,
   firstLanguageSet:
     'CON Chagua lugha:\n{languages}\n0. Rudi\n00.Ondoka\n11. Mbele',

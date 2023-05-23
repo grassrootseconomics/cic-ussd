@@ -6,6 +6,12 @@ import type { Locales, Translations } from './i18n-types'
 import { loadedFormatters, loadedLocales, locales } from './i18n-util'
 
 import eng from './eng'
+import fra from './fra'
+import gax from './gax'
+import kam from './kam'
+import kik from './kik'
+import luo from './luo'
+import mij from './mij'
 import swa from './swa'
 
 import eng_auth from './eng/auth'
@@ -23,6 +29,96 @@ import eng_socialRecovery from './eng/socialRecovery'
 import eng_statement from './eng/statement'
 import eng_transfer from './eng/transfer'
 import eng_voucher from './eng/voucher'
+import fra_auth from './fra/auth'
+import fra_balances from './fra/balances'
+import fra_feedback from './fra/feedback'
+import fra_helpers from './fra/helpers'
+import fra_languages from './fra/languages'
+import fra_main from './fra/main'
+import fra_pins from './fra/pins'
+import fra_profile from './fra/profile'
+import fra_registration from './fra/registration'
+import fra_settings from './fra/settings'
+import fra_sms from './fra/sms'
+import fra_socialRecovery from './fra/socialRecovery'
+import fra_statement from './fra/statement'
+import fra_transfer from './fra/transfer'
+import fra_voucher from './fra/voucher'
+import gax_auth from './gax/auth'
+import gax_balances from './gax/balances'
+import gax_feedback from './gax/feedback'
+import gax_helpers from './gax/helpers'
+import gax_languages from './gax/languages'
+import gax_main from './gax/main'
+import gax_pins from './gax/pins'
+import gax_profile from './gax/profile'
+import gax_registration from './gax/registration'
+import gax_settings from './gax/settings'
+import gax_sms from './gax/sms'
+import gax_socialRecovery from './gax/socialRecovery'
+import gax_statement from './gax/statement'
+import gax_transfer from './gax/transfer'
+import gax_voucher from './gax/voucher'
+import kam_auth from './kam/auth'
+import kam_balances from './kam/balances'
+import kam_feedback from './kam/feedback'
+import kam_helpers from './kam/helpers'
+import kam_languages from './kam/languages'
+import kam_main from './kam/main'
+import kam_pins from './kam/pins'
+import kam_profile from './kam/profile'
+import kam_registration from './kam/registration'
+import kam_settings from './kam/settings'
+import kam_sms from './kam/sms'
+import kam_socialRecovery from './kam/socialRecovery'
+import kam_statement from './kam/statement'
+import kam_transfer from './kam/transfer'
+import kam_voucher from './kam/voucher'
+import kik_auth from './kik/auth'
+import kik_balances from './kik/balances'
+import kik_feedback from './kik/feedback'
+import kik_helpers from './kik/helpers'
+import kik_languages from './kik/languages'
+import kik_main from './kik/main'
+import kik_pins from './kik/pins'
+import kik_profile from './kik/profile'
+import kik_registration from './kik/registration'
+import kik_settings from './kik/settings'
+import kik_sms from './kik/sms'
+import kik_socialRecovery from './kik/socialRecovery'
+import kik_statement from './kik/statement'
+import kik_transfer from './kik/transfer'
+import kik_voucher from './kik/voucher'
+import luo_auth from './luo/auth'
+import luo_balances from './luo/balances'
+import luo_feedback from './luo/feedback'
+import luo_helpers from './luo/helpers'
+import luo_languages from './luo/languages'
+import luo_main from './luo/main'
+import luo_pins from './luo/pins'
+import luo_profile from './luo/profile'
+import luo_registration from './luo/registration'
+import luo_settings from './luo/settings'
+import luo_sms from './luo/sms'
+import luo_socialRecovery from './luo/socialRecovery'
+import luo_statement from './luo/statement'
+import luo_transfer from './luo/transfer'
+import luo_voucher from './luo/voucher'
+import mij_auth from './mij/auth'
+import mij_balances from './mij/balances'
+import mij_feedback from './mij/feedback'
+import mij_helpers from './mij/helpers'
+import mij_languages from './mij/languages'
+import mij_main from './mij/main'
+import mij_pins from './mij/pins'
+import mij_profile from './mij/profile'
+import mij_registration from './mij/registration'
+import mij_settings from './mij/settings'
+import mij_sms from './mij/sms'
+import mij_socialRecovery from './mij/socialRecovery'
+import mij_statement from './mij/statement'
+import mij_transfer from './mij/transfer'
+import mij_voucher from './mij/voucher'
 import swa_auth from './swa/auth'
 import swa_balances from './swa/balances'
 import swa_feedback from './swa/feedback'
@@ -57,6 +153,114 @@ const localeTranslations = {
 		statement: eng_statement,
 		transfer: eng_transfer,
 		voucher: eng_voucher
+	},
+	fra: {
+		...fra,
+		auth: fra_auth,
+		balances: fra_balances,
+		feedback: fra_feedback,
+		helpers: fra_helpers,
+		languages: fra_languages,
+		main: fra_main,
+		pins: fra_pins,
+		profile: fra_profile,
+		registration: fra_registration,
+		settings: fra_settings,
+		sms: fra_sms,
+		socialRecovery: fra_socialRecovery,
+		statement: fra_statement,
+		transfer: fra_transfer,
+		voucher: fra_voucher
+	},
+	gax: {
+		...gax,
+		auth: gax_auth,
+		balances: gax_balances,
+		feedback: gax_feedback,
+		helpers: gax_helpers,
+		languages: gax_languages,
+		main: gax_main,
+		pins: gax_pins,
+		profile: gax_profile,
+		registration: gax_registration,
+		settings: gax_settings,
+		sms: gax_sms,
+		socialRecovery: gax_socialRecovery,
+		statement: gax_statement,
+		transfer: gax_transfer,
+		voucher: gax_voucher
+	},
+	kam: {
+		...kam,
+		auth: kam_auth,
+		balances: kam_balances,
+		feedback: kam_feedback,
+		helpers: kam_helpers,
+		languages: kam_languages,
+		main: kam_main,
+		pins: kam_pins,
+		profile: kam_profile,
+		registration: kam_registration,
+		settings: kam_settings,
+		sms: kam_sms,
+		socialRecovery: kam_socialRecovery,
+		statement: kam_statement,
+		transfer: kam_transfer,
+		voucher: kam_voucher
+	},
+	kik: {
+		...kik,
+		auth: kik_auth,
+		balances: kik_balances,
+		feedback: kik_feedback,
+		helpers: kik_helpers,
+		languages: kik_languages,
+		main: kik_main,
+		pins: kik_pins,
+		profile: kik_profile,
+		registration: kik_registration,
+		settings: kik_settings,
+		sms: kik_sms,
+		socialRecovery: kik_socialRecovery,
+		statement: kik_statement,
+		transfer: kik_transfer,
+		voucher: kik_voucher
+	},
+	luo: {
+		...luo,
+		auth: luo_auth,
+		balances: luo_balances,
+		feedback: luo_feedback,
+		helpers: luo_helpers,
+		languages: luo_languages,
+		main: luo_main,
+		pins: luo_pins,
+		profile: luo_profile,
+		registration: luo_registration,
+		settings: luo_settings,
+		sms: luo_sms,
+		socialRecovery: luo_socialRecovery,
+		statement: luo_statement,
+		transfer: luo_transfer,
+		voucher: luo_voucher
+	},
+	mij: {
+		...mij,
+		auth: mij_auth,
+		balances: mij_balances,
+		feedback: mij_feedback,
+		helpers: mij_helpers,
+		languages: mij_languages,
+		main: mij_main,
+		pins: mij_pins,
+		profile: mij_profile,
+		registration: mij_registration,
+		settings: mij_settings,
+		sms: mij_sms,
+		socialRecovery: mij_socialRecovery,
+		statement: mij_statement,
+		transfer: mij_transfer,
+		voucher: mij_voucher
 	},
 	swa: {
 		...swa,

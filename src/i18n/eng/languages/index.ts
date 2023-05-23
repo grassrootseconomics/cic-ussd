@@ -10,7 +10,7 @@ const eng_languages: NamespaceLanguagesTranslation = {
   changeSuccess:
     'CON Your language change request was successful.\n0. Back\n9. Exit',
   enteringPin:
-    'CON Please enter four number PIN:\n0. Back',
+    'CON Enter your PIN:\n0. Back',
   exit: exit,
   firstLanguageSet:
     'CON Select language:\n{languages}\n0. Back\n00.Exit\n11. Next',

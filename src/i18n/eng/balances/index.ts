@@ -6,7 +6,7 @@ const { accountBlocked, exit } = eng
 const eng_balances: NamespaceBalancesTranslation = {
   accountBlocked: accountBlocked,
   balancesMenu:
-    'CON My balance\n1. My balance\n2. Community balance\n0. Back',
+    'CON Balances:\n1. My balance\n2. Community balance\n0. Back',
   enteringPinA:
     'CON Please enter your PIN:\n0. Back',
   enteringPinC:
