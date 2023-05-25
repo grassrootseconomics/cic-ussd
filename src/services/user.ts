@@ -129,7 +129,7 @@ class ReconstructionService {
     }
   }
   async reconstructStatement(db: PostgresDb, transactions: GraphTransaction[]){
-    return await generateStatement(this.account.address, db, this.graphql, this.redis, transactions);
+    return await generateStatement(this.account.address, db, this.graphql, this.account.language, this.redis, transactions);
   }
 
   async reconstructVouchers(symbolMap: Map<string, string>): Promise<[CachedVoucher, CachedVoucher[]]> {

@@ -39,8 +39,8 @@ export function cashRounding (amount: string): number {
   return parseFloat(truncatedAmount.toFixed(2))
 }
 
-export async function formatDate (date: Date): Promise<string> {
-  return moment(date).tz(config.TIMEZONE).format('DD-MM-YYYY HH:mm A')
+export async function formatDate (date: number): Promise<string> {
+  return moment.unix(date).tz(config.TIMEZONE).format('DD-MM-YYYY HH:mm A')
 }
 
 export async function getCountryCode (phoneNumber: string) {
