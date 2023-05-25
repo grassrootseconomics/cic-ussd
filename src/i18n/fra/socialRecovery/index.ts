@@ -32,11 +32,11 @@ const fra_socialRecovery: NamespaceSocialRecoveryTranslation = {
     'END Une erreur s\'est produite lors du chargement de vos tuteurs Veuillez réessayer plus tard',
   pinManagementMenu: pinManagementMenu,
   secondGuardiansSet:
-    'CON Parrains:\n{guardians}\n11. Suivant\n22. Precedent\n00. Quitter',
+    'CON Parrains:\n{guardians}\n11. Suivant\n22. Retour\n00. Quitter',
   socialRecoveryMenu:
     'CON PIN parrain\n1. Ajouter\n2. Retirer\n3. Consulter\n0. Retour',
   thirdGuardiansSet:
-    'CON Parrains:\n{guardians}\n22. Precedent\n00. Quitter'
+    'CON Parrains:\n{guardians}\n22. Retour\n00. Quitter'
 }
 
 export default fra_socialRecovery

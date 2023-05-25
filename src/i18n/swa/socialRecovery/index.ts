@@ -36,7 +36,7 @@ const swa_socialRecovery: NamespaceSocialRecoveryTranslation = {
   socialRecoveryMenu:
     'CON Ulinzi wa PIN:\n1. Ongeza mlinzi\n2. Ondoa mlinzi\n3. Angalia walinzi\n0. Rudi',
   thirdGuardiansSet:
-    'CON Walinzi:\n{guardians}\n22. Rudi\n00.Ondoka'
+    'CON Walinzi:\n{guardians}\n22. Rudi\n00. Ondoka'
 }
 
 export default swa_socialRecovery

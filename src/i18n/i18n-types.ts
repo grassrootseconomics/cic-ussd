@@ -130,7 +130,7 @@ export type NamespaceBalancesTranslation = {
 	 */
 	loadError: string
 	/**
-	 * C​O​N​ ​S​a​l​i​o​ ​l​a​k​o​ ​n​i​:​ ​{​b​a​l​a​n​c​e​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​.​
+	 * C​O​N​ ​S​a​l​i​o​ ​l​a​k​o​ ​n​i​:​ ​{​b​a​l​a​n​c​e​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​
 ​0​.​ ​R​u​d​i​
 ​9​.​ ​O​n​d​o​k​a
 	 * @param {unknown} balance
@@ -563,7 +563,7 @@ export type NamespaceRegistrationTranslation = {
 	 */
 	accountCreationSuccess: string
 	/**
-	 * E​N​D​ ​A​s​a​n​t​e​ ​k​w​a​ ​k​u​t​u​m​i​a​ ​h​u​d​u​m​a​ ​y​a​ ​S​a​r​a​f​u​.
+	 * E​N​D​ ​A​s​a​n​t​e​ ​k​w​a​ ​k​u​t​u​m​i​a​ ​h​u​d​u​m​a​ ​y​a​ ​S​a​r​a​f​u​.​ ​K​w​a​h​e​r​i​!
 	 */
 	exit: string
 	/**
@@ -595,16 +595,6 @@ export type NamespaceRegistrationTranslation = {
 
 export type NamespaceSettingsTranslation = {
 	/**
-	 * C​O​N​ ​A​k​a​u​n​t​i​ ​y​a​n​g​u​
-​1​.​ ​W​a​s​i​f​u​ ​w​a​n​g​u​
-​2​.​ ​B​a​d​i​l​i​ ​l​u​g​h​a​
-​3​.​ ​A​n​g​a​l​i​a​ ​s​a​l​i​o​
-​4​.​ ​T​a​a​r​i​f​a​ ​y​a​ ​m​a​t​u​m​i​z​i​
-​5​.​ ​M​i​p​a​n​g​i​l​i​o​ ​y​a​ ​P​I​N​
-​0​.​ ​R​u​d​i
-	 */
-	settingsMenu: string
-	/**
 	 * C​O​N​ ​S​a​l​i​o​:​ ​{​b​a​l​a​n​c​e​|​c​u​r​r​e​n​c​y​}​ ​{​s​y​m​b​o​l​}​
 ​1​.​ ​T​u​m​a​
 ​2​.​ ​S​a​r​a​f​u​ ​y​a​n​g​u​
@@ -614,6 +604,16 @@ export type NamespaceSettingsTranslation = {
 	 * @param {unknown} symbol
 	 */
 	mainMenu: RequiredParams<'balance|currency' | 'symbol'>
+	/**
+	 * C​O​N​ ​A​k​a​u​n​t​i​ ​y​a​n​g​u​
+​1​.​ ​W​a​s​i​f​u​ ​w​a​n​g​u​
+​2​.​ ​B​a​d​i​l​i​ ​l​u​g​h​a​
+​3​.​ ​A​n​g​a​l​i​a​ ​s​a​l​i​o​
+​4​.​ ​T​a​a​r​i​f​a​ ​y​a​ ​m​a​t​u​m​i​z​i​
+​5​.​ ​M​i​p​a​n​g​i​l​i​o​ ​y​a​ ​P​I​N​
+​0​.​ ​R​u​d​i
+	 */
+	settingsMenu: string
 }
 
 export type NamespaceSmsTranslation = {
@@ -623,9 +623,20 @@ export type NamespaceSmsTranslation = {
 	 */
 	accountCreated: RequiredParams<'supportPhone|phone'>
 	/**
+	 * {​i​n​i​t​i​a​t​o​r​}​ ​a​m​e​t​u​m​a​ ​o​m​b​i​ ​l​a​ ​k​u​b​a​d​i​l​i​s​h​a​ ​P​I​N​ ​y​a​k​o
+	 * @param {unknown} initiator
+	 */
+	pinReset: RequiredParams<'initiator'>
+	/**
 	 * K​w​a​ ​k​u​t​u​m​i​a​ ​h​i​i​ ​h​u​d​u​m​a​ ​u​m​e​k​u​b​a​l​i​ ​s​h​e​r​i​a​ ​n​a​ ​m​a​s​h​a​r​t​i​ ​y​a​f​u​a​t​a​y​o​ ​h​t​t​p​:​/​/​g​r​a​s​s​e​c​o​n​.​o​r​g​/​t​o​s​.
 	 */
 	termsAndConditions: string
+	/**
+	 * {​s​e​n​d​e​r​}​ ​a​m​e​k​u​k​a​r​i​b​i​s​h​a​ ​k​w​a​ ​m​t​a​n​d​a​o​ ​w​a​ ​S​a​r​a​f​u​.​ ​B​o​n​y​e​z​a​*​3​8​4​*​9​6​#​ ​S​a​f​a​r​i​c​o​m​ ​a​u​*​4​8​3​*​4​6​#​ ​k​w​a​ ​m​i​t​a​n​d​a​o​ ​t​o​f​a​u​t​i​.​ ​U​s​a​i​d​i​z​i​ ​{​s​u​p​p​o​r​t​P​h​o​n​e​|​p​h​o​n​e​}​.
+	 * @param {unknown} sender
+	 * @param {unknown} supportPhone
+	 */
+	upsell: RequiredParams<'sender' | 'supportPhone|phone'>
 }
 
 export type NamespaceSocialRecoveryTranslation = {
@@ -1152,7 +1163,7 @@ export type TranslationFunctions = {
 		 */
 		loadError: () => LocalizedString
 		/**
-		 * CON Salio lako ni: {balance|currency} {symbol}.
+		 * CON Salio lako ni: {balance|currency} {symbol}
 	0. Rudi
 	9. Ondoka
 		 */
@@ -1547,7 +1558,7 @@ export type TranslationFunctions = {
 		 */
 		accountCreationSuccess: () => LocalizedString
 		/**
-		 * END Asante kwa kutumia huduma ya Sarafu.
+		 * END Asante kwa kutumia huduma ya Sarafu. Kwaheri!
 		 */
 		exit: () => LocalizedString
 		/**
@@ -1575,6 +1586,14 @@ export type TranslationFunctions = {
 	}
 	settings: {
 		/**
+		 * CON Salio: {balance|currency} {symbol}
+	1. Tuma
+	2. Sarafu yangu
+	3. Akaunti yangu
+	4. Usaidizi
+		 */
+		mainMenu: (arg: { balance: unknown, symbol: unknown }) => LocalizedString
+		/**
 		 * CON Akaunti yangu
 	1. Wasifu wangu
 	2. Badili lugha
@@ -1584,14 +1603,6 @@ export type TranslationFunctions = {
 	0. Rudi
 		 */
 		settingsMenu: () => LocalizedString
-		/**
-		 * CON Salio: {balance|currency} {symbol}
-	1. Tuma
-	2. Sarafu yangu
-	3. Akaunti yangu
-	4. Usaidizi
-		 */
-		mainMenu: (arg: { balance: unknown, symbol: unknown }) => LocalizedString
 	}
 	sms: {
 		/**
@@ -1599,9 +1610,17 @@ export type TranslationFunctions = {
 		 */
 		accountCreated: (arg: { supportPhone: unknown }) => LocalizedString
 		/**
+		 * {initiator} ametuma ombi la kubadilisha PIN yako
+		 */
+		pinReset: (arg: { initiator: unknown }) => LocalizedString
+		/**
 		 * Kwa kutumia hii huduma umekubali sheria na masharti yafuatayo http://grassecon.org/tos.
 		 */
 		termsAndConditions: () => LocalizedString
+		/**
+		 * {sender} amekukaribisha kwa mtandao wa Sarafu. Bonyeza*384*96# Safaricom au*483*46# kwa mitandao tofauti. Usaidizi {supportPhone|phone}.
+		 */
+		upsell: (arg: { sender: unknown, supportPhone: unknown }) => LocalizedString
 	}
 	socialRecovery: {
 		/**

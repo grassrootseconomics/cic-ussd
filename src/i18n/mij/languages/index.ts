@@ -5,8 +5,10 @@ const { accountBlocked, exit } = mij
 
 const mij_languages: NamespaceLanguagesTranslation = {
   accountBlocked: accountBlocked,
-  changeError: 'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  changeSuccess: 'CON xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.\n0. Uya nyuma\n9. Ombola',
+  changeError:
+    'END Kukala na hitilafu wakati kubadilisha luga. Unavoywa kujeza kaheri.',
+  changeSuccess:
+    'CON Voyoro ra kugaluza luga rifanikiwa.\n0. Uya nyuma\n9. Ombola.',
   enteringPin: 'CON Unavoywa piniyo\n0. Uya nyuma',
   exit: exit,
   firstLanguageSet:

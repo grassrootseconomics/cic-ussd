@@ -7,7 +7,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import { SystemError } from '@lib/errors';
 import { Connections } from '@machines/utils';
 import { UserService } from '@services/user';
-import { buildResponse, MachineContext } from '@services/machine';
+import { buildResponse, MachineContext, notifyingMachines } from '@services/machine';
 import { fallbackLanguage, tHelpers } from '@i18n/translators';
 import { logger } from '@/app';
 import { Locales } from '@i18n/i18n-types';
@@ -82,7 +82,7 @@ async function buildContext(request: SessionRequest): Promise<MachineContext> {
 
 export async function sessionHandler(request: SessionRequest, reply: FastifyReply) {
   try {
-    const context = await buildContext(request)
+    let context = await buildContext(request)
     const sessionService = new SessionService(context.connections.db, context.ussd.requestId, context.connections.redis.ephemeral)
     let session = await sessionService.get() as SessionInterface
     if(!session){
@@ -95,9 +95,17 @@ export async function sessionHandler(request: SessionRequest, reply: FastifyRepl
         version: 1
       })
     }
+    // update session with context data
     if (session.data && Object.keys(session.data).length > 0){
       context.data = session.data
     }
+
+    // add notifier to context if involves a notifying machine-id
+    if(session.machineId && notifyingMachines.includes(session.machineId)){
+      const notifier = request.server.atNotifier
+      context = {...context, notifier }
+    }
+
     const response = await buildResponse(context, session)
     let language = fallbackLanguage();
     if ('user' in context && context.user) {

@@ -15,7 +15,7 @@ const luo_helpers: NamespaceHelpersTranslation = {
   noMoreVouchers: 'Onge Sarafu moko',
   notProvided: 'Okoketi',
   services: 'Gima iuso:',
-  systemError: 'END Sarafu nigu chandruok matin. Tem kendo bange',
+  systemError: 'END Sarafu nigu chandruok matin. Tem kendo bange.',
   unknownAddress: 'Akaunt okongere'
 }
 

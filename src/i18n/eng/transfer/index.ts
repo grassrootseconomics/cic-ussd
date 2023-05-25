@@ -17,7 +17,7 @@ const eng_transfer: NamespaceTransferTranslation = {
     invalidRecipient:
       'CON {recipient} is not registered or invalid, please try again:\n0. Back',
     invalidRecipientWithInvite:
-      'CON {recipient} is not registered or invalid, please try again:\n1. Invite to Sarafu Network.\n9. Exit',
+      'CON {recipient} is not registered or invalid, please try again:\n0. Back\n1. Invite to Sarafu Network.\n9. Exit',
     inviteError:
       'END Your invite request for {invitee} to Sarafu Network failed. Please try again later.',
     inviteSuccess:

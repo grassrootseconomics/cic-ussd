@@ -16,7 +16,7 @@ const mij_auth: NamespaceAuthTranslation = {
   exit: exit,
   mainMenu: mainMenu,
   processingAccount:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    'END Akauntiyo ichere tengezwa. Undaphokera Ujumbe mufuhi akauntiyo ichikala tayari.'
 
 }
 

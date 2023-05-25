@@ -2,7 +2,7 @@ import { PostgresDb } from '@fastify/postgres';
 import { GraphQLClient } from 'graphql-request';
 import { Provider } from 'ethers';
 import { Redis as RedisClient } from 'ioredis';
-import { getAddressFromTill, getAddressFromVpa, Ussd, validatePhoneNumber } from '@lib/ussd';
+import { getAddressFromTill, getAddressFromVpa, Notifier, Ussd, validatePhoneNumber } from '@lib/ussd';
 import { logger } from '@/app';
 import { User, UserService } from '@services/user';
 import { BaseMachineError, MachineError } from '@lib/errors';
@@ -58,6 +58,10 @@ export interface MachineInterface {
 export interface MachineServiceInterface {
   stop: () => void,
   transition: (event: MachineEvent) => void,
+}
+
+export interface NotifierContext extends UserContext {
+  notifier: Notifier
 }
 
 export interface UserContext extends BaseContext {
@@ -119,9 +123,9 @@ export function updateErrorMessages (context: BaseContext, event: any) {
   return context
 }
 
-export async function validateUser(countryCode: CountryCode, phoneNumber: string, redis: RedisClient){
+export async function validateUser(countryCode: CountryCode, db: PostgresDb, phoneNumber: string, redis: RedisClient){
   const key = validatePhoneNumber(countryCode, phoneNumber)
-  const user = new UserService(key, redis).get()
+  const user = new UserService(key, redis).get(undefined, db)
   if (!user) {
     throw new MachineError(BaseMachineError.UNKNOWN_ACCOUNT, `Account not found for phone number: ${key}.`)
   }
@@ -145,7 +149,7 @@ export async function validateTargetUser(context: UserContext, input: string) {
     phoneNumber = input
   }
 
-  const targetUser = await validateUser(countryCode, phoneNumber, redis.persistent)
+  const targetUser = await validateUser(countryCode, db, phoneNumber, redis.persistent)
 
   if (user?.account.phone_number === targetUser?.account?.phone_number) {
     throw new MachineError(BaseMachineError.SELF_INTERACTION, "Cannot interact with self.")

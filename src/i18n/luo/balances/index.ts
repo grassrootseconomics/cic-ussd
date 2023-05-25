@@ -15,11 +15,11 @@ const luo_balances: NamespaceBalancesTranslation = {
   fetchError:
     'END Nitie chandruok e aguch anyuola tem kendo.',
   fetchSuccess:
-    'CON Balang mar anyuola ni en {balance|currency} {symbol}\n0. Chien\n9. Wuog',
+    'CON Balang mar anyuola ni en {balance|currency} {symbol}\n0. Chien\n9. Wuok',
   loadError:
     'END Ntie chandruok e golo omenda mari modong. Tem kendo',
   loadSuccess:
-    'CON Omenda mari en {balance|currency}{symbol}\n0. Chien \n9. Wuog'
+    'CON Omenda mari en {balance|currency}{symbol}\n0. Chien \n9. Wuok'
 }
 
 export default luo_balances

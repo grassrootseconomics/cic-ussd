@@ -18,7 +18,7 @@ const fra_voucher: NamespaceVoucherTranslation = {
   secondVoucherSet:
     'CON Sélectionnez le numéro ou le symbole de vos bons:\n{vouchers}\n11. Suivant\n22. Retour\n00. Sortie',
   setError:
-    'END ',
+    'END Une erreur s\'est produite lors de la définition de votre bon Veuillez réessayer plus tard.',
   setSuccess:
     'CON Succès! {symbol} est maintenant votre bon actif.\n0. Retour \n9. Sortie',
   thirdVoucherSet:

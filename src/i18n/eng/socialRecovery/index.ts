@@ -36,7 +36,7 @@ const eng_socialRecovery: NamespaceSocialRecoveryTranslation = {
   socialRecoveryMenu:
     'CON PIN guarding:\n1. Add guardian\n2. Remove guardian\n3. View guardians\n0. Back',
   thirdGuardiansSet:
-    'CON Guardians:\n{guardians}\n22. Back\n00.Exit'
+    'CON Guardians:\n{guardians}\n22. Back\n00. Exit'
 }
 
 export default eng_socialRecovery

@@ -6,7 +6,7 @@ const { mainMenu } = kik_main
 const kik_settings: NamespaceSettingsTranslation = {
   mainMenu: mainMenu,
   settingsMenu:
-    'CON Akaunti yakwa\n1. Maritwa makwa\n2. Cagura rothiumu\n3. Rora matigari\n4. Rora rugano\n5. Cenjia PIN'
+    'CON Akaunti yakwa\n1. Maritwa makwa\n2. Cagura rothiumu\n3. Rora matigari\n4. Rora rugano\n5. Cenjia PIN\n0. Coka'
 }
 
 export default kik_settings

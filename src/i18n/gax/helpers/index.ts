@@ -15,7 +15,7 @@ const gax_helpers: NamespaceHelpersTranslation = {
   noMoreVouchers: 'Sarafu dibii injirt',
   notProvided: 'Kes inkan',
   services: 'Maan gurgurt:',
-  systemError: 'END sarafu diib mitambo argat. Saadhi garii itdheebi',
+  systemError: 'END sarafu diib mitambo argat. Saadhi garii itdheebi.',
   unknownAddress: 'Akantin injir'
 }
 

@@ -17,15 +17,15 @@ const gax_pins: NamespacePinsTranslation = {
     'CON Namba ta atin korkorad kekeyaad ta pin badilifaad\n0.Dheebi',
   exit: exit,
   pinChangeError:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.',
+    'END Dibii yabaat oja pin tante badilishi feeth.Saadhi garii itdheebi.',
   pinChangeSuccess:
-    'CON xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.\n0. Dheebi\n9. Bai',
+    'CON .Qarqars kake ka pin badilishu yataat\\n0. Dheebi\\n9. Bai',
   pinManagementMenu:
     'CON pin ta atin feet\n1.Pin badilifaad\n2.Pin nam dibii badilifaad\n3.Pin Korkorad\n0.Dheebi',
   socialRecoveryMenu:
     'CON PIN korkorad\n1. Darad\n2. Baas\n3. Laaalad\n0.Dheebi',
   wardResetError:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx {ward}.',
+    'END Pin resetin Ya dibii baat {ward}.',
   wardResetSuccess:
     'CON Yadandeeth:Yaa pin badilifadu ergan {ward}\n0.Dheebi\n9.Bai'
 }

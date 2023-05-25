@@ -25,6 +25,7 @@ import {
   MachineId,
   MachineInterface,
   MachineServiceInterface,
+  NotifierContext,
   UserContext
 } from '@machines/utils';
 import { ActorMenu, mainMenu, pinManagementMenu, settingsMenu } from '@lib/menus';
@@ -36,6 +37,7 @@ export type MachineContext =
   | BaseContext
   | BalancesContext
   | LanguagesContext
+  | NotifierContext
   | PinManagementContext
   | ProfileContext
   | RegistrationContext
@@ -60,6 +62,8 @@ export const machines: MachineInterface[] = [
   voucherMachine
 ]
 
+// TODO[Philip]: "Notifiable" can be a machine attribute to insert the notifier to context in a cleaner way.
+export const notifyingMachines: MachineId[] = [MachineId.PIN_MANAGEMENT, MachineId.TRANSFER]
 
 class MachineService implements MachineServiceInterface {
 

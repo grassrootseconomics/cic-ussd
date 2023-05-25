@@ -6,9 +6,9 @@ const { accountBlocked, exit } = gax
 const gax_languages: NamespaceLanguagesTranslation = {
   accountBlocked: accountBlocked,
   changeError:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    'END Dibii ya baat oja afaan badilishu feeth, Sadhi garii itdheebi',
   changeSuccess:
-    'CON xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.\n0. Dheebi\n9. Bai',
+    'CON Qarqars kake ka afaan badilishan yataat\n0. Dheebi\n9. Bai',
   enteringPin:
     'CON Pin kekhai\n0. Dheebi',
   exit: exit,

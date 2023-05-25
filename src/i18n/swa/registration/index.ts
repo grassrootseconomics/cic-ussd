@@ -1,11 +1,14 @@
 import { NamespaceRegistrationTranslation } from '../../i18n-types';
+import swa from '..'
+
+const { exit } = swa
 
 const swa_registration: NamespaceRegistrationTranslation = {
   accountCreationError:
     'END Ombi lako la kusajiliwa haliwezi kukamilishwa. Tafadhali jaribu tena baadaye.',
   accountCreationSuccess:
     'END Akaunti yako ya Sarafu inatayarishwa. Utapokea ujumbe wa SMS akaunti yako ikiwa tayari.',
-  exit: 'END Asante kwa kutumia huduma ya Sarafu.',
+  exit: exit,
   firstLanguageSet:
     'CON Karibu Sarafu Network!\n{languages}\n00.Ondoka\n11. Mbele',
   secondLanguageSet:

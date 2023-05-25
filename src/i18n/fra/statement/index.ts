@@ -12,12 +12,13 @@ const fra_statement: NamespaceStatementTranslation = {
   exit: exit,
   firstTransactionSet:
     'CON {transactions}\n0. Retour\n11. Suivant\n00. Quitter',
-  loadError: 'END Une erreur s\'est produite lors du chargement de votre relevé de compte Veuillez réessayer plus tard',
+  loadError:
+    'END Une erreur s\'est produite lors du chargement de votre relevé de compte Veuillez réessayer plus tard',
   mainMenu: mainMenu,
   secondTransactionSet:
-    'CON {transactions}\n11. Suivant\n22. Precedent\n00. Quitter',
+    'CON {transactions}\n11. Suivant\n22. Retour\n00. Quitter',
   thirdTransactionSet:
-    'CON {transactions}\n22. Precedent\n00. Quitter'
+    'CON {transactions}\n22. Retour\n00. Quitter'
 }
 
 export default fra_statement

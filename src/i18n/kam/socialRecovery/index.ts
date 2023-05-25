@@ -27,15 +27,15 @@ const kam_socialRecovery: NamespaceSocialRecoveryTranslation = {
   guardianRemovalError:
     'END Kwithiwa na kathina kwa kumya {guardian}ta musovei waku',
   guardianRemovalSuccess:
-    'CON{guardian} musovei waku newaumwa\n0. Syoka\n9. Uma',
+    'CON {guardian} musovei waku newaumwa\n0. Syoka\n9. Uma',
   loadError: '',
   pinManagementMenu: pinManagementMenu,
   secondGuardiansSet:
-    'CON{guardians}\n11. Kusovya\n22. Syoka\n00.Syoka',
+    'CON Atetheesya:\n{guardians}\n11. Kusovya\n22. Syoka\n00.Syoka',
   socialRecoveryMenu:
     'CON Atetheesya ma PIN\n1. Sisya\n2. Ongela\n3. Umya\n0. Syoka',
   thirdGuardiansSet:
-    'CON{guardians}\n22. Syoka\n00. Uma'
+    'CON Atetheesya:\n{guardians}\n22. Syoka\n00. Uma'
 }
 
 export default kam_socialRecovery

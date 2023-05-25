@@ -1,7 +1,9 @@
 import type { NamespaceAuthTranslation } from '../../i18n-types';
-import eng from '..';
+import eng from '..'
+import eng_main from '../main'
 
 const { accountBlocked, exit } = eng
+const { mainMenu } = eng_main
 
 const eng_auth: NamespaceAuthTranslation = {
     accountBlocked: accountBlocked,
@@ -12,8 +14,7 @@ const eng_auth: NamespaceAuthTranslation = {
     enteringPin:
       'CON Please enter a new four number PIN for your account:\n00. Exit',
     exit: exit,
-    mainMenu:
-      'CON Balance: {balance|currency} {symbol}\n1. Send\n2. My Vouchers\n3. My Account\n4. Help',
+    mainMenu: mainMenu,
     processingAccount:
       'END Your account is still being created. You will receive an SMS when your account is ready.'
 }

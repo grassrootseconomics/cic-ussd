@@ -303,11 +303,14 @@ export async function updateGraphPersonalInformation(
 
   const variables = { personal_information };
   const result = await graphql.request<{ insert_personal_information_one: Partial<PersonalInformation> }>(query, variables);
+  const personalInformation = result.insert_personal_information_one
+  const tag = (personalInformation?.given_names && personalInformation?.family_name) ? `${personalInformation.given_names} ${personalInformation.family_name} ${phoneNumber}`: phoneNumber
 
   await new UserService(phoneNumber, redis).update({
     graph:{
       personalInformation: result.insert_personal_information_one
-    }
+    },
+    tag
   })
   return result.insert_personal_information_one;
 }

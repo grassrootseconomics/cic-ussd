@@ -17,15 +17,15 @@ const mij_pins: NamespacePinsTranslation = {
     'CON Ika namba ya simu muimirizi wako kugaluza piniyo\n0. Uya Nyuma',
   exit: exit,
   pinChangeError:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.',
+    'END Phakala na hitilafu phenye kugaluza pini. Unavoywa kujeza kaheri badaye.',
   pinChangeSuccess:
-    'CON xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.\n0. Uya nyuma\n9. Ombola',
+    'CON Mavoyogo ga kugaluza pini gafaulu.\n0. Uya nyuma\n9. Ombola',
   pinManagementMenu:
     'CON Tsaguzi kwenye pini\n1. Galuza pini\n2. Ikato pini\n3. Imira pini\n0. Uya nyuma',
   socialRecoveryMenu:
     'CON Kinjira PIN\n1. Ika\n2. Usa\n3. Lola\n0. Uya nyuma',
   wardResetError:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx {ward}.',
+    'END Kukala na hitilafu kugaluzani {ward} PIN.',
   wardResetSuccess:
     'CON Uweza: Umuhumira pini agaluze {ward}\n0. Uya nyuma\n9. Ombola'
 }

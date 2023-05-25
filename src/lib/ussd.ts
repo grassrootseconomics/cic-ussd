@@ -225,7 +225,7 @@ export function sanitizePhoneNumber (phoneNumber: string, countryCode?: CountryC
   return phoneNumber
 }
 
-export function sendSMS(message: string, notifier: Notifier, recipient: string[]) {
+export async function sendSMS(message: string, notifier: Notifier, recipient: string[]) {
   logger.debug(`Sending SMS to: ${recipient.join(', ')}`)
   return notifier.send(message, recipient)
 }

@@ -19,7 +19,7 @@ const mij_balances: NamespaceBalancesTranslation = {
   loadError:
     'END Kukala na makosa kwa urehani balansi. Tafadhali jeza kaheri baadaye',
   loadSuccess:
-    'CON Balansi yakwako ni {balance|currency} {symbol}\n0. Uya\n9. Ombola'
+    'CON Saliyoro ni: {balance|currency} {symbol}\n0. Back\n9.  Ombola.'
 }
 
 export default mij_balances

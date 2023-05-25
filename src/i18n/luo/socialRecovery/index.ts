@@ -23,11 +23,11 @@ const luo_socialRecovery: NamespaceSocialRecoveryTranslation = {
   guardianAdditionError:
     'CON Ntie chandruok e medo jakony {guardian}',
   guardianAdditionSuccess:
-    'CON {guardian} Jakony omedi kaka jakonyni\n0. Chien\n9. Wuog',
+    'CON {guardian} Jakony omedi kaka jakonyni\n0. Chien\n9. Wuok',
   guardianRemovalError:
     'END Ntie chandruok e golo {guardian} kaka jakonyni. Tem kendo',
   guardianRemovalSuccess:
-    'CON {guardian} ogol kaka jakonyni\n0. Chien\n9. Wuog',
+    'CON {guardian} ogol kaka jakonyni\n0. Chien\n9. Wuok',
   loadError:
     'END Ntie chandruok e medo jakony kaka jakonyni. Tem kendo bange.',
   pinManagementMenu:pinManagementMenu,

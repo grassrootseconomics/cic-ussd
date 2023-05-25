@@ -16,7 +16,7 @@ const kik_auth: NamespaceAuthTranslation = {
   exit: exit,
   mainMenu: mainMenu,
   processingAccount:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    'END Akaunti yaku no irathondekwo. Ni ukwamukira SMS akaunti yaku yareka.'
 }
 
 export default kik_auth

@@ -19,7 +19,7 @@ const kam_balances: NamespaceBalancesTranslation = {
   loadError:
     'END Thina waumila ivinda ya kusisya balanci ya kikundi kwawenyivyo tata ingi kavindane kangi.',
   loadSuccess:
-    'CON Mbalansi yaku: {balance|currency} {symbol}.\n0. Syoka\n9. Uma'
+    'CON Mbalansi yaku: {balance|currency} {symbol}\n0. Syoka\n9. Uma'
 }
 
 export default kam_balances

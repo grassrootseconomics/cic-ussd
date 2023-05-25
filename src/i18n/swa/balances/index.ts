@@ -19,7 +19,7 @@ const swa_balances: NamespaceBalancesTranslation = {
   loadError:
     'END Tatizo limetokea wakati wa kuangali salio lako. Tafadhali jaribu tena baadaye.',
   loadSuccess:
-    'CON Salio lako ni: {balance|currency} {symbol}.\n0. Rudi\n9. Ondoka'
+    'CON Salio lako ni: {balance|currency} {symbol}\n0. Rudi\n9. Ondoka'
 }
 
 export default swa_balances

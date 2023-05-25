@@ -36,7 +36,7 @@ const mij_socialRecovery: NamespaceSocialRecoveryTranslation = {
   socialRecoveryMenu:
     'CON Kinjira PIN\n1. Ika\n2. Usa\n3. Lola\n0. Uya nyuma',
   thirdGuardiansSet:
-    'CON Kinjira\n{guardians}\n22. Uya Nyuma\n00.Ombola'
+    'CON Kinjira\n{guardians}\n22. Uya Nyuma\n00. Ombola'
 }
 
 export default mij_socialRecovery
