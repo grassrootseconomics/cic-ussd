@@ -196,8 +196,7 @@ export const stateMachine = createMachine<ProfileContext, MachineEvent>({
       entry: send({ type: 'RETRY', feedback: 'invalidPinPV' }),
       on: {
         RETRY: 'enteringProfileViewPin'
-      },
-      tags: 'error'
+      }
     },
     invalidMarketplaceEntry: {
       description: 'Entered service is invalid. Raises a RETRY event to prompt user to retry service entry.',
@@ -310,7 +309,6 @@ async function initiateProfileChange(context: ProfileContext, event: any) {
           id: graphAccountId,
           marketplace: cachedMarketplace,
         },
-        personalInformation: cachedPersonalInformation,
         user: {
           id: graphUserId
         }
