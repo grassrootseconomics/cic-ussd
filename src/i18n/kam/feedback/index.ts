@@ -1,6 +1,10 @@
 import type { NamespaceFeedbackTranslation } from '../../i18n-types'
+import kam from '..'
+
+const { accountBlocked } = kam
 
 const kam_feedback: NamespaceFeedbackTranslation = {
+  accountBlocked: accountBlocked,
   invalidAmount:
     'CON Kiwango kila watuma nikenene kuvita balanci yaku kana kiyaele kwawenyivyo, tata ingi\n0. Syoka',
   invalidGenderOption:

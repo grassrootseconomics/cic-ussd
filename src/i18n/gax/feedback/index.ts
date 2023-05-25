@@ -1,6 +1,10 @@
 import type { NamespaceFeedbackTranslation } from '../../i18n-types'
+import gax from '..'
+
+const { accountBlocked } = gax
 
 const gax_feedback: NamespaceFeedbackTranslation = {
+  accountBlocked,
   invalidAmount:
     'CON Agii atin ergite gudhaa ag athin argat ir. Mar dibii itdheeb\n0 Rudi',
   invalidGenderOption:

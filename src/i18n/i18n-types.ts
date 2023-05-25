@@ -141,6 +141,10 @@ export type NamespaceBalancesTranslation = {
 
 export type NamespaceFeedbackTranslation = {
 	/**
+	 * E​N​D​ ​P​I​N​ ​y​a​k​o​ ​i​m​e​f​u​n​g​w​a​.​ ​K​w​a​ ​u​s​a​i​d​i​z​i​ ​t​a​f​a​d​h​a​l​i​ ​p​i​g​a​ ​s​i​m​u​ ​k​w​a​:​ ​0​7​5​7​6​2​8​8​8​5​.
+	 */
+	accountBlocked: string
+	/**
 	 * C​O​N​ ​K​i​a​s​i​ ​u​l​i​c​h​o​t​u​m​a​ ​n​i​ ​k​i​k​u​b​w​a​ ​k​u​l​i​k​o​ ​k​i​a​s​i​ ​u​l​i​c​h​o​n​a​c​h​o​ ​a​u​ ​s​i​o​ ​s​a​h​i​h​i​.​ ​T​a​f​a​d​h​a​l​i​ ​j​a​r​i​b​u​ ​t​e​n​a​:​
 ​0​.​ ​R​u​d​i
 	 */
@@ -741,7 +745,7 @@ export type NamespaceSocialRecoveryTranslation = {
 	 * C​O​N​ ​W​a​l​i​n​z​i​:​
 ​{​g​u​a​r​d​i​a​n​s​}​
 ​2​2​.​ ​R​u​d​i​
-​0​0​.​O​n​d​o​k​a
+​0​0​.​ ​O​n​d​o​k​a
 	 * @param {unknown} guardians
 	 */
 	thirdGuardiansSet: RequiredParams<'guardians'>
@@ -763,6 +767,7 @@ export type NamespaceStatementTranslation = {
 	exit: string
 	/**
 	 * C​O​N​ ​{​t​r​a​n​s​a​c​t​i​o​n​s​}​
+​0​.​ ​R​u​d​i​
 ​1​1​.​M​b​e​l​e​
 ​0​0​.​ ​O​n​d​o​k​a
 	 * @param {unknown} transactions
@@ -832,6 +837,7 @@ export type NamespaceTransferTranslation = {
 	exit: string
 	/**
 	 * C​O​N​ ​{​r​e​c​i​p​i​e​n​t​}​ ​h​a​i​j​a​s​a​j​i​l​i​w​a​ ​a​u​ ​s​i​o​ ​s​a​h​i​h​i​,​ ​t​a​f​a​d​h​a​l​i​ ​w​e​k​a​ ​t​e​n​a​:​
+​0​.​ ​R​u​d​i​
 ​1​.​K​a​r​i​b​i​s​h​a​ ​k​w​a​ ​m​a​t​a​n​d​a​o​ ​w​a​ ​S​a​r​a​f​u​.​
 ​9​.​ ​O​n​d​o​k​a
 	 * @param {unknown} recipient
@@ -1170,6 +1176,10 @@ export type TranslationFunctions = {
 		loadSuccess: (arg: { balance: unknown, symbol: unknown }) => LocalizedString
 	}
 	feedback: {
+		/**
+		 * END PIN yako imefungwa. Kwa usaidizi tafadhali piga simu kwa: 0757628885.
+		 */
+		accountBlocked: () => LocalizedString
 		/**
 		 * CON Kiasi ulichotuma ni kikubwa kuliko kiasi ulichonacho au sio sahihi. Tafadhali jaribu tena:
 	0. Rudi
@@ -1716,7 +1726,7 @@ export type TranslationFunctions = {
 		 * CON Walinzi:
 	{guardians}
 	22. Rudi
-	00.Ondoka
+	00. Ondoka
 		 */
 		thirdGuardiansSet: (arg: { guardians: unknown }) => LocalizedString
 	}
@@ -1736,6 +1746,7 @@ export type TranslationFunctions = {
 		exit: () => LocalizedString
 		/**
 		 * CON {transactions}
+	0. Rudi
 	11.Mbele
 	00. Ondoka
 		 */
@@ -1794,6 +1805,7 @@ export type TranslationFunctions = {
 		exit: () => LocalizedString
 		/**
 		 * CON {recipient} haijasajiliwa au sio sahihi, tafadhali weka tena:
+	0. Rudi
 	1.Karibisha kwa matandao wa Sarafu.
 	9. Ondoka
 		 */

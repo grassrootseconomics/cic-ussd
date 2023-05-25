@@ -1,6 +1,10 @@
 import type { NamespaceFeedbackTranslation } from '../../i18n-types'
+import mij from '..'
+
+const { accountBlocked } = mij
 
 const mij_feedback: NamespaceFeedbackTranslation = {
+  accountBlocked: accountBlocked,
   invalidAmount:
     'CON Chaasi urichoika chidzulu sana ama kachisawa. Tafadhali jeza kaheri\n0. Uya',
   invalidGenderOption:
