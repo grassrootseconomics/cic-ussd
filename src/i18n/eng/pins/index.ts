@@ -21,7 +21,7 @@ const eng_pins: NamespacePinsTranslation = {
   pinChangeSuccess:
     'CON Your PIN change request has been successful.\n0. Back\n9. Exit',
   pinManagementMenu:
-    'CON PIN Management:\n1. Change PIN\n2. Reset ward\'s PIN\n3. Guard my PIN\n0. Back',
+    'CON PIN Management:\n1. Change PIN\n2. Reset other\'s PIN\n3. Guard my PIN\n0. Back',
   socialRecoveryMenu:
     'CON PIN guarding:\n1. Add guardian\n2. Remove guardian\n3. View guardians\n0. Back',
   wardResetError:
