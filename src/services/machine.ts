@@ -203,6 +203,9 @@ async function resolveErrorResponse<K extends keyof NamespaceFeedbackTranslation
     case 'invalidPinPC':
     case 'invalidPinPV':
       const remainingAttempts = 2 - context.user.account.pin_attempts
+      if (remainingAttempts === 0){
+        return tFeedback('accountBlocked', language, { remainingAttempts })
+      }
       return tFeedback(feedback, language, { remainingAttempts })
 
     case 'invalidLanguageOption':

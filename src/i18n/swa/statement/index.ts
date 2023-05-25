@@ -11,7 +11,7 @@ const swa_statement: NamespaceStatementTranslation = {
     "CON Tafadhali weka PIN yako kuona taarifa ya matumizi\n0. Rudi",
   exit: exit,
   firstTransactionSet:
-    "CON {transactions}\n11.Mbele\n00. Ondoka",
+    "CON {transactions}\n0. Rudi\n11.Mbele\n00. Ondoka",
   loadError:
     "END Tatizo limetokea wakati wa kuangalia taarifa ya akaunti yako. Tafadhali jaribu tena baadaye.",
   mainMenu: mainMenu,

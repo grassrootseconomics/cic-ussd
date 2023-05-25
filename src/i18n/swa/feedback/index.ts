@@ -1,6 +1,10 @@
 import { NamespaceFeedbackTranslation } from '../../i18n-types';
+import swa from '..';
+
+const { accountBlocked } = swa;
 
 const swa_feedback: NamespaceFeedbackTranslation = {
+  accountBlocked: accountBlocked,
   invalidAmount:
     'CON Kiasi ulichotuma ni kikubwa kuliko kiasi ulichonacho au sio sahihi. Tafadhali jaribu tena:\n0. Rudi',
   invalidGenderOption:

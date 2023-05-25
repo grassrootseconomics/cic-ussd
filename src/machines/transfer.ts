@@ -7,7 +7,6 @@ import {
   MachineEvent,
   MachineId, NotifierContext,
   updateErrorMessages,
-  UserContext,
   validateTargetUser
 } from '@machines/utils';
 import { isBlocked, isValidPin, validatePin } from '@machines/auth';
@@ -52,7 +51,7 @@ export const stateMachine = createMachine<TransferContext, MachineEvent>({
           onError: [
             { target: 'accountBlocked', cond: 'isBlocked' },
             { target: 'transferError', cond: 'isTransferError', actions: 'updateErrorMessages' },
-            { target: 'invalidPin' },
+            { target: 'invalidPin', actions: 'updateErrorMessages' },
           ]
         },
         tags: 'invoked'
@@ -159,7 +158,6 @@ export const stateMachine = createMachine<TransferContext, MachineEvent>({
         on: {
           RETRY: 'enteringPin'
         },
-        tags: 'error'
       },
       validatingRecipient: {
         description: 'Invoked service that validates the recipient.',

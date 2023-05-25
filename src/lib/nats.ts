@@ -1,17 +1,25 @@
 import { PostgresDb } from '@fastify/postgres';
 import { GraphQLClient } from 'graphql-request';
-import { Provider } from 'ethers';
+import { ethers, Provider } from 'ethers';
 import { Redis as RedisClient } from 'ioredis';
 import { Codec, JsMsg, JSONCodec } from 'nats';
 import { RegistrationEvent, TransferEvent } from '@lib/custodail';
 import { AccountService, getPhoneNumberFromAddress } from '@services/account';
 import { SystemError } from '@lib/errors';
-import { getVoucherSymbol, Notifier, retrieveWalletBalance, sendSMS } from '@lib/ussd';
+import {
+  CachedVoucher,
+  cashRounding,
+  formatDate,
+  getVoucherSymbol,
+  Notifier,
+  retrieveWalletBalance,
+  sendSMS
+} from '@lib/ussd';
 import { config } from '@/config';
 import { generateUserTag, User, UserService } from '@services/user';
-import { formatTransferData, updateHeldVouchers, updateStatement } from '@services/transfer';
+import { Transaction, TransactionType, updateHeldVouchers, updateStatement } from '@services/transfer';
 import { logger } from '@/app';
-import { tSMS } from '@i18n/translators';
+import { tHelpers, tSMS } from '@i18n/translators';
 
 type EventHandler<T> = (
   db: PostgresDb,
@@ -57,15 +65,35 @@ async function processTransferEvent(
   const [sender, senderService] = await getUser(db, redis, data.from, true);
   const [recipient, recipientService] = await getUser(db, redis, data.to, false);
 
-  if (!sender && recipient) {
-    await updateUser(recipient, recipientService, sender, symbol, data, provider);
-    return;
+  if(!recipient){
+    throw new SystemError('Error retrieving recipient.')
   }
 
-  if (sender && recipient) {
-    await updateUser(sender, senderService, recipient, symbol, data, provider);
-    await updateUser(recipient, recipientService, sender, symbol, data, provider);
+  // format transaction
+  const transaction: Transaction = {
+    sender: '',
+    type: undefined,
+    contractAddress: data.contractAddress,
+    recipient: recipient.tag ? recipient.tag : recipient.account.phone_number,
+    symbol,
+    timestamp: await formatDate(data.timestamp),
+    transactionHash: data.transactionHash,
+    value: cashRounding(ethers.formatUnits(data.value, 6))
   }
+
+  // determine sender
+  if(sender){
+    transaction.sender =  sender.tag ? sender.tag : sender.account.phone_number
+    transaction.type = sender.account.address == data.to ? TransactionType.CREDIT : TransactionType.DEBIT
+    await updateUser(sender.account.address, sender.vouchers.held || [], provider, sender.statement || [], transaction, senderService)
+
+  } else {
+    transaction.sender = tHelpers('unknownAddress', recipient.account.language)
+  }
+
+  // update recipient
+  transaction.type = recipient.account.address == data.to ? TransactionType.CREDIT : TransactionType.DEBIT
+  await updateUser(recipient.account.address, recipient.vouchers.held || [], provider, recipient.statement || [], transaction, recipientService)
 }
 
 async function getUser(
@@ -92,22 +120,22 @@ async function getUser(
 }
 
 async function updateUser(
-  user: User,
-  userService: UserService,
-  counterparty: Partial<User> | null | undefined,
-  symbol: string,
-  data: TransferEvent,
-  provider: Provider
+  address: string,
+  heldVouchers: CachedVoucher[],
+  provider: Provider,
+  statement: Transaction[],
+  transaction: Transaction,
+  userService: UserService
 ) {
-  const transaction = await formatTransferData(data, user, counterparty, symbol);
-  const statement = await updateStatement(user.statement || [], transaction);
-  const balance = await retrieveWalletBalance(user.account.address, data.contractAddress, provider);
-  const heldVouchers = await updateHeldVouchers(user.vouchers?.held || [], { address: data.contractAddress, balance, symbol });
+
+  const updatedStatement = await updateStatement(statement, transaction);
+  const balance = await retrieveWalletBalance(address, transaction.contractAddress, provider);
+  const updatedHeldVouchers = await updateHeldVouchers(heldVouchers, { address: transaction.contractAddress, balance, symbol: transaction.symbol });
 
   await userService.update({
-    statement,
+    statement: updatedStatement,
     vouchers: {
-      held: heldVouchers,
+      held: updatedHeldVouchers,
     },
   });
 }

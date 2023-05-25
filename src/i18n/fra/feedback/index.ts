@@ -1,6 +1,10 @@
 import type { NamespaceFeedbackTranslation } from '../../i18n-types'
+import fra from '..'
+
+const { accountBlocked } = fra
 
 const fra_feedback: NamespaceFeedbackTranslation = {
+  accountBlocked: accountBlocked,
   invalidAmount:
     'CON Le montant que vous avez entré est supérieur à votre solde ou n\'est pas valide Veuillez réessayer\n0. Retour',
   invalidGenderOption:

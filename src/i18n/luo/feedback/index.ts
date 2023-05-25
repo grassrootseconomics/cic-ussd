@@ -1,6 +1,10 @@
 import type { NamespaceFeedbackTranslation } from '../../i18n-types'
+import luo from '..'
+
+const { accountBlocked } = luo
 
 const luo_feedback: NamespaceFeedbackTranslation = {
+  accountBlocked: accountBlocked,
   invalidAmount:
     'CON Omenda mimedo ngeny moloyo omenda ni kata onge. Tem kendo\n0. Chien',
   invalidGenderOption:

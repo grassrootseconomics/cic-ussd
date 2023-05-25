@@ -11,7 +11,7 @@ const eng_statement: NamespaceStatementTranslation = {
     "CON Please enter your PIN to view statement:\n0. Back",
   exit: exit,
   firstTransactionSet:
-    "CON {transactions}\n11.Next\n00. Exit",
+    "CON {transactions}\n0. Back\n11.Next\n00. Exit",
   loadError:
     "END An error occurred while loading your account statement. Please try again later.",
   mainMenu: mainMenu,

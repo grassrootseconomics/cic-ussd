@@ -12,7 +12,7 @@ const kam_statement: NamespaceStatementTranslation = {
   exit:
   exit,
   firstTransactionSet:
-    'CON {transactions}\n11. Mbee\n00. Uma',
+    'CON {transactions}\n0. Syoka\n11. Mbee\n00. Uma',
   loadError:
     'END Thina waumela ivinda ya kusisya utomei wa voucher, tata ingi kavinda kangi.',
   mainMenu:

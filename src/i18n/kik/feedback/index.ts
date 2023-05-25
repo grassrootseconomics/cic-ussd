@@ -1,6 +1,10 @@
 import type { NamespaceFeedbackTranslation } from '../../i18n-types'
+import kik from '..'
+
+const { accountBlocked } = kik
 
 const kik_feedback: NamespaceFeedbackTranslation = {
+  accountBlocked: accountBlocked,
   invalidAmount:
     'CON Muigana uratuma ni munene gukira matigari winamo kana kwina thina. Ndakwihoya ugerie ringi\n0. Coka',
   invalidGenderOption:

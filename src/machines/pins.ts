@@ -281,7 +281,7 @@ function saveValidatedWard(context: PinManagementContext, event: any) {
   context.data = {
     ...(context.data || {}),
     validatedWardEntry: {
-      language: event.data.language,
+      language: event.data.ward.language,
       phoneNumber: event.data.ward.phoneNumber,
       tag: event.data.ward.tag
     }
@@ -330,8 +330,8 @@ async function initiateWardPinReset(context: PinManagementContext, event: any) {
     const message = tSMS('pinReset', validatedWardEntry.language, { initiator: tag ? tag : phone_number })
     await sendSMS(message, notifier, [validatedWardEntry.phoneNumber])
     return { success: true }
-  } catch (error) {
-    throw new MachineError(PinsError.WARD_RESET_ERROR, "Failed to reset ward's PIN.")
+  } catch (error: any) {
+    throw new MachineError(PinsError.WARD_RESET_ERROR, error.message)
   }
 }
 
@@ -348,12 +348,13 @@ async function validateWardToReset(context: PinManagementContext, event: any) {
   if (!guardian && !isSystemGuardian) {
     throw new MachineError(PinsError.UNAUTHORIZED_GUARDIAN, "You are not a guardian of this account")
   }
-  return { success: true, ward: { phoneNumber: wardPhoneNumber, tag: ward.tag } }
+  return { success: true, ward: { language: ward.account.language, phoneNumber: wardPhoneNumber, tag: ward.tag } }
 }
 
 export async function pinsTranslations(context: PinManagementContext, state: string, translator: any) {
   const { data: { validatedWardEntry, wardEntry } } = context;
   switch (state) {
+    case 'enteringPinWR':
     case 'wardResetSuccess':
       return await translate(state, translator, { ward: validatedWardEntry.tag });
     case 'wardResetError':

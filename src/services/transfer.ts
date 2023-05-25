@@ -6,7 +6,8 @@ import { getPhoneNumberFromAddress } from '@services/account';
 import { getUserTag, User } from '@services/user';
 import { GraphQLClient } from 'graphql-request';
 import { GraphTransaction } from '@lib/graph/user';
-import { TransferEvent } from '@lib/custodail';
+import { tHelpers } from '@i18n/translators';
+import { Locales } from '@i18n/i18n-types';
 
 export enum TransactionType {
   CREDIT = "CREDIT",
@@ -14,12 +15,13 @@ export enum TransactionType {
 }
 
 export interface Transaction {
+  contractAddress: string,
   recipient: string;
   sender: string;
   symbol: string;
   timestamp: string;
   transactionHash: string;
-  type: TransactionType;
+  type: TransactionType | undefined;
   value: number;
 }
 
@@ -35,6 +37,7 @@ export async function generateStatement(
   address: string,
   db: PostgresDb,
   graphql: GraphQLClient,
+  language: Locales,
   redis: RedisClient,
   transactions: GraphTransaction[]) {
   if (transactions.length === 0) {
@@ -77,11 +80,11 @@ export async function generateStatement(
 
       if(recipient && symbol){
         return <Transaction>{
-          sender: sender || "unknownSender",
+          sender: sender || tHelpers('unknownAddress', language),
           recipient,
           value: cashRounding(ethers.formatUnits(transaction.tx_value, 6)),
           symbol,
-          timestamp: await formatDate(new Date(transaction.date_block)),
+          timestamp: await formatDate(transaction.date_block),
           transactionHash: transaction.tx_hash,
           type: transactionType,
         };
@@ -102,21 +105,6 @@ export async function generateSymbolMap(graphql: GraphQLClient, redis: RedisClie
 
   const symbols = await Promise.allSettled(symbolPromises);
   return new Map(await handleResults(symbols));
-}
-
-export async function formatTransferData(data: TransferEvent, recipient: Partial<User>, sender: Partial<User> | null | undefined, symbol: string) {
-  const isRecipient = recipient.account?.address === data.to;
-  const type = isRecipient ? TransactionType.CREDIT : TransactionType.DEBIT;
-
-  return <Transaction>{
-    sender: sender ? sender.tag : "unknownSender",
-    recipient: recipient.tag,
-    value: cashRounding(ethers.formatUnits(data.value, 6)),
-    symbol,
-    timestamp: await formatDate(new Date(data.timestamp)),
-    transactionHash: data.transactionHash,
-    type,
-  };
 }
 
 export async function updateHeldVouchers(vouchers: Pick<User, 'vouchers'>['vouchers']['held'], voucher: CachedVoucher){
