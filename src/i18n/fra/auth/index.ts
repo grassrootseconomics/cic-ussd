@@ -16,7 +16,7 @@ const fra_auth: NamespaceAuthTranslation  = {
   exit: exit,
   mainMenu: mainMenu,
   processingAccount:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    'END Votre compte est en cours de création. Vous recevrez un SMS lorsque votre compte sera prêt.'
 }
 
 export default fra_auth

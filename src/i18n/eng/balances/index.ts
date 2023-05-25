@@ -19,7 +19,7 @@ const eng_balances: NamespaceBalancesTranslation = {
   loadError:
     'END There was an error loading your balance. Please try again later.',
   loadSuccess:
-    'CON Your balance is: {balance|currency} {symbol}.\n0. Back\n9. Exit',
+    'CON Your balance is: {balance|currency} {symbol}\n0. Back\n9. Exit',
 }
 
 export default eng_balances

@@ -19,7 +19,7 @@ const gax_balances: NamespaceBalancesTranslation = {
   loadError:
     'END Dibii ya baat oja balans kake laalu feet. Saadhii garii itdheebi.',
   loadSuccess:
-    'CON balans kake akan {balance|currency} {symbol}{symbol}\n0. Dheebi\n9. Bai'
+    'CON Balans kake akan {balance|currency} {symbol}\n0. Dheebi\n9. Bai'
 }
 
 export default gax_balances

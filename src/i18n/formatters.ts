@@ -1,5 +1,6 @@
 import type { FormattersInitializer } from 'typesafe-i18n';
 import type { Formatters, Locales } from './i18n-types';
+import { sanitizePhoneNumber } from '@lib/ussd';
 
 export const initFormatters: FormattersInitializer<Locales, Formatters> = (locale: Locales) => {
 
@@ -8,7 +9,7 @@ export const initFormatters: FormattersInitializer<Locales, Formatters> = (local
 			return value.toFixed(2)
 		},
 		phone: (value: any) => {
-			return value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')
+			return sanitizePhoneNumber(value, "KE")
 		}
 	}
 

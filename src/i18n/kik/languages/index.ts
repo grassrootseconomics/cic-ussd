@@ -5,8 +5,10 @@ const { accountBlocked, exit } = kik
 
 const kik_languages: NamespaceLanguagesTranslation = {
   accountBlocked: accountBlocked,
-  changeError: 'END Kuma na thina kucagura ruthomi, geria ringi thutha wa dakika nini.',
-  changeSuccess: 'CON Mahoya maku ma kucagura ruthomi nimatomwo.\n0. Coka\n9. Ehera',
+  changeError:
+    'END Kuma na thina kucagura ruthomi, geria ringi thutha wa dakika nini.',
+  changeSuccess:
+    'CON Mahoya maku ma kucagura ruthomi nimatomwo.\n0. Coka\n9. Ehera',
   enteringPin: 'CON Ikera PIN yaku:\n0. Coka',
   exit: exit,
   firstLanguageSet:

@@ -10,9 +10,9 @@ const gax_profile: NamespaceProfileTranslation = {
   authorizingProfileView:
     'CON PIN kekhai\n0. Dheebi',
   changeError:
-    'CON kadaa kanke ka wasifu kekeet yakubalan\n0. Dheebi \n9. Bai',
+    'END Dibii yaayu baat oja wasifu kanke kekeet Saadhii garii itdheebi.',
   displayingProfile:
-    'CON xxxxxx\n{name}\n{gender}\n{age}\n{location}\n{services}\n0. Dheebi',
+    'CON Profile\n{name}\n{gender}\n{age}\n{location}\n{services}\n0. Dheebi',
   enteringFamilyName:
     'CON Makhaa ka egee\n0. Dhebii',
   enteringGivenNames:
@@ -29,7 +29,7 @@ const gax_profile: NamespaceProfileTranslation = {
     'CON Gan kake ka athdalat kor\n0. Dheebi',
   exit: exit,
   profileChangeSuccess:
-    'CON kadaa kanke ka wasifu kekeet yakubalan\n0. Dheebi \n9. Bai',
+    'CON Kadaa kanke ka wasifu kekeet yakubalan\n0. Dheebi \n9. Bai',
   profileMenu:
     'CON Odhuu Khiy\n1. Maqa kekhai\n2. Dir mo dubr\n3. Gan kekhai\n4. Fulaa kubaat kai\n5. Mih kai\n6. Profile khiy laal\n0. Dheebi',
   selectingGender:

@@ -6,7 +6,7 @@ const luo_feedback: NamespaceFeedbackTranslation = {
   invalidGenderOption:
     'CON Kido mari mar nyuol opogre. Asayi tem kendo\n1. Dhako\n2. Dichuo\n3. Moro\n0. Chien',
   invalidLanguageOption:
-    'CON Dhok mari opogre tem kendo\n{languages}\n0. Chien\n00. Wuog\n11. Maluwe',
+    'CON Dhok mari opogre tem kendo\n{languages}\n0. Chien\n00. Wuok\n11. Maluwe',
   invalidLocationOption:
     'CON Kar dak miketo opogre tem kondo\n0. Chien',
   invalidMarketplaceEntry:
@@ -18,17 +18,17 @@ const luo_feedback: NamespaceFeedbackTranslation = {
   invalidPin:
     'CON Pin mari oken kare Idong gi temo {remainingAttempts}\n0. Chien',
   invalidPinAtRegistration:
-    'CON Pin miketo opogrePin nyak bed gi namba angwenYudo kony goch {supportPhone|phone}\n00. Wuog ',
+    'CON Pin miketo opogrePin nyak bed gi namba angwenYudo kony goch {supportPhone|phone}\n00. Wuok ',
   invalidPinPC:
     'CON Pin mari oken kare Idong gi temo {remainingAttempts}\n0. Chien',
   invalidPinPV:
     'CON Pin mari oken kare Idong gi temo {remainingAttempts}\n0. Chien',
   invalidVoucher:
-    'CON Vocha mari opogre. Tem kendo\n{vouchers}\n0 Chien\n11. Bange\n00. Wuog',
+    'CON Vocha mari opogre. Tem kendo\n{vouchers}\n0 Chien\n11. Bange\n00. Wuok',
   invalidYOBEntry:
     'CON Higa mar nyuol miketo opogre. Tem kendo\n0. Chien',
   pinMismatch:
-    'CON Pin manyien opogre gi miketo. Tem kendo E kony goch {supportPhone|phone}\n0. Wuog'
+    'CON Pin mari okchal gi pin mane iketo. Asayi tem kendo. Ir kony,goch {supportPhone|phone}\n0.Chien'
 }
 
 export default luo_feedback

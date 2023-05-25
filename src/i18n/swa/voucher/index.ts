@@ -25,8 +25,6 @@ const swa_voucher : NamespaceVoucherTranslation = {
     'CON Chagua nambari au ishara kutoka kwa salio zako:\n{vouchers}\n22. Rudi\n00. Ondoka',
   voucherMenu:
     'CON Sarafu yangu\n1. Chagua Sarafu\n2. Maelezo ya Sarafu\n0. Rudi'
-
-
 }
 
 export default swa_voucher;

@@ -17,15 +17,15 @@ const luo_pins: NamespacePinsTranslation = {
     'CON Ket namba simu ma irito PIN ne\n0. Chien',
   exit: exit,
   pinChangeError:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.',
+    'END Ntiere chandruok e loko pinni.Asayi tem kendo bange .',
   pinChangeSuccess:
-    'CON xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.\n0. Chien\n9. Wuok',
+    'CON Pin mioro ni olok osedhi\n0. Chien\n9. Wuok',
   pinManagementMenu:
-    'CON xxxxxxxxxxxxxxxxxx\n1. Lok PIN na\n2. Los PIN\n3. Rit PIN na\n0. Chien',
+    'CON Jolos Pin:\n1. Lok PIN na\n2. Los PIN\n3. Rit PIN na\n0. Chien',
   socialRecoveryMenu:
     'CON Arita PIN\n1. Med\n2. Gol\n3. \n0. Chien',
   wardResetError:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx {ward}.',
+    'END Ne ntie chandruok e loso pinni {ward}.',
   wardResetSuccess:
     'CON Kwayo mari mar loko namba mopondo mar {ward} oseor\n0. Chien\n9. Wuok'
 }

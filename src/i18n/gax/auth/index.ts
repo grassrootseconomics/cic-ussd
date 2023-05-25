@@ -16,7 +16,7 @@ const gax_auth: NamespaceAuthTranslation = {
   exit: exit,
   mainMenu: mainMenu,
   processingAccount:
-    'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    'END Akaunti kake midaasu jiraa. sms si ergan oja tayaar taat'
 }
 
 export default gax_auth

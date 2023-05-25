@@ -14,9 +14,9 @@ const fra_languages: NamespaceLanguagesTranslation = {
   firstLanguageSet:
     'CON Choisir la langue:\n{languages}\n0. Retour\n11. Suivant\n00. Quitter',
   secondLanguageSet:
-    'CON Choisir la langue:\n{languages}\n11. Suivant\n22. Precedent\n00. Quitter',
+    'CON Choisir la langue:\n{languages}\n11. Suivant\n22. Retour\n00. Quitter',
   thirdLanguageSet:
-    'CON Choisir la langue:\n{languages}\n22. Precedent\n00. Quitter'
+    'CON Choisir la langue:\n{languages}\n22. Retour\n00. Quitter'
 }
 
 export default fra_languages

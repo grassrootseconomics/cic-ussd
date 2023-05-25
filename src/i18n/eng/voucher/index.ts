@@ -7,7 +7,8 @@ const { mainMenu } = eng_main
 
 const eng_voucher: NamespaceVoucherTranslation = {
   accountBlocked: accountBlocked,
-  displayVoucherInfo: 'CON {symbol} {name}\n{contact} {location}\n{description}\n0. Back',
+  displayVoucherInfo:
+    'CON {symbol} {name}\n{contact} {location}\n{description}\n0. Back',
   enteringPin:
     'CON Enter PIN to confirm selection:\n{symbol} {name}\n{contact} {location}\n{description}\n0. Back\n00. Exit',
   exit: exit,
@@ -23,7 +24,7 @@ const eng_voucher: NamespaceVoucherTranslation = {
   thirdVoucherSet:
     'CON Select number or symbol from your vouchers:\n{vouchers}\n22. Back\n00. Exit',
   voucherMenu:
-    'CON My voucher\n1. Select voucher\n2. Voucher details\n0. Back'
+    'CON My vouchers\n1. Select voucher\n2. Voucher details\n0. Back'
 }
 
 export default eng_voucher;

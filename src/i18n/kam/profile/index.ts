@@ -10,7 +10,7 @@ const kam_profile: NamespaceProfileTranslation = {
   authorizingProfileView:
     'CON Ikia PIN yaku\n0. Syoka',
   changeError:
-    'END ',
+    'END Thina waumila ivinda ya kuseovya kimathesyo chaku kwawenyivyo tata ingi kavindane kangi.',
   displayingProfile:
     'CON Welesyo wakwa:\n{name}\n{gender}\n{age}\n{location}\n{services}\n0. Syoka',
   enteringFamilyName:
@@ -29,7 +29,7 @@ const kam_profile: NamespaceProfileTranslation = {
     'CON Ikia mwaka wa kusyawa:\n0. Syoka',
   exit: exit,
   profileChangeSuccess:
-    'CON ',
+    'CON Kimathesyo chaku cha kwemathesya nichetekelwa\n. Syoka\n9. Uma',
   profileMenu:
     'CON Welesyo wakwa\n1. Ikia isyitwa\n2. Ikia muvai\n3. Ikia miaka\n4. Ikia utui\n5. Ikia syindu\n6. Sisya welesyo waku',
   selectingGender:

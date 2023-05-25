@@ -5,7 +5,7 @@ import {
   isSuccess,
   isValidPhoneNumber,
   MachineEvent,
-  MachineId,
+  MachineId, NotifierContext,
   updateErrorMessages,
   UserContext,
   validateTargetUser
@@ -14,8 +14,9 @@ import { isBlocked, isValidPin, validatePin } from '@machines/auth';
 import { custodialTransfer } from '@lib/custodail';
 import { createTracker, TaskType } from '@db/models/custodailTasks';
 import { BaseMachineError, ContextError, MachineError, SystemError } from '@lib/errors';
-import { cashRounding, validatePhoneNumber } from '@lib/ussd';
-import { translate } from '@i18n/translators';
+import { cashRounding, sendSMS, validatePhoneNumber } from '@lib/ussd';
+import { translate, tSMS } from '@i18n/translators';
+import { config } from '@/config';
 
 enum TransferError {
   INVALID_RECIPIENT = 'INVALID_RECIPIENT',
@@ -23,7 +24,7 @@ enum TransferError {
   TRANSFER_ERROR = "TRANSFER_ERROR",
 }
 
-export interface TransferContext extends UserContext {
+export interface TransferContext extends NotifierContext {
   data: {
     amount?: number,
     recipientEntry?: string,
@@ -98,6 +99,7 @@ export const stateMachine = createMachine<TransferContext, MachineEvent>({
       invalidRecipient: {
         description: 'Entered identifier is invalid.',
         on: {
+          BACK: 'enteringRecipient',
           TRANSIT: [
             { target: 'exit', cond: 'isOption9' },
             { target: 'validatingRecipient', cond: 'isValidIdentifier', actions: 'saveRecipientEntry' },
@@ -108,6 +110,7 @@ export const stateMachine = createMachine<TransferContext, MachineEvent>({
       invalidRecipientWithInvite: {
         description: 'Entered identifier is invalid.',
         on: {
+          BACK: 'enteringRecipient',
           TRANSIT: [
             { target: 'exit', cond: 'isOption9' },
             { target: 'invitingRecipient', cond: 'isOption1' },
@@ -216,14 +219,16 @@ async function authorizeTransfer(context: TransferContext, event: any) {
 async function initiateInvite(context: TransferContext) {
   const {
     data,
-    user: { account: { phone_number } },
+    notifier,
+    user: { account: { language, phone_number }, tag },
     ussd: { countryCode } } = context
   if (!data.recipientEntry) {
     throw new MachineError(ContextError.MALFORMED_CONTEXT, "Missing recipient entry.")
   }
   const invitee = validatePhoneNumber(countryCode, data.recipientEntry)
   try {
-    console.debug(`Initiating invite to ${invitee} from ${phone_number}`)
+    const message = tSMS('upsell', language, { sender: tag ? tag : phone_number, supportPhone: config.KE.SUPPORT_PHONE })
+    await sendSMS(message, notifier, [invitee])
     return { success: true }
   } catch (error: any) {
     throw new MachineError(TransferError.INVITE_ERROR, error.message)
@@ -337,6 +342,8 @@ async function transferTranslations(context: TransferContext, state: string, tra
         symbol: symbol,
       });
     case 'invalidRecipient':
+    case 'invalidRecipientWithInvite':
+      console.log(`STATE: ${state} AND CONTEXT DATA: ${JSON.stringify(data)}`)
       return await translate(state, translator, { recipient: data?.recipientEntry});
     case 'inviteError':
     case 'inviteSuccess':

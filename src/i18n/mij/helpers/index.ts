@@ -15,7 +15,7 @@ const mij_helpers: NamespaceHelpersTranslation = {
   noMoreVouchers: 'Kahana Sarafu zaidi',
   notProvided: 'Kahana Sarafu zaidi',
   services: 'Miyo uguzayo:',
-  systemError: 'END Sarafu inakabiliwa na matatizo ga chimihambo. Tafadhali heza tena baadae',
+  systemError: 'END Sarafu inakabiliwa na matatizo ga chimihambo. Tafadhali heza tena baadae.',
   unknownAddress: 'Akaunti isiyomanyikana'
 }
 

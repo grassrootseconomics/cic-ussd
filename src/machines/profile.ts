@@ -246,7 +246,7 @@ export const stateMachine = createMachine<ProfileContext, MachineEvent>({
         BACK: 'profileMenu',
         TRANSIT: [
           { target: 'enteringYOB', cond: 'YOBAbsent', actions: 'saveGender' },
-          { target: 'enteringProfileChangePin', cond: 'isValidGender' },
+          { target: 'enteringProfileChangePin', cond: 'isValidGender', actions: 'saveGender' },
           { target: 'invalidGenderOption' }
         ]
       }
@@ -387,11 +387,12 @@ function isValidGender(_: ProfileContext , event: any) {
   return event.input === "1" || event.input === "2"
 }
 
-function saveGender(context: ProfileContext , _: any) {
+function saveGender(context: ProfileContext , event: any) {
   if (!context.data.personalInformation) {
     context.data.personalInformation = {};
   }
-  context.data.personalInformation.gender = "1" ? Gender.MALE : Gender.FEMALE
+
+  context.data.personalInformation.gender = event.input == "1" ? Gender.MALE : Gender.FEMALE
   return context
 }
 

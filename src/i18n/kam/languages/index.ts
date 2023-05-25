@@ -5,8 +5,10 @@ const { accountBlocked, exit } = kam
 
 const kam_languages: NamespaceLanguagesTranslation = {
   accountBlocked: accountBlocked,
-  changeError: 'CON Thina waumila ivinda ya kusakua luka, tata ingi kavindane kangi.',
-  changeSuccess: 'CON Woni waku wa kusakua luka niwatumwa.\n0. Syoka\n9. Uma',
+  changeError:
+    'CON Thina waumila ivinda ya kusakua luka, tata ingi kavindane kangi.',
+  changeSuccess:
+    'CON Woni waku wa kusakua luka niwatumwa.\n0. Syoka\n9. Uma',
   enteringPin: 'CON Ikera PIN yaku:\n0. Syoka',
   exit: exit,
   firstLanguageSet: 'CON Sakua luka:\n{languages}\n0. Syoka\n00. Uma\n11. Mbee',

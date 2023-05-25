@@ -177,7 +177,7 @@ export class UserService {
     }
 
     logger.debug(`User: ${this.phoneNumber} not found in cache. Querying database.`)
-    if(!db || !graphql || !provider) {
+    if(!db) {
       throw new SystemError(`Cannot query database, missing connection parameters.`)
     }
 
@@ -188,6 +188,9 @@ export class UserService {
     }
 
     logger.debug(`User: ${this.phoneNumber} found in database. Attempting to rebuild user in cache.`)
+    if(!graphql || !provider){
+      throw new SystemError("Cannot query graph or retrieve balance, missing graphql client or eth provider.")
+    }
     try {
       return await this.rebuild(account, db, graphql, provider)
     } catch (error: any) {

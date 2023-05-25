@@ -15,7 +15,7 @@ const kam_helpers: NamespaceHelpersTranslation = {
   noMoreVouchers: 'Vai Sarafu ingi.',
   notProvided: 'Inenganitwe',
   services: 'Wita kyau',
-  systemError: 'END metambo ya sarafu yenamathena kwa ivinda yee kwawenyivyo tata ingi kavinda kangi.',
+  systemError: 'END Metambo ya sarafu yenamathena kwa ivinda yee kwawenyivyo tata ingi kavinda kangi.',
   unknownAddress: 'Accounti itesekeeye'
 }
 

@@ -10,13 +10,13 @@ const luo_profile: NamespaceProfileTranslation = {
   authorizingProfileView:
     'CON Kiyie to ket PIN ni\n0. Chien',
   changeError:
-    'END Chandruok oyudre ka waloso ranyis mari. Tem kendo bange',
+    'END Chandruok oyudre ka waloso ranyis mari. Tem kendo bange.',
   displayingProfile:
     'CON Nyanonro:\n{name}\n{gender}\n{age}\n{location}\n{services}\n0. Chien',
   enteringFamilyName:
     'CON Ket nyingi mogik.\n0. Chien',
   enteringGivenNames:
-    'CON Xxxxxxxxxxxxxxxxx\n0. Chien',
+    'CON Ket nyingi mokuongo:\n0. Chien',
   enteringLocation:
     'CON Ket kumaidake\n0. Chien',
   enteringMarketplace:
@@ -29,7 +29,7 @@ const luo_profile: NamespaceProfileTranslation = {
     'CON Ket iki mar nyuol\n0. Chien',
   exit: exit,
   profileChangeSuccess:
-    'CON Ranyis mari olosre maber\n0. Chien\n9. Wuog',
+    'CON Ranyis mari olosre maber\n0. Chien\n9. Wuok',
   profileMenu:
     'CON Wasifu wangu\n1. Ket nyingi\n2. Ket kit chuech mari\n3. Ket iki\n4. Ket kumaidake\n5. Ket gikmaiuso\n6. Ng\'i nyanonro\n0. Chien',
   selectingGender:

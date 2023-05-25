@@ -10,7 +10,7 @@ const fra_profile: NamespaceProfileTranslation = {
   authorizingProfileView:
     'CON Veuillez entrer votre code PIN\n0. Retour',
   changeError:
-    'END Une erreur s\'est produite lors de la mise à jour de votre profil, veuillez réessayer plus tard',
+    'END Une erreur s\'est produite lors de la mise à jour de votre profil, veuillez réessayer plus tard.',
   displayingProfile:
     'CON Profil:\n{name}\n{gender}\n{age}\n{location}\n{services}\n0. Retour',
   enteringFamilyName:

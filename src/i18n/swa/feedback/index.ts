@@ -4,7 +4,7 @@ const swa_feedback: NamespaceFeedbackTranslation = {
   invalidAmount:
     'CON Kiasi ulichotuma ni kikubwa kuliko kiasi ulichonacho au sio sahihi. Tafadhali jaribu tena:\n0. Rudi',
   invalidGenderOption:
-   'CON Chaguo la jinsia sio sahihi. Tafadhali jaribu tena:\n1. Mwanaume\n2. Mwanamke\n3. Nyingine\n0. Rudi',
+    'CON Chaguo la jinsia sio sahihi. Tafadhali jaribu tena:\n1. Mwanaume\n2. Mwanamke\n3. Nyingine\n0. Rudi',
   invalidLanguageOption:
     'CON Chaguo la lugha sio sahihi. Tafadhali jaribu tena:\n{languages}\n0. Rudi\n00.Ondoka\n11. Mbele',
   invalidLocationOption:

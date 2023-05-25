@@ -16,7 +16,7 @@ const eng_feedback: NamespaceFeedbackTranslation = {
   invalidNewPin:
     'CON The PIN you entered is invalid. The PIN must be different from your current PIN. For help, call {supportPhone|phone}.\n0. Back',
   invalidPin:
-    'Your PIN is incorrect, you have {remainingAttempts} attempts remaining.\n0. Back',
+    'CON Your PIN is incorrect, you have {remainingAttempts} attempts remaining.\n0. Back',
   invalidPinAtRegistration:
     'CON The PIN you have entered is invalid. PIN must consist of 4 digits. For help, call {supportPhone|phone}:\n00. Exit',
   invalidPinPC:

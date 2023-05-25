@@ -39,8 +39,14 @@ export interface SocialRecoveryContext extends UserContext {
     guardianToAddEntry: string,
     guardianToRemoveEntry: string,
     loadedGuardians: string[],
-    validGuardianToAdd: string,
-    validGuardianToRemove?: string,
+    validGuardianToAdd: {
+      phoneNumber: string,
+      tag: string
+    },
+    validGuardianToRemove: {
+      phoneNumber: string,
+      tag: string
+    },
   }
 }
 
@@ -322,12 +328,18 @@ function isRemovalError(context: SocialRecoveryContext, event: any) {
 }
 
 function saveValidatedGuardianToAdd(context: SocialRecoveryContext, event: any) {
-  context.data.validGuardianToAdd = event.data.guardian;
+  context.data.validGuardianToAdd = {
+    phoneNumber: event.data.guardian.phoneNumber,
+    tag: event.data.guardian.tag
+  };
   return context;
 }
 
 function saveValidatedGuardianToRemove(context: SocialRecoveryContext, event: any) {
-  context.data.validGuardianToRemove = event.data.guardian;
+  context.data.validGuardianToRemove = {
+    phoneNumber: event.data.guardian.phoneNumber,
+    tag: event.data.guardian.tag
+  };
   return context;
 }
 
@@ -360,7 +372,7 @@ async function initiateGuardianAddition(context: SocialRecoveryContext, event: a
   }
 
   try {
-    await new AccountService(db, redis.persistent).addGuardian(data.validGuardianToAdd, phone_number)
+    await new AccountService(db, redis.persistent).addGuardian(data.validGuardianToAdd.phoneNumber, phone_number)
     return { success: true }
   } catch (error: any) {
     throw new MachineError(SocialRecoveryError.GUARDIAN_ADDITION_ERROR, error.message)
@@ -381,7 +393,7 @@ async function initiateGuardianRemoval(context: SocialRecoveryContext, event: an
   }
 
   try {
-    await new AccountService(db, redis.persistent).removeGuardian(data.validGuardianToRemove, phone_number)
+    await new AccountService(db, redis.persistent).removeGuardian(data.validGuardianToRemove.phoneNumber, phone_number)
     return { success: true }
   } catch (error: any) {
     throw new MachineError(SocialRecoveryError.GUARDIAN_REMOVAL_ERROR, error.message)
@@ -425,7 +437,7 @@ async function validateGuardianToAdd(context: SocialRecoveryContext, event: any)
   if (guardians.includes(guardian.account.phone_number)) {
     throw new MachineError(SocialRecoveryError.ALREADY_ADDED, "Already a guardian.")
   }
-  return { guardian: guardian.account.phone_number, success: true }
+  return { guardian: { phoneNumber: guardian.account.phone_number, tag : guardian.tag }, success: true }
 }
 
 async function validateGuardianToRemove(context: SocialRecoveryContext, event: any) {
@@ -438,21 +450,23 @@ async function validateGuardianToRemove(context: SocialRecoveryContext, event: a
   if (!guardians.includes(guardian.account.phone_number)) {
     throw new MachineError(SocialRecoveryError.NOT_ADDED, "Not a guardian.")
   }
-  return { guardian: guardian.account.phone_number, success: true }
+  return { guardian: { phoneNumber: guardian.account.phone_number, tag : guardian.tag }, success: true }
 }
 
 async function socialRecoveryTranslations(context: SocialRecoveryContext, state: string, translator: any){
   const { data} = context
 
   switch (state) {
+    case 'enteringPinAG':
     case 'guardianAdditionSuccess':
     case 'guardianAdditionError': {
-      return await translate(state, translator, { guardian: data.validGuardianToAdd });
+      return await translate(state, translator, { guardian: data.validGuardianToAdd?.tag ? data.validGuardianToAdd.tag : data.validGuardianToAdd.phoneNumber });
     }
 
+    case 'enteringPinRG':
     case 'guardianRemovalSuccess':
     case 'guardianRemovalError': {
-      return await translate(state, translator, { guardian: data.validGuardianToRemove });
+      return await translate(state, translator, { guardian: data.validGuardianToRemove?.tag ? data.validGuardianToRemove.tag : data.validGuardianToRemove.phoneNumber});
     }
 
     case "firstGuardiansSet": {

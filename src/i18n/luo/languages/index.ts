@@ -5,8 +5,10 @@ const { accountBlocked, exit } = luo
 
 const luo_languages: NamespaceLanguagesTranslation = {
   accountBlocked: accountBlocked,
-  changeError: 'END xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  changeSuccess: 'CON xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.\n0. Chien\n9. Wuok',
+  changeError:
+    'END Midhiero otimre ka iloko dhok, asayi tem kendo bange.',
+  changeSuccess:
+    'CON Loko dhok mari oselosre.\n0. Chien\n9. Wuok',
   enteringPin: 'CON Kiyie to ket PIN:\n0. Chien',
   exit: exit,
   firstLanguageSet:
