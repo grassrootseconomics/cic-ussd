@@ -11,6 +11,7 @@ export enum TxType {
 export interface CustodialEvent {
   block: number;
   contractAddress: string;
+  success: boolean;
   timestamp: number;
   to: string;
   transactionHash: string;
@@ -33,7 +34,6 @@ interface RegistrationResponse {
 
 export interface TransferEvent extends CustodialEvent {
   from: string;
-  success: boolean;
   value: number;
 }
 

@@ -148,6 +148,11 @@ async function processRegistrationEvent(
   redis: RedisClient,
   notifier?: Notifier
 ): Promise<void> {
+  if(!data.success){
+    logger.error(`Registration failed: ${data.transactionHash}`);
+    return;
+  }
+
   const phoneNumber = await getPhoneNumberFromAddress(data.to, db, redis)
   if (!phoneNumber) {
     throw new SystemError(`Could not find phone number for address: ${data.to}`)
