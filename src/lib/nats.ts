@@ -210,7 +210,7 @@ export async function processMessage(db: PostgresDb, graphql: GraphQLClient, mes
       break;
     default:
       logger.warn(`Unknown subject: ${subject}.`);
-      message.nak()
+      return;
   }
 }
 
