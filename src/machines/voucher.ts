@@ -81,6 +81,7 @@ export const stateMachine = createMachine<VouchersContext, MachineEvent>({
       on: {
         BACK: 'loadingHeldVouchers',
         TRANSIT: [
+          { target: 'exit', cond: 'isOption00' },
           { target: 'accountBlocked', cond: 'isBlocked' },
           { target: 'authorizingSelection' },
         ]
@@ -244,7 +245,8 @@ function isSetError(context: VouchersContext, event: any) {
 
 async function loadHeldVouchers(context: VouchersContext) {
   const { connections: { graphql, redis }, user: { account, statement, vouchers: { active, held } } } = context
-  const voucherInfoPromises = (held || [active]).map(async (voucher) => {
+  const vouchers = new Set([...(held || []), active]);
+  const voucherInfoPromises = Array.from(vouchers).map(async (voucher) => {
     const info = await getVoucherByAddress(voucher.address, graphql, redis.persistent)
     if(info){
       return {
@@ -346,13 +348,18 @@ function isValidVoucherOption(context: VouchersContext, event: any) {
 
   // Use for loop instead of find to break early when a match is found
   for (const voucher of heldVouchers) {
-    // Check if the voucher can be split and do the split
-    if (voucher.includes('. ')) {
-      const [index, symbol] = voucher.split('. ');
+    // Get the tokens from each voucher string
+    const tokens = voucher.split("\n")
 
-      // Check if the index or symbol matches the input and return true if found
-      if (index === input || (symbol.includes(" ") && symbol.split(" ")[0].toLowerCase() === input)) {
-        return true;
+    // Check if the voucher can be split and do the split
+    for (const token of tokens) {
+      if (token.includes('. ')) {
+        const [index, symbol] = token.split('. ');
+
+        // Check if the index or symbol matches the input and return true if found
+        if (index === input || (symbol.includes(" ") && symbol.split(" ")[0].toLowerCase() === input)) {
+          return true;
+        }
       }
     }
   }
@@ -399,10 +406,21 @@ function saveVoucherSelection(context: VouchersContext, event: any) {
     throw new MachineError(ContextError.MALFORMED_CONTEXT, "Held vouchers are missing from context data.");
   }
 
-  const selectedVoucher = context.data.heldVouchers.find((voucher) => {
-    const [index, symbol] = voucher.split('. ');
-    return index === input || symbol.split(" ")[0].toLowerCase() === input;
-  });
+  let selectedVoucher = null;
+  for (const voucher of context.data.heldVouchers) {
+
+    const tokens = voucher.split("\n")
+
+    for (const token of tokens) {
+      if (token.includes('. ')) {
+        const [index, symbol] = token.split('. ');
+        if (index === input || (symbol.includes(" ") && symbol.split(" ")[0].toLowerCase() === input)) {
+          selectedVoucher = token;
+          break;
+        }
+      }
+    }
+  }
 
   if (selectedVoucher) {
     const [_, symbol] = selectedVoucher.split('. ');

@@ -341,7 +341,6 @@ async function transferTranslations(context: TransferContext, state: string, tra
       });
     case 'invalidRecipient':
     case 'invalidRecipientWithInvite':
-      console.log(`STATE: ${state} AND CONTEXT DATA: ${JSON.stringify(data)}`)
       return await translate(state, translator, { recipient: data?.recipientEntry});
     case 'inviteError':
     case 'inviteSuccess':
