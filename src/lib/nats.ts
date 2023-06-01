@@ -160,17 +160,19 @@ async function processRegistrationEvent(
   const tag = await generateUserTag(data.to, graphql, phoneNumber)
   await new AccountService(db, redis).activateOnChain(config.DEFAULT_VOUCHER.ADDRESS, phoneNumber)
   const balance = await retrieveWalletBalance(data.to, config.DEFAULT_VOUCHER.ADDRESS, provider)
+  const voucher = {
+      address: config.DEFAULT_VOUCHER.ADDRESS,
+      balance,
+      symbol: config.DEFAULT_VOUCHER.SYMBOL,
+    }
   const user = await new UserService(phoneNumber, redis).update({
     account: {
       active_voucher_address: config.DEFAULT_VOUCHER.ADDRESS,
     },
     tag,
     vouchers: {
-      active: {
-        address: config.DEFAULT_VOUCHER.ADDRESS,
-        balance,
-        symbol: config.DEFAULT_VOUCHER.SYMBOL,
-      }
+      active: voucher,
+      held: [voucher]
     }
   })
 

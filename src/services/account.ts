@@ -163,7 +163,6 @@ export class AccountService {
 }
 
 export async function getPhoneNumberFromAddress(address: string, db: PostgresDb, redis: RedisClient) {
-  console.log(`Getting phone number for address: ${address}`);
   let phoneNumber = await redis.get(`address-phone-${address}`);
   if (phoneNumber) {
     return phoneNumber;

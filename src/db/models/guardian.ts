@@ -50,7 +50,6 @@ export class Guardian {
         `SELECT guardian FROM guardians WHERE account_phone_number = $1 AND guardian = $2`,
         [phoneNumber, guardian]
       )
-      console.log(rows)
       return rows.length > 0 ? rows[0].guardian : null;
     } catch (error: any){
       logger.error(`Error selecting guardian: ${error.message}, stack: ${error.stack}.`)
