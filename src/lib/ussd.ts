@@ -17,6 +17,7 @@ export interface CachedVoucher {
 }
 
 export interface Notifier {
+  active: boolean
   send(message: string, recipients: string[]): Promise<void>;
 }
 
@@ -226,8 +227,12 @@ export function sanitizePhoneNumber (phoneNumber: string, countryCode?: CountryC
 }
 
 export async function sendSMS(message: string, notifier: Notifier, recipient: string[]) {
-  logger.debug(`Sending SMS to: ${recipient.join(', ')}`)
-  return notifier.send(message, recipient)
+  if (notifier.active) {
+    logger.debug(`Sending SMS to: ${recipient.join(', ')}`)
+    await notifier.send(message, recipient)
+  } else {
+    logger.debug(`Notifier inactive. Not sending SMS to: ${recipient.join(', ')}`)
+  }
 }
 
 export function validatePhoneNumber(countryCode: CountryCode, phoneNumber: string, ) {

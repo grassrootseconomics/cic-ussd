@@ -52,6 +52,7 @@ app.register(fastifyPostgres, { connectionString: config.DATABASE.URL })
 
 // register custom plugins
 app.register(atNotifier, {
+  active: config.AT.ACTIVE,
   apiKey: config.AT.API_KEY,
   senderId: config.AT.SENDER_ID,
   url: config.AT.URL,
@@ -89,7 +90,7 @@ app.setErrorHandler<Error>(function (error, request, reply) {
     })
   }
 
-  return reply.status(400).send({
+  reply.status(400).send({
     error: 'BAD_REQUEST',
     message: error.message,
     statusCode: 400
