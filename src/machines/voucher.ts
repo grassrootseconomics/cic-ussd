@@ -293,53 +293,57 @@ async function loadVoucherInfo(context: VouchersContext) {
   };
 }
 
-async function formatVouchers(active: CachedVoucher, held: CachedVoucher[], language: Locales, transactions: Transaction[]) {
-  // get credits and debits in one loop
-  let credits = [];
-  let debits = [];
-  for (const element of transactions) {
-    if (element.type === TransactionType.CREDIT) {
-      credits.push(element);
-    } else if (element.type === TransactionType.DEBIT) {
-      debits.push(element);
+async function formatVouchers(active: CachedVoucher, held: CachedVoucher[], language: Locales, transactions: Transaction[]){
+  const credits = await getTransactionsByType(transactions, TransactionType.CREDIT);
+  const debits = await getTransactionsByType(transactions, TransactionType.DEBIT);
+
+  const lastCreditSymbol = await getLastTransactionSymbol(credits);
+  const lastDebitSymbol = await getLastTransactionSymbol(debits);
+  const activeVoucherSymbol = active.symbol;
+
+  const sortedHeld = await sortVouchersByBalance(held);
+  const orderedVouchers = await getOrderedVouchers(activeVoucherSymbol, sortedHeld, lastCreditSymbol, lastDebitSymbol);
+
+  const formattedVouchers = orderedVouchers.map((voucher, index) => `${index + 1}. ${voucher?.symbol} ${voucher?.balance.toFixed(2)}`);
+  const placeholder = tHelpers("noMoreVouchers", language);
+  return await menuPages(formattedVouchers, placeholder);
+}
+
+async function getTransactionsByType(transactions: Transaction[], type: TransactionType) {
+  return transactions.filter((element) => element.type === type);
+}
+
+async function getLastTransactionSymbol(transactions: Transaction[]) {
+  return transactions.length > 0 ? transactions[transactions.length - 1].symbol : null;
+}
+
+async function sortVouchersByBalance(vouchers: CachedVoucher[]) {
+  return vouchers.sort((a, b) => a.balance - b.balance);
+}
+
+async function getOrderedVouchers(activeSymbol: string, heldVouchers: CachedVoucher[], lastCreditSymbol: string | null, lastDebitSymbol: string | null) {
+  const orderedVouchers = [];
+  if (lastCreditSymbol) {
+    const creditVoucher = heldVouchers.find((voucher) => voucher.symbol === lastCreditSymbol);
+    if (creditVoucher) {
+      orderedVouchers.push(creditVoucher);
     }
   }
 
-  // get the last credit, debit and active voucher symbol
-  let lastCreditSymbol = credits.length > 0 ? credits[credits.length - 1].symbol : null;
-  let lastDebitSymbol = debits.length > 0 ? debits[debits.length - 1].symbol : null;
-  const activeSymbol = active.symbol;
-
-  // sort the held vouchers by balance
-  const sortedHeld = (held || []).slice().sort((a, b) => a.balance - b.balance);
-
-  // if last credit, debit or active voucher are present and not the same as the active voucher or each other, add them to the top of the list
-  const lastCreditIndex = lastCreditSymbol && lastCreditSymbol !== activeSymbol && lastCreditSymbol !== lastDebitSymbol ? sortedHeld.findIndex((v) => v.symbol === lastCreditSymbol) : null;
-  const lastDebitIndex = lastDebitSymbol && lastDebitSymbol !== activeSymbol && lastDebitSymbol !== lastCreditSymbol ? sortedHeld.findIndex((v) => v.symbol === lastDebitSymbol) : null;
-
-  // create an ordered array with the last credit, debit and active voucher at the top
-  const orderedHeld = [];
-  if (lastCreditIndex) {
-    orderedHeld.push(sortedHeld[lastCreditIndex]);
-  }
-  if (lastDebitIndex) {
-    orderedHeld.push(sortedHeld[lastDebitIndex]);
+  if (lastDebitSymbol) {
+    const debitVoucher = heldVouchers.find((voucher) => voucher.symbol === lastDebitSymbol);
+    if (debitVoucher && debitVoucher.symbol !== lastCreditSymbol) {
+      orderedVouchers.push(debitVoucher);
+    }
   }
 
-  // add the active voucher
-  const activeVoucher = sortedHeld.find((v) => v.symbol === activeSymbol) || active;
-  orderedHeld.push(activeVoucher);
+  const activeVoucher = heldVouchers.find((voucher) => voucher.symbol === activeSymbol);
+  if (activeVoucher && activeVoucher.symbol !== lastCreditSymbol && activeVoucher.symbol !== lastDebitSymbol) {
+    orderedVouchers.push(activeVoucher);
+  }
 
-  // add the rest of the vouchers
-  const filteredHeld = sortedHeld
-    .filter((v) => v.symbol !== lastCreditSymbol && v.symbol !== lastDebitSymbol && v.symbol !== activeSymbol);
-  orderedHeld.push(...filteredHeld);
-
-  // format the vouchers
-  const formattedVouchers = orderedHeld
-    .map((voucher, index) => `${index + 1}. ${voucher?.symbol} ${voucher?.balance.toFixed(2)}`);
-  const placeholder = tHelpers("noMoreVouchers", language)
-  return await menuPages(formattedVouchers, placeholder)
+  const remainingVouchers = heldVouchers.filter((voucher) => voucher.symbol !== lastCreditSymbol && voucher.symbol !== lastDebitSymbol && voucher.symbol !== activeSymbol);
+  return orderedVouchers.concat(remainingVouchers);
 }
 
 function isValidVoucherOption(context: VouchersContext, event: any) {
