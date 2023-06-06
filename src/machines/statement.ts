@@ -18,6 +18,7 @@ import { GraphQLClient } from 'graphql-request';
 import { Locales } from '@i18n/i18n-types';
 import { Transaction, TransactionType } from '@services/transfer';
 import { menuPages } from '@lib/ussd';
+import moment from 'moment-timezone';
 
 
 enum StatementError {
@@ -143,6 +144,7 @@ async function authorizeStatementView(context: StatementContext, event: any) {
 
   try {
     const formattedStatement = await formatStatement(graphql, language, redis.persistent, statement || [])
+    console.log(`Formatted statement: ${JSON.stringify(formattedStatement)}`)
     return { success: true, statement: formattedStatement }
   } catch (error) {
     throw new MachineError(StatementError.LOAD_ERROR, `Error loading statement.`)
@@ -151,14 +153,19 @@ async function authorizeStatementView(context: StatementContext, event: any) {
 
 async function formatStatement( graphql: GraphQLClient, language: Locales, redis: RedisClient, transactions: Transaction[]){
   const placeholder = tHelpers("noMoreTransactions", language)
+  transactions.sort((a, b) => {
+    const dateA = moment(a.timestamp, "DD-MM-YYYY hh:mm A");
+    const dateB = moment(b.timestamp, "DD-MM-YYYY hh:mm A");
+    return dateB.valueOf() - dateA.valueOf();
+  });
   const formattedTransactions = await Promise.all(transactions.map(async (transaction) => {
-      const transactionType = transaction.type === TransactionType.CREDIT ? "credit" : "debit"
-     return tHelpers(transactionType, language, {
-       value: transaction.value,
-       time: transaction.timestamp,
-       sender: transaction.sender,
-       recipient: transaction.recipient,
-       symbol: transaction.symbol,
+    const transactionType = transaction.type === TransactionType.CREDIT ? "credit" : "debit"
+    return tHelpers(transactionType, language, {
+      value: transaction.value,
+      time: transaction.timestamp,
+      sender: transaction.sender,
+      recipient: transaction.recipient,
+      symbol: transaction.symbol,
      })
   }))
   return await menuPages(formattedTransactions, placeholder)
