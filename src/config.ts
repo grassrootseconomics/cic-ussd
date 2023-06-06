@@ -10,6 +10,7 @@ function stringToList (value: string | undefined): string[] | void {
 
 export const config = {
   AT: {
+    ACTIVE: process.env.AT_ACTIVE === 'true',
     API_KEY: process.env.AT_API_KEY ?? 'x',
     SENDER_ID: process.env.AT_SENDER_ID ?? undefined,
     SMS_WEBHOOK_SECRET: process.env.AT_SMS_WEBHOOK_SECRET ?? 'xD',
@@ -55,10 +56,10 @@ export const config = {
     PERSISTENT_DSN: process.env.REDIS_PERSISTENT_DSN ?? 'redis://localhost:6379/4',
   },
   SERVER: {
-    DISABLE_REQUEST_LOGGING: !process.env.SERVER_DISABLE_REQUEST_LOGGING ?? false,
+    DISABLE_REQUEST_LOGGING: process.env.SERVER_DISABLE_REQUEST_LOGGING === 'true',
     HOST: process.env.SERVER_HOST ?? '127.0.0.1',
     PORT: parseInt(process.env.SERVER_PORT ?? '5000'),
-    TRUST_PROXY_ENABLED: !process.env.TRUST_PROXY_ENABLED ?? true
+    TRUST_PROXY_ENABLED: process.env.TRUST_PROXY_ENABLED === 'true',
   },
   SYSTEM: {
     SECRET: process.env.SYSTEM_SECRET ?? 'x',

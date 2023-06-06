@@ -9,6 +9,7 @@ declare module 'fastify' {
 }
 
 interface ATNotifierPluginOptions {
+  active: boolean;
   apiKey: string;
   senderId?: string;
   url: string;
@@ -32,12 +33,14 @@ interface AtResponse {
 
 export class ATNotifier implements Notifier {
 
+  active: boolean
   apiKey: string;
   senderId: string | undefined;
   url: string;
   username: string;
 
-  constructor(apiKey: string, url: string, username: string, senderId?: string) {
+  constructor(active: boolean, apiKey: string, url: string, username: string, senderId?: string) {
+    this.active = active;
     this.apiKey = apiKey;
     this.url = url;
     this.username = username;
@@ -78,6 +81,7 @@ export class ATNotifier implements Notifier {
 
 const atNotifierPlugin: FastifyPluginAsync<ATNotifierPluginOptions> = async (fastify, options) => {
   const notifier = new ATNotifier(
+    options.active,
     options.apiKey,
     options.url,
     options.username,

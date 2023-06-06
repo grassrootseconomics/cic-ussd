@@ -37,7 +37,7 @@ export class AccountService {
   }
 
   public async addGuardian(guardianPhoneNumber: string, phoneNumber: string) {
-    const guardians = await  this.getAllGuardians(phoneNumber) || []
+    const guardians = await  this.getAllGuardians(phoneNumber) ?? []
     const updated = [...guardians, guardianPhoneNumber]
     const results = await Promise.allSettled([
       new Guardian(this.db).insertGuardian(guardianPhoneNumber, phoneNumber),
@@ -79,7 +79,7 @@ export class AccountService {
 
   public async getAllGuardians(phoneNumber: string) {
     const cachedAccount = await new UserService(phoneNumber, this.redis).get(['account'])
-    if (cachedAccount && cachedAccount.account?.guardians) {
+    if (cachedAccount?.account?.guardians) {
       return cachedAccount.account?.guardians
     }
     const guardians = await new Guardian(this.db).selectAllGuardians(phoneNumber)
@@ -92,7 +92,7 @@ export class AccountService {
   public async getGuardian(phoneNumber: string, guardianPhoneNumber: string): Promise<string | null> {
     const cachedAccount = await new UserService(phoneNumber, this.redis).get(['account'])
     if (cachedAccount?.account?.guardians) {
-      return cachedAccount.account?.guardians.find(g => g === guardianPhoneNumber) || null
+      return cachedAccount.account?.guardians.find(g => g === guardianPhoneNumber) ?? null
     }
     return await new Guardian(this.db).selectGuardian(guardianPhoneNumber, phoneNumber)
   }
@@ -111,7 +111,7 @@ export class AccountService {
   }
 
   public async removeGuardian(guardianPhoneNumber: string, phoneNumber: string) {
-    const guardians = await  this.getAllGuardians(phoneNumber) || []
+    const guardians = await  this.getAllGuardians(phoneNumber) ?? []
     const updated = guardians.filter(g => g !== guardianPhoneNumber)
     const results = await Promise.allSettled([
       new Guardian(this.db).deleteGuardian(guardianPhoneNumber, phoneNumber),
@@ -133,7 +133,6 @@ export class AccountService {
   }
 
   public async updateCache(phoneNumber: string, data: DeepPartial<User>) {
-    logger.debug(`Updating cached account for phone number: ${phoneNumber}`)
     await new UserService(phoneNumber, this.redis).update(data)
   }
 
