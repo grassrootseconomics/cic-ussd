@@ -138,7 +138,7 @@ export const stateMachine = createMachine<ProfileContext, MachineEvent>({
         BACK: 'profileMenu',
         TRANSIT: 'authorizingProfileChange'
       },
-      tags: 'error'
+      tags: ['encryptInput', 'error']
     },
     enteringProfileViewPin: {
       description: 'Expects valid PIN matching account\'s PIN.',
@@ -146,7 +146,7 @@ export const stateMachine = createMachine<ProfileContext, MachineEvent>({
         BACK: 'profileMenu',
         TRANSIT: 'authorizingProfileView'
       },
-      tags: 'error'
+      tags: ['encryptInput', 'error']
     },
     enteringYOB: {
       description: 'Expects a valid year of birth. > 1900 and < current year.',
