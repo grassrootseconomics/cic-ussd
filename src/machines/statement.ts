@@ -144,7 +144,6 @@ async function authorizeStatementView(context: StatementContext, event: any) {
 
   try {
     const formattedStatement = await formatStatement(graphql, language, redis.persistent, statement || [])
-    console.log(`Formatted statement: ${JSON.stringify(formattedStatement)}`)
     return { success: true, statement: formattedStatement }
   } catch (error) {
     throw new MachineError(StatementError.LOAD_ERROR, `Error loading statement.`)
