@@ -326,9 +326,8 @@ async function initiateProfileChange(context: ProfileContext, event: any) {
     if (context?.data?.personalInformation){
       let updatedProfile: Partial<PersonalInformation> = {
         ...context.data.personalInformation,
-        user_identifier: graphUserId
       }
-      await updateGraphPersonalInformation(address, graphql, updatedProfile, phone_number, redis.persistent)
+      await updateGraphPersonalInformation(address, graphql, updatedProfile, phone_number, redis.persistent, graphUserId)
     }
 
     if (context?.data?.marketplaceName) {

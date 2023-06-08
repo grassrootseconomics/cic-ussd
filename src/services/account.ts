@@ -7,7 +7,7 @@ import { DeepPartial } from 'ts-essentials';
 import { Account, AccountInterface, AccountStatus } from '@db/models/account';
 import { User, UserService } from '@services/user';
 import { GraphQLClient } from 'graphql-request';
-import { updateGraphUser } from '@lib/graph/user';
+import { updateGraphPersonalInformation, updateGraphUser } from '@lib/graph/user';
 import { Guardian } from '@db/models/guardian';
 
 export class AccountService {
@@ -136,10 +136,11 @@ export class AccountService {
     await new UserService(phoneNumber, this.redis).update(data)
   }
 
-  public async updateLanguage(language: Locales, phoneNumber: string) {
+  public async updateLanguage(address: string, graphql: GraphQLClient, graphUserId: number, language: Locales, phoneNumber: string) {
     const results = await Promise.allSettled([
       new Account(this.db).setLanguage(phoneNumber, language),
-      this.updateCache(phoneNumber, { account: { language } })
+      this.updateCache(phoneNumber, { account: { language } }),
+      updateGraphPersonalInformation(address, graphql, { language_code: language }, phoneNumber, this.redis, graphUserId)
     ])
     await handleResults(results)
   }

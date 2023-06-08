@@ -13,6 +13,7 @@ export const personalInformationFields = `
  family_name
  gender
  given_names
+ language_code
  location_name
  year_of_birth`
 
@@ -289,28 +290,27 @@ export async function updateGraphPersonalInformation(
   graphql: GraphQLClient,
   personal_information: Partial<PersonalInformation>,
   phoneNumber: string,
-  redis: RedisClient
+  redis: RedisClient,
+  user_identifier: number
 ) {
   const updatedFields = getRequestedFields(personal_information);
-  const constraint = 'personal_information_user_identifier_key';
   const query = `
-    mutation UpdatePersonalInformation($personal_information: personal_information_insert_input!) {
-      insert_personal_information_one(
-        object: $personal_information,
-        on_conflict: { constraint: ${constraint}, update_columns: [${updatedFields}] }
-      ) { ${updatedFields} }
+    mutation UpdatePersonalInformation($personal_information: personal_information_set_input!, $user_identifier: Int!) {
+      update_personal_information(where: {user_identifier: {_eq: $user_identifier}}, _set: $personal_information) {
+        returning { ${updatedFields} }
+      }
     }`;
 
-  const variables = { personal_information };
-  const result = await graphql.request<{ insert_personal_information_one: Partial<PersonalInformation> }>(query, variables);
-  const personalInformation = result.insert_personal_information_one
+  const variables = { personal_information, user_identifier };
+  const result = await graphql.request<{ update_personal_information: { returning: Partial<PersonalInformation>[] } }>(query, variables);
+  const personalInformation = result.update_personal_information.returning[0]
   const tag = (personalInformation?.given_names && personalInformation?.family_name) ? `${personalInformation.given_names} ${personalInformation.family_name} ${phoneNumber}`: phoneNumber
 
   await new UserService(phoneNumber, redis).update({
     graph:{
-      personalInformation: result.insert_personal_information_one
+      personalInformation
     },
     tag
   })
-  return result.insert_personal_information_one;
+  return personalInformation;
 }
