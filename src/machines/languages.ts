@@ -156,7 +156,12 @@ const stateMachine = createMachine<LanguagesContext, MachineEvent>({
 })
 
 async function initiateLanguageChange(context: LanguagesContext, event: any) {
-  const { connections: { db, redis }, user: { account: { phone_number } }, data } = context
+  const {
+    connections: {
+      db, graphql, redis
+    },
+    user: { account: { address, phone_number }, graph: { user: { id } } },
+    data } = context
   const { input } = event
 
   await validatePin(context, input)
@@ -166,7 +171,7 @@ async function initiateLanguageChange(context: LanguagesContext, event: any) {
   }
 
   try {
-    await new AccountService(db, redis.persistent).updateLanguage(data.selectedLanguage, phone_number)
+    await new AccountService(db, redis.persistent).updateLanguage(address, graphql, id, data.selectedLanguage, phone_number)
     return { success: true }
   } catch (error: any) {
     throw new MachineError(LanguageError.CHANGE_ERROR, `${error.message} - ${error.stack}`)
