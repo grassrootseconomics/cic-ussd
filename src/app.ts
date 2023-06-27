@@ -1,4 +1,5 @@
 import fastifyCors from '@fastify/cors';
+import fastifyMetrics from 'fastify-metrics';
 import fastifyPostgres from '@fastify/postgres';
 import fastifySensible from '@fastify/sensible';
 import ethPlugin from '@plugins/eth';
@@ -48,6 +49,9 @@ app.addContentTypeParser('application/x-www-form-urlencoded',
 // register third-party plugins.
 app.register(fastifyCors, { origin: true })
 app.register(fastifySensible)
+if(config.METRICS.ENABLED){
+  app.register(fastifyMetrics, { endpoint: '/metrics' })
+}
 app.register(fastifyPostgres, { connectionString: config.DATABASE.URL })
 
 // register custom plugins
