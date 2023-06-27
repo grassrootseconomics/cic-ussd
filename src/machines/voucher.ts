@@ -96,9 +96,9 @@ export const stateMachine = createMachine<VouchersContext, MachineEvent>({
       on: {
         BACK: 'voucherMenu',
         TRANSIT: [
-          { target: 'enteringPin', cond: 'isValidVoucherOption', actions: 'saveVoucherSelection' },
           { target: 'secondVoucherSet', cond: 'isOption11' },
           { target: 'exit', cond: 'isOption00' },
+          { target: 'enteringPin', cond: 'isValidVoucherOption', actions: 'saveVoucherSelection' },
           { target: 'invalidSelection' }
         ]
       },
@@ -152,10 +152,10 @@ export const stateMachine = createMachine<VouchersContext, MachineEvent>({
       description: 'Expects selection from second voucher set.',
       on: {
         TRANSIT: [
-          { target: 'enteringPin', cond: 'isValidVoucherOption', actions: 'saveVoucherSelection' },
           { target: 'thirdVoucherSet', cond: 'isOption11' },
           { target: 'firstVoucherSet', cond: 'isOption22' },
           { target: 'exit', cond: 'isOption00' },
+          { target: 'enteringPin', cond: 'isValidVoucherOption', actions: 'saveVoucherSelection' },
           { target: 'invalidSelection' }
         ]
       }
@@ -176,9 +176,9 @@ export const stateMachine = createMachine<VouchersContext, MachineEvent>({
     thirdVoucherSet: {
       on: {
         TRANSIT: [
-          { target: 'enteringPin', cond: 'isValidVoucherOption', actions: 'saveVoucherSelection' },
           { target: 'secondVoucherSet', cond: 'isOption22' },
           { target: 'exit', cond: 'isOption00' },
+          { target: 'enteringPin', cond: 'isValidVoucherOption', actions: 'saveVoucherSelection' },
           { target: 'invalidSelection' }
         ]
       },
