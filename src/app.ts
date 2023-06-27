@@ -14,7 +14,6 @@ import { config } from '@/config';
 import pino from 'pino';
 import moment from 'moment-timezone';
 import atNotifier from '@plugins/atNotifier';
-import { balanceResolverRoutes } from '@routes/balances';
 
 export const logger = pino({
   name: config.LOG.NAME,
@@ -50,9 +49,7 @@ app.addContentTypeParser('application/x-www-form-urlencoded',
 // register third-party plugins.
 app.register(fastifyCors, { origin: true })
 app.register(fastifySensible)
-if (config.METRICS.ENABLED) {
-  app.register(fastifyMetrics, {  endpoint: '/metrics' })
-}
+app.register(fastifyMetrics, { endpoint: '/metrics' })
 app.register(fastifyPostgres, { connectionString: config.DATABASE.URL })
 
 // register custom plugins

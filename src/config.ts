@@ -45,9 +45,6 @@ export const config = {
     LEVEL: process.env.LOG_LEVEL ?? 'info',
     NAME: process.env.LOG_NAME ?? 'cic-ussd',
   },
-  METRICS: {
-    ENABLED: process.env.METRICS_ENABLED === 'true',
-  },
   NATS: {
     DURABLE_NAME: process.env.NATS_DURABLE_NAME ?? 'cic-ussd',
     SERVER: process.env.NATS_SERVER ?? 'nats://localhost:4222',
