@@ -49,7 +49,9 @@ app.addContentTypeParser('application/x-www-form-urlencoded',
 // register third-party plugins.
 app.register(fastifyCors, { origin: true })
 app.register(fastifySensible)
-app.register(fastifyMetrics, { endpoint: '/metrics' })
+if(config.METRICS.ENABLED){
+  app.register(fastifyMetrics, { endpoint: '/metrics' })
+}
 app.register(fastifyPostgres, { connectionString: config.DATABASE.URL })
 
 // register custom plugins
