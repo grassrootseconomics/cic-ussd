@@ -1,5 +1,10 @@
 # cic-ussd
 
+![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/grassrootseconomics/cic-ussd/.github%2Fworkflows%2Frelease.yaml)
+![GitHub tag (with filter)](https://img.shields.io/github/v/tag/grassrootseconomics/cic-ussd)
+
+
+
 A [Fastify](https://www.fastify.io/)-based, [USSD](https://en.wikipedia.org/wiki/Unstructured_Supplementary_Service_Data) client implementation, that interfaces with the community inclusion currencies [custodial system](https://cic-stack.grassecon.org/custodial/cic-custodial). It is built using Node.js (>=18). The app is designed to provide a simple and efficient way to create and manage USSD menus and interactions.
 
 ## Pre-requisites
@@ -58,7 +63,7 @@ The application will be available at `http://localhost:9000`.
 
 ## Usage
 
-The app exposes an API for handling USSD requests. It currently supports the [AfricasTalking USSD API](https://developers.africastalking.com/docs/ussd/overview). To use the API, send a POST request to the `api/v1/ussd/africasTalking` endpoint with the appropriate USSD payload. We recommend using the [Dialoguss](https://github.com/nndi-oss/dialoguss) library for a more interactive and streamlined USSD experience.
+The app exposes an API for handling USSD requests. It currently supports the [AfricasTalking USSD API](https://developers.africastalking.com/docs/ussd/overview). To use the API, send a POST request to the `v1/ussd/${AT_USSD_ENDPOINT_SECRET}` endpoint with the appropriate USSD payload. We recommend using the [Dialoguss](https://github.com/nndi-oss/dialoguss) library for a more interactive and streamlined USSD experience.
 
 Example request:
 
