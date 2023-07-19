@@ -13,11 +13,15 @@ import { isBlocked, isValidPin, validatePin } from '@machines/auth';
 import { custodialTransfer } from '@lib/custodail';
 import { createTracker, TaskType } from '@db/models/custodailTasks';
 import { BaseMachineError, ContextError, MachineError, SystemError } from '@lib/errors';
-import { cashRounding, sendSMS, validatePhoneNumber } from '@lib/ussd';
-import { translate, tSMS } from '@i18n/translators';
+import {cashRounding, getAddressFromTill, sendSMS, validatePhoneNumber} from '@lib/ussd';
+import {tHelpers, translate, tSMS} from '@i18n/translators';
 import { config } from '@/config';
+import {getPhoneNumberFromAddress} from "@services/account";
+import {logger} from "@/app";
+import {ethers} from "ethers";
 
 enum TransferError {
+  INVALID_ADDRESS = 'INVALID_ADDRESS',
   INVALID_RECIPIENT = 'INVALID_RECIPIENT',
   INVITE_ERROR = 'INVITE_ERROR',
   TRANSFER_ERROR = "TRANSFER_ERROR",
@@ -310,9 +314,36 @@ function saveValidatedRecipient(context: TransferContext, event: any) {
 
 async function validateRecipient(context: TransferContext, event: any) {
   const { input } = event
-  const recipient = await validateTargetUser(context, input)
+  let phoneNumber = input;
+  let checksumAddress: string;
+  if(input.startsWith('0x')){
+    try {
+      checksumAddress = ethers.getAddress(input)
+    } catch (error: any) {
+      throw new MachineError(TransferError.INVALID_ADDRESS, error.message)
+    }
+    const phoneNumber = await getPhoneNumberFromAddress(checksumAddress, context.connections.db, context.connections.redis.persistent)
+    if(!phoneNumber){
+      logger.warn(`No account found for address ${input}.`)
+      const tag = tHelpers('unknownAddress', context.user.account.language)
+      return { address: checksumAddress, tag }
+    }
+  }
+
+  if(input.length === 6){
+    const address = await getAddressFromTill(context.connections.graphql, context.connections.redis.persistent, input)
+    if (!address) {
+      throw new MachineError(BaseMachineError.UNKNOWN_TILL_OR_VPA, `No account found for till: ${input}`)
+    }
+    phoneNumber = await getPhoneNumberFromAddress(address, context.connections.db, context.connections.redis.persistent)
+    if(!phoneNumber){
+      throw new MachineError(BaseMachineError.UNKNOWN_ADDRESS, `Account not found for address: ${address}.`)
+    }
+  }
+
+  const recipient = await validateTargetUser(context, phoneNumber)
   if (!recipient) {
-    throw new MachineError(TransferError.INVALID_RECIPIENT, "Invalid recipient.")
+      throw new MachineError(TransferError.INVALID_RECIPIENT, `No account found for recipient: ${input}`)
   }
   return { address: recipient.account.address, tag: recipient.tag }
 }

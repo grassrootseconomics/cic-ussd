@@ -1,17 +1,16 @@
-import { PostgresDb } from '@fastify/postgres';
-import { GraphQLClient } from 'graphql-request';
-import { Provider } from 'ethers';
-import { Redis as RedisClient } from 'ioredis';
-import { getAddressFromTill, getAddressFromVpa, Notifier, Ussd, validatePhoneNumber } from '@lib/ussd';
-import { logger } from '@/app';
-import { User, UserService } from '@services/user';
-import { BaseMachineError, MachineError } from '@lib/errors';
-import { CountryCode } from 'libphonenumber-js';
-import { translate } from '@i18n/translators';
-import { StateMachine } from 'xstate';
-import { getPhoneNumberFromAddress } from '@services/account';
-import { NamespaceFeedbackTranslation } from '@i18n/i18n-types';
-import { LocalizedString } from 'typesafe-i18n';
+import {PostgresDb} from '@fastify/postgres';
+import {GraphQLClient} from 'graphql-request';
+import {Provider} from 'ethers';
+import {Redis as RedisClient} from 'ioredis';
+import {Notifier, Ussd, validatePhoneNumber} from '@lib/ussd';
+import {logger} from '@/app';
+import {User, UserService} from '@services/user';
+import {BaseMachineError, MachineError} from '@lib/errors';
+import {CountryCode} from 'libphonenumber-js';
+import {translate} from '@i18n/translators';
+import {StateMachine} from 'xstate';
+import {NamespaceFeedbackTranslation} from '@i18n/i18n-types';
+import {LocalizedString} from 'typesafe-i18n';
 
 export enum MachineId {
   AUTH = "auth",
@@ -133,23 +132,8 @@ export async function validateUser(countryCode: CountryCode, db: PostgresDb, pho
 }
 
 export async function validateTargetUser(context: UserContext, input: string) {
-  const { user, connections: { db, graphql, redis }, ussd: { countryCode } } = context
-
-  let address, phoneNumber;
-  if(input.length === 6 || input.startsWith('0x')){
-    address = await (input.startsWith('0x') ? getAddressFromVpa : getAddressFromTill)(graphql, redis.persistent, input)
-    if(!address) {
-      throw new MachineError(BaseMachineError.UNKNOWN_TILL_OR_VPA, `Account not found for till or vpa: ${input}.`)
-    }
-    phoneNumber = await getPhoneNumberFromAddress(address, db, redis.persistent)
-    if (!phoneNumber) {
-      throw new MachineError(BaseMachineError.UNKNOWN_ADDRESS, `Account not found for address: ${address}.`)
-    }
-  } else {
-    phoneNumber = input
-  }
-
-  const targetUser = await validateUser(countryCode, db, phoneNumber, redis.persistent)
+  const { user, connections: { db, redis }, ussd: { countryCode } } = context
+  const targetUser = await validateUser(countryCode, db, input, redis.persistent)
 
   if (user?.account.phone_number === targetUser?.account?.phone_number) {
     throw new MachineError(BaseMachineError.SELF_INTERACTION, "Cannot interact with self.")
