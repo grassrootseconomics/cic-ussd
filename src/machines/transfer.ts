@@ -10,7 +10,7 @@ import {
   validateTargetUser
 } from '@machines/utils';
 import { isBlocked, isValidPin, validatePin } from '@machines/auth';
-import { custodialTransfer } from '@lib/custodail';
+import { custodialTransfer } from '@lib/custodial';
 import { createTracker, TaskType } from '@db/models/custodailTasks';
 import { BaseMachineError, ContextError, MachineError, SystemError } from '@lib/errors';
 import {cashRounding, getAddressFromTill, sendSMS, validatePhoneNumber} from '@lib/ussd';
