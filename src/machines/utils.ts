@@ -96,10 +96,14 @@ export const isOption11 = generateOptionChecker('11');
 export const isOption22 = generateOptionChecker('22');
 
 export async function intermediateMachineTranslations(context: UserContext, state: string, translator: any) {
-  const { user: { vouchers: { active: { balance, symbol } } } } = context
+  const { user: { account: {address}, vouchers: { active: { balance, symbol } } } } = context
   if (state === "mainMenu"){
     return await translate(state, translator, { balance: balance, symbol: symbol })
-  } else {
+  }
+  else if (state === "displayAddress"){
+    return await translate(state, translator, { address })
+  }
+  else {
     return await translate(state, translator)
   }
 }

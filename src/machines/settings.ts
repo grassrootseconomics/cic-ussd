@@ -6,6 +6,7 @@ import {
   isOption3,
   isOption4,
   isOption5,
+  isOption6,
   MachineEvent,
   MachineId,
   MachineInterface,
@@ -19,6 +20,12 @@ const stateMachine = createMachine<UserContext, MachineEvent>({
       balances: {
         description: 'Transitions to balances machine',
         type: 'final'
+      },
+      displayAddress: {
+          description: 'Displays the address of the current user.',
+          on: {
+            BACK: 'settingsMenu'
+          }
       },
       language: {
         description: 'Transitions to language machine',
@@ -45,7 +52,8 @@ const stateMachine = createMachine<UserContext, MachineEvent>({
             { target: 'language', cond: 'isOption2' },
             { target: 'balances', cond: 'isOption3' },
             { target: 'statement', cond: 'isOption4' },
-            { target: 'pinManagement', cond: 'isOption5' }
+            { target: 'pinManagement', cond: 'isOption5' },
+            { target: 'displayAddress', cond: 'isOption6'}
           ]
         }
       },
@@ -60,7 +68,8 @@ const stateMachine = createMachine<UserContext, MachineEvent>({
         isOption2,
         isOption3,
         isOption4,
-        isOption5
+        isOption5,
+        isOption6
     }
 })
 
