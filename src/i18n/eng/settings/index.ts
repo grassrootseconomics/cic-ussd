@@ -6,7 +6,8 @@ const { mainMenu } = eng_main
 const eng_settings: NamespaceSettingsTranslation = {
   mainMenu: mainMenu,
   settingsMenu:
-    'CON My Account\n1. Profile\n2. Change language\n3. Check balances\n4. Check statement\n5. PIN options\n0. Back'
+    'CON My Account\n1. Profile\n2. Change language\n3. Check balances\n4. Check statement\n5. PIN options\n6. My Address\n0. Back',
+  displayAddress: 'CON Address:\n{address}\n0. Back',
 }
 
 export default eng_settings

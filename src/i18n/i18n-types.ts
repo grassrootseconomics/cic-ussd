@@ -552,6 +552,7 @@ export type NamespaceProfileTranslation = {
 ​3​.​ ​A​n​g​a​l​i​a​ ​s​a​l​i​o​
 ​4​.​ ​T​a​a​r​i​f​a​ ​y​a​ ​m​a​t​u​m​i​z​i​
 ​5​.​ ​M​i​p​a​n​g​i​l​i​o​ ​y​a​ ​P​I​N​
+​6​.​ ​A​n​w​a​n​i​ ​y​a​n​g​u​
 ​0​.​ ​R​u​d​i
 	 */
 	settingsMenu: string
@@ -615,9 +616,17 @@ export type NamespaceSettingsTranslation = {
 ​3​.​ ​A​n​g​a​l​i​a​ ​s​a​l​i​o​
 ​4​.​ ​T​a​a​r​i​f​a​ ​y​a​ ​m​a​t​u​m​i​z​i​
 ​5​.​ ​M​i​p​a​n​g​i​l​i​o​ ​y​a​ ​P​I​N​
+​6​.​ ​A​n​w​a​n​i​ ​y​a​n​g​u​
 ​0​.​ ​R​u​d​i
 	 */
 	settingsMenu: string
+	/**
+	 * C​O​N​ ​A​n​w​a​n​i​:​
+​{​a​d​d​r​e​s​s​}​
+​0​.​ ​R​u​d​i
+	 * @param {unknown} address
+	 */
+	displayAddress: RequiredParams<'address'>
 }
 
 export type NamespaceSmsTranslation = {
@@ -1554,6 +1563,7 @@ export type TranslationFunctions = {
 	3. Angalia salio
 	4. Taarifa ya matumizi
 	5. Mipangilio ya PIN
+	6. Anwani yangu
 	0. Rudi
 		 */
 		settingsMenu: () => LocalizedString
@@ -1610,9 +1620,16 @@ export type TranslationFunctions = {
 	3. Angalia salio
 	4. Taarifa ya matumizi
 	5. Mipangilio ya PIN
+	6. Anwani yangu
 	0. Rudi
 		 */
 		settingsMenu: () => LocalizedString
+		/**
+		 * CON Anwani:
+	{address}
+	0. Rudi
+		 */
+		displayAddress: (arg: { address: unknown }) => LocalizedString
 	}
 	sms: {
 		/**

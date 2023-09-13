@@ -6,7 +6,8 @@ const { mainMenu } = gax_main
 const gax_settings: NamespaceSettingsTranslation = {
   mainMenu: mainMenu,
   settingsMenu:
-    'CON Akaunti khiy\n1. Profile khiy\n2. Afaan chaguad\n3. Balansi laalad\n4. Odhuu jalkaba laal\n5. Pin ta atin feet\n0. Dheebi'
+    'CON Akaunti khiy\n1. Profile khiy\n2. Afaan chaguad\n3. Balansi laalad\n4. Odhuu jalkaba laal\n5. Pin ta atin feet\n6. Adresi khiy\n0. Dheebi',
+  displayAddress: 'CON Adresi:\n{address}\n0. Dheebi',
 }
 
 export default gax_settings
