@@ -4,7 +4,7 @@ FROM node:18-alpine3.15 AS base
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install -g npm@latest
+RUN npm install -g npm@8.19.2
 RUN npm ci --omit=dev --omit=optional
 
 # build stage
