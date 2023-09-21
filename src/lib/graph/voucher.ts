@@ -2,7 +2,6 @@ import { GraphQLClient } from 'graphql-request';
 import { logger } from '@/app';
 
 export interface Voucher {
-  demurrage_rate: number
   id: number
   location_name: string
   sink_address: string
@@ -13,12 +12,10 @@ export interface Voucher {
 }
 
 export const voucherFields = `
-    demurrage_rate
     geo
     id
     location_name
     sink_address
-    supply
     symbol
     voucher_address
     voucher_description
