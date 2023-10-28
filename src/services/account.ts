@@ -136,6 +136,10 @@ export class AccountService {
     await new UserService(phoneNumber, this.redis).update(data)
   }
 
+  public async updateAddressSmsThreshold(addressSmsThreshold: number, phoneNumber: string) {
+    await this.updateCache(phoneNumber, { account: { address_sms_threshold: addressSmsThreshold } })
+  }
+
   public async updateLanguage(address: string, graphql: GraphQLClient, graphUserId: number, language: Locales, phoneNumber: string) {
     const results = await Promise.allSettled([
       new Account(this.db).setLanguage(phoneNumber, language),
