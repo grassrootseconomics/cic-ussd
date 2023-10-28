@@ -9,6 +9,7 @@ function stringToList (value: string | undefined): string[] | void {
 }
 
 export const config = {
+  ADDRESS_SMS_THRESHOLD: parseInt(process.env.ADDRESS_SMS_THRESHOLD ?? '5'),
   AT: {
     ACTIVE: process.env.AT_ACTIVE === 'true',
     API_KEY: process.env.AT_API_KEY ?? 'x',
