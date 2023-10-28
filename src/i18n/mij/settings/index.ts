@@ -7,7 +7,7 @@ const mij_settings: NamespaceSettingsTranslation = {
   mainMenu: mainMenu,
   settingsMenu:
     'CON Akaunti yangu\n1. Malagizo gangu\n2. Tsagula luga\n3. Lola sazo\n4. Lola tarifa\n5. Galuza PIN\n6. Adilesi yangu\n0. Uya Nyuma',
-  displayAddress: 'CON Adilesi:\n{address}\n0. Uya Nyuma',
+  displayAddress: 'END Adilesi:\n{address}',
 }
 
 export default mij_settings

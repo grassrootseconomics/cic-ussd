@@ -7,7 +7,7 @@ const swa_settings: NamespaceSettingsTranslation = {
   mainMenu: mainMenu,
   settingsMenu:
     'CON Akaunti yangu\n1. Wasifu wangu\n2. Badili lugha\n3. Angalia salio\n4. Taarifa ya matumizi\n5. Mipangilio ya PIN\n6. Anwani yangu\n0. Rudi',
-  displayAddress: 'CON Anwani:\n{address}\n0. Rudi',
+  displayAddress: 'END Anwani:\n{address}',
 
 }
 
