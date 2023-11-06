@@ -15,6 +15,7 @@ export interface AccountInterface {
   activated_on_chain: boolean
   activated_on_ussd: boolean
   address: string
+  address_sms_threshold?: number
   guardian: string // probably should be part of a different interface
   guardians?: string[]
   id: number

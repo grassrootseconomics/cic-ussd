@@ -1,24 +1,24 @@
-import { SessionInterface, SessionType } from '@db/models/session';
-import { RegistrationContext, registrationMachine } from '@machines/registration';
-import { AccountStatus } from '@db/models/account';
-import { AuthContext, authMachine, hashValue } from '@machines/auth';
-import { mainMachine } from '@machines/main';
-import { SessionService } from '@services/session';
-import { interpret, Interpreter, StateValue } from 'xstate';
-import { fallbackLanguage, languageOptions, tFeedback } from '@i18n/translators';
-import { BalancesContext, balancesMachine } from '@machines/balances';
-import { LanguagesContext, languagesMachine } from '@machines/languages';
-import { PinManagementContext, pinManagementMachine } from '@machines/pins';
-import { ProfileContext, profileMachine } from '@machines/profile';
-import { settingsMachine } from '@machines/settings';
-import { SocialRecoveryContext, socialRecoveryMachine } from '@machines/socialRecovery';
-import { StatementContext, statementMachine } from '@machines/statement';
-import { TransferContext, transferMachine } from '@machines/transfer';
-import { voucherMachine, VouchersContext } from '@machines/voucher';
-import { SystemError } from '@lib/errors';
-import { waitFor } from 'xstate/lib/waitFor';
-import { L } from '@i18n/i18n-node';
-import { Locales, NamespaceFeedbackTranslation } from '@i18n/i18n-types';
+import {SessionInterface, SessionType} from '@db/models/session';
+import {RegistrationContext, registrationMachine} from '@machines/registration';
+import {AccountStatus} from '@db/models/account';
+import {AuthContext, authMachine, hashValue} from '@machines/auth';
+import {mainMachine} from '@machines/main';
+import {SessionService} from '@services/session';
+import {interpret, Interpreter, StateValue} from 'xstate';
+import {fallbackLanguage, languageOptions, tFeedback} from '@i18n/translators';
+import {BalancesContext, balancesMachine} from '@machines/balances';
+import {LanguagesContext, languagesMachine} from '@machines/languages';
+import {PinManagementContext, pinManagementMachine} from '@machines/pins';
+import {ProfileContext, profileMachine} from '@machines/profile';
+import {SettingsContext, settingsMachine} from '@machines/settings';
+import {SocialRecoveryContext, socialRecoveryMachine} from '@machines/socialRecovery';
+import {StatementContext, statementMachine} from '@machines/statement';
+import {TransferContext, transferMachine} from '@machines/transfer';
+import {voucherMachine, VouchersContext} from '@machines/voucher';
+import {SystemError} from '@lib/errors';
+import {waitFor} from 'xstate/lib/waitFor';
+import {L} from '@i18n/i18n-node';
+import {Locales, NamespaceFeedbackTranslation} from '@i18n/i18n-types';
 import {
   BaseContext,
   MachineEvent,
@@ -28,9 +28,9 @@ import {
   NotifierContext,
   UserContext
 } from '@machines/utils';
-import { ActorMenu, mainMenu, pinManagementMenu, settingsMenu } from '@lib/menus';
-import { LocalizedString } from 'typesafe-i18n';
-import { config } from '@/config';
+import {ActorMenu, mainMenu, pinManagementMenu, settingsMenu} from '@lib/menus';
+import {LocalizedString} from 'typesafe-i18n';
+import {config} from '@/config';
 
 export type MachineContext =
   | AuthContext
@@ -41,6 +41,7 @@ export type MachineContext =
   | PinManagementContext
   | ProfileContext
   | RegistrationContext
+  | SettingsContext
   | SocialRecoveryContext
   | StatementContext
   | TransferContext
@@ -63,7 +64,7 @@ export const machines: MachineInterface[] = [
 ]
 
 // TODO[Philip]: "Notifiable" can be a machine attribute to insert the notifier to context in a cleaner way.
-export const notifyingMachines: MachineId[] = [MachineId.PIN_MANAGEMENT, MachineId.TRANSFER]
+export const notifyingMachines: MachineId[] = [MachineId.PIN_MANAGEMENT, MachineId.SETTINGS, MachineId.TRANSFER]
 
 class MachineService implements MachineServiceInterface {
 

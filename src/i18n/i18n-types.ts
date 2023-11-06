@@ -621,9 +621,8 @@ export type NamespaceSettingsTranslation = {
 	 */
 	settingsMenu: string
 	/**
-	 * C​O​N​ ​A​n​w​a​n​i​:​
-​{​a​d​d​r​e​s​s​}​
-​0​.​ ​R​u​d​i
+	 * E​N​D​ ​A​n​w​a​n​i​:​
+​{​a​d​d​r​e​s​s​}
 	 * @param {unknown} address
 	 */
 	displayAddress: RequiredParams<'address'>
@@ -1625,9 +1624,8 @@ export type TranslationFunctions = {
 		 */
 		settingsMenu: () => LocalizedString
 		/**
-		 * CON Anwani:
+		 * END Anwani:
 	{address}
-	0. Rudi
 		 */
 		displayAddress: (arg: { address: unknown }) => LocalizedString
 	}
