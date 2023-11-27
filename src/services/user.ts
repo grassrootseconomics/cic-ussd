@@ -87,6 +87,10 @@ async function parseFullGraphUser(users: Partial<GraphUser>[]) {
     graph.account.vpas = account.vpas
   }
 
+  if(user.personal_information) {
+    graph.personalInformation = user.personal_information
+  }
+
   return graph
 }
 
@@ -138,10 +142,16 @@ class ReconstructionService {
     let activeVoucher;
     if (heldVouchers.length > 0) {
       activeVoucher = heldVouchers.find((voucher) => voucher.address === this.account.active_voucher_address);
+      if (!activeVoucher) {
+        console.log(`Could not find active voucher ${this.account.active_voucher_address} in held vouchers, reconstructing active voucher.`)
+        activeVoucher = await this.reconstructActiveVoucher();
+        heldVouchers = [activeVoucher, ...heldVouchers];
+      }
     } else {
       activeVoucher = await this.reconstructActiveVoucher();
       heldVouchers = [activeVoucher];
     }
+
 
     if (!activeVoucher) {
       throw new SystemError(`Could not reconstruct active voucher for ${this.account.address}`);
@@ -209,7 +219,7 @@ export class UserService {
     const symbolMap = await generateSymbolMap(graphql, this.redis, transactions);
     const [activeVoucher, heldVouchers] = await reconstructionService.reconstructVouchers(symbolMap);
     const statement = await reconstructionService.reconstructStatement(db, transactions);
-    const tag = await getUserTag(account.phone_number, this.redis);
+    const tag = await generateUserTag(account.address, graphql, account.phone_number);
 
     let user: DeepPartial<User> = { account, graph, tag, vouchers: { active: activeVoucher, held: heldVouchers } }
 
