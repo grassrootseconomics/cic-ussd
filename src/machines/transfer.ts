@@ -13,12 +13,14 @@ import { isBlocked, isValidPin, validatePin } from '@machines/auth';
 import { custodialTransfer } from '@lib/custodail';
 import { createTracker, TaskType } from '@db/models/custodailTasks';
 import { BaseMachineError, ContextError, MachineError, SystemError } from '@lib/errors';
-import {cashRounding, getAddressFromTill, sendSMS, validatePhoneNumber} from '@lib/ussd';
+import {cashRounding, getAddressFromTill, getAddressFromVpa, sendSMS, validatePhoneNumber} from '@lib/ussd';
 import {tHelpers, translate, tSMS} from '@i18n/translators';
 import { config } from '@/config';
 import {getPhoneNumberFromAddress} from "@services/account";
 import {logger} from "@/app";
 import {ethers} from "ethers";
+
+const VPA_PATTERN = /^[a-zA-Z0-9]+@[a-zA-Z]+$/
 
 enum TransferError {
   INVALID_ADDRESS = 'INVALID_ADDRESS',
@@ -293,7 +295,7 @@ function isValidAmount(context: TransferContext, event: any) {
 }
 
 function isValidIdentifier(context: TransferContext, event: any) {
-  return event.input.length === 6 || event.input.startsWith('0x') || isValidPhoneNumber(context, event)
+  return event.input.length === 6 || event.input.startsWith('0x') || isValidPhoneNumber(context, event) || VPA_PATTERN.test(event.input)
 }
 
 function saveAmount(context: TransferContext, event: any) {
@@ -337,7 +339,20 @@ async function validateRecipient(context: TransferContext, event: any) {
     }
     phoneNumber = await getPhoneNumberFromAddress(address, context.connections.db, context.connections.redis.persistent)
     if(!phoneNumber){
-      throw new MachineError(BaseMachineError.UNKNOWN_ADDRESS, `Account not found for address: ${address}.`)
+      logger.warn(`No account found for till ${input}.`)
+      return { address: address, tag: address }
+    }
+  }
+
+  if (VPA_PATTERN.test(input)) {
+    const address = await getAddressFromVpa(context.connections.graphql, context.connections.redis.persistent, input)
+    if (!address) {
+      throw new MachineError(BaseMachineError.UNKNOWN_TILL_OR_VPA, `No account found for vpa: ${input}`)
+    }
+    phoneNumber = await getPhoneNumberFromAddress(address, context.connections.db, context.connections.redis.persistent)
+    if(!phoneNumber){
+      logger.warn(`No account found for VPA ${input}.`)
+      return { address: address, tag: address }
     }
   }
 
