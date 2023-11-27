@@ -1,6 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { Redis as RedisClient } from 'ioredis';
 import { UserService } from '@services/user';
+import {handleResults} from "@lib/ussd";
 
 
 export enum Gender { MALE = 'MALE', FEMALE = 'FEMALE' }
@@ -46,7 +47,7 @@ export interface GraphMarketplace {
 
 export interface GraphTransaction {
   sender_address: string;
-  date_block: number;
+  date_block: string;
   recipient_address: string;
   tx_hash: string;
   tx_value: number;
@@ -207,14 +208,9 @@ export async function getGraphPersonalInformation(address: string, graphql: Grap
   return data.personal_information[0]
 }
 
-export async function getFullGraphUserData(
-  address: string,
-  graphql: GraphQLClient,
-  interfaceIdentifier: string,
-  activated = true,
-  transactionsLimit = 9,
-  transactionSuccess = true){
-  const query = `query retrieveFullUserGraphData($activated: Boolean!, $address: String!, $interfaceIdentifier: String!, $transactionSuccess: Boolean!, $transactionsLimit: Int!) {
+
+async function retrieveUserGraphData(graphql: GraphQLClient, interfaceIdentifier: string, activated = true) {
+  const query = `query retrieveUserGraphData($activated: Boolean!, $interfaceIdentifier: String!) {
     users(where: {interface_identifier: {_eq: $interfaceIdentifier}, activated: {_eq: $activated}, interface_type: {_eq: USSD}}) {
       id
       accounts(limit: 1){
@@ -225,6 +221,19 @@ export async function getFullGraphUserData(
       }
       personal_information{ ${personalInformationFields} }
     }
+  }`
+
+  const variables = {
+    activated,
+    interfaceIdentifier
+  }
+
+    return await graphql.request<{ users: GraphUser[] }>(query, variables)
+}
+
+
+async function retrieveUserGraphTransactions(graphql: GraphQLClient, address: string, transactionSuccess: boolean, transactionsLimit: number) {
+  const query = `query retrieveUserGraphTransactions($address: String!, $transactionSuccess: Boolean!, $transactionsLimit: Int!) {
     transactions(where: {_or: [{recipient_address: {_eq: $address}}, {sender_address: {_eq: $address}}], success: {_eq: $transactionSuccess}}, limit: $transactionsLimit, order_by: {date_block: desc}) {
       recipient_address
       sender_address
@@ -234,16 +243,35 @@ export async function getFullGraphUserData(
       date_block
       tx_hash
     }
-  }`;
+  }`
 
   const variables = {
-    activated,
     address,
-    interfaceIdentifier,
     transactionSuccess,
     transactionsLimit
   }
-  return await graphql.request<{ users: GraphUser[], transactions: GraphTransaction[] }>(query, variables)
+
+  return await graphql.request<{ transactions: GraphTransaction[] }>(query, variables)
+}
+
+
+export async function getFullGraphUserData(
+  address: string,
+  graphql: GraphQLClient,
+  interfaceIdentifier: string,
+  activated = true,
+  transactionsLimit = 9,
+  transactionSuccess = true){
+
+  const promises: Promise<any>[] = []
+  promises.push(retrieveUserGraphData(graphql, interfaceIdentifier, activated))
+  promises.push(retrieveUserGraphTransactions(graphql, address, transactionSuccess, transactionsLimit))
+
+  const results = await handleResults(await Promise.allSettled(promises))
+  return {
+    users: results[0].users,
+    transactions: results[1].transactions
+  }
 }
 
 export async function updateGraphUser(graphql: GraphQLClient, id: number, user: Partial<GraphUser>): Promise<Partial<GraphUser>> {

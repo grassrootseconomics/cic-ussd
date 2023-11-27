@@ -1,9 +1,9 @@
-import { CachedVoucher, cashRounding, formatDate, getVoucherSymbol, handleResults } from '@lib/ussd';
+import { CachedVoucher, cashRounding, getVoucherSymbol, handleResults } from '@lib/ussd';
 import { PostgresDb } from '@fastify/postgres';
 import { Redis as RedisClient } from 'ioredis';
 import { ethers } from 'ethers';
 import { getPhoneNumberFromAddress } from '@services/account';
-import { getUserTag, User } from '@services/user';
+import {generateUserTag, User} from '@services/user';
 import { GraphQLClient } from 'graphql-request';
 import { GraphTransaction } from '@lib/graph/user';
 import { tHelpers } from '@i18n/translators';
@@ -25,12 +25,12 @@ export interface Transaction {
   value: number;
 }
 
-async function getTransferUserTag(address: string, db: PostgresDb, redis: RedisClient) {
+async function getTransferUserTag(address: string, db: PostgresDb, graphql: GraphQLClient, redis: RedisClient) {
   const phoneNumber = await getPhoneNumberFromAddress(address, db, redis);
   if (!phoneNumber) {
     return null;
   }
-  return await getUserTag(phoneNumber, redis);
+  return await generateUserTag(address, graphql, phoneNumber);
 }
 
 export async function generateStatement(
@@ -55,7 +55,7 @@ export async function generateStatement(
 
   const userTags = await Promise.allSettled(
     Array.from(addressSet).map(async (addr) => {
-      const userTag = await getTransferUserTag(addr, db, redis);
+      const userTag = await getTransferUserTag(addr, db, graphql, redis);
       return [addr, userTag];
     }),
   );
@@ -84,7 +84,7 @@ export async function generateStatement(
           recipient,
           value: cashRounding(ethers.formatUnits(transaction.tx_value, 6)),
           symbol,
-          timestamp: await formatDate(transaction.date_block),
+          timestamp: transaction.date_block,
           transactionHash: transaction.tx_hash,
           type: transactionType,
         };
