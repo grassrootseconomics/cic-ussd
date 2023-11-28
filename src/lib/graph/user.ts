@@ -185,9 +185,8 @@ export async function getGraphAddressFromTill(graphql: GraphQLClient, till: stri
 export async function getGraphAddressFromVpa(graphql: GraphQLClient, vpa: string) {
   const query = `query GetAddressFromVpa($vpa: String!) {
       vpa(where: {vpa: {_eq: $vpa}}) {
-        account {
-          blockchain_address
-      }
+        account {blockchain_address}
+        }
     }`
 
   const variables = {
