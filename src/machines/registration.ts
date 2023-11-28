@@ -10,7 +10,7 @@ import {
   updateErrorMessages
 } from '@machines/utils';
 import { ErrorCodes, MachineError, SystemError } from '@lib/errors';
-import { createWallet } from '@lib/custodail';
+import { createWallet } from '@lib/custodial';
 import { createTracker, TaskType } from '@db/models/custodailTasks';
 import { AccountService } from '@services/account';
 import { createGraphAccount, createGraphUser, GraphAccountTypes } from '@lib/graph/user';

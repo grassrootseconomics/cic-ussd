@@ -3,7 +3,7 @@ import { GraphQLClient } from 'graphql-request';
 import { ethers, Provider } from 'ethers';
 import { Redis as RedisClient } from 'ioredis';
 import { Codec, JsMsg, JSONCodec } from 'nats';
-import { RegistrationEvent, TransferEvent } from '@lib/custodail';
+import { RegistrationEvent, TransferEvent } from '@lib/custodial';
 import { AccountService, getPhoneNumberFromAddress } from '@services/account';
 import { SystemError } from '@lib/errors';
 import {
