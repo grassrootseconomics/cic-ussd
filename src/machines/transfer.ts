@@ -19,6 +19,7 @@ import { config } from '@/config';
 import {getPhoneNumberFromAddress} from "@services/account";
 import {logger} from "@/app";
 import {ethers} from "ethers";
+import iconv from "iconv-lite"
 
 const VPA_PATTERN = /^[a-zA-Z0-9]+@[a-zA-Z]+$/
 
@@ -318,6 +319,17 @@ async function validateRecipient(context: TransferContext, event: any) {
   const { input } = event
   let phoneNumber = input;
   let checksumAddress: string;
+
+  logger.debug({
+    user: context.user.account,
+    inputUtf8Buffer: iconv.encode(input, "utf8")
+  }, "input as utf8 buffer")
+  
+  logger.debug({
+    user: context.user.account,
+    inputLatin1Buffer: iconv.encode(input, "ISO-8859-1")
+  }, "input as latin1 buffer")
+
   if(input.startsWith('0x')){
     try {
       checksumAddress = ethers.getAddress(input)
