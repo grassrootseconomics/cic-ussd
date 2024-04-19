@@ -316,19 +316,11 @@ function saveValidatedRecipient(context: TransferContext, event: any) {
 }
 
 async function validateRecipient(context: TransferContext, event: any) {
-  const { input } = event
+  let { input } = event
   let phoneNumber = input;
   let checksumAddress: string;
 
-  logger.debug({
-    user: context.user.account,
-    inputUtf8Buffer: iconv.encode(input, "utf8")
-  }, "input as utf8 buffer")
-  
-  logger.debug({
-    user: context.user.account,
-    inputLatin1Buffer: iconv.encode(input, "ISO-8859-1")
-  }, "input as latin1 buffer")
+  input = replaceInvalidChar(input)
 
   if(input.startsWith('0x')){
     try {
@@ -411,4 +403,11 @@ async function transferTranslations(context: TransferContext, state: string, tra
 export const transferMachine = {
   stateMachine,
   translate: transferTranslations
+}
+
+function replaceInvalidChar(inputString: string): string {
+  const isoCharCode = 161;
+  const atChar = "@";
+
+  return inputString.replace(new RegExp(String.fromCharCode(isoCharCode), 'g'), atChar);
 }

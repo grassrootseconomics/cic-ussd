@@ -31,15 +31,6 @@ export async function ATOnRequestHook(request: SessionRequest) {
 export async function ATPreHandlerHook(request: SessionRequest) {
   const { phoneNumber, sessionId, serviceCode, text } = request.body as ATRequest;
 
-  logger.debug({
-    inputUtf8Buffer: iconv.encode(text, "utf8"),
-    phoneNumber: phoneNumber,
-  }, "AT request as utf8 buffer")
-  
-  logger.debug({
-    inputLatin1Buffer: iconv.encode(text, "ISO-8859-1"),
-    phoneNumber: phoneNumber,
-  }, "AT reuqest text as latin1 buffer")
 
   const countryCode = await getCountryCode(phoneNumber)
   if (!countryCode) {
