@@ -336,17 +336,22 @@ async function validateRecipient(context: TransferContext, event: any) {
     }
   }
 
-  if(input.length === 6){
-    const address = await getAddressFromTill(context.connections.graphql, context.connections.redis.persistent, input)
-    if (!address) {
-      throw new MachineError(BaseMachineError.UNKNOWN_TILL_OR_VPA, `No account found for till: ${input}`)
-    }
-    phoneNumber = await getPhoneNumberFromAddress(address, context.connections.db, context.connections.redis.persistent)
-    if(!phoneNumber){
-      logger.warn(`No account found for till ${input}.`)
-      return { address: address, tag: address }
-    }
-  }
+  /**
+   * 
+   * Invalid if branch, we hit 6 chars VPA here which are never found, we are deprecating tills for now in any case.
+   * 
+   */
+  // if(input.length === 6){
+  //   const address = await getAddressFromTill(context.connections.graphql, context.connections.redis.persistent, input)
+  //   if (!address) {
+  //     throw new MachineError(BaseMachineError.UNKNOWN_TILL_OR_VPA, `No account found for till: ${input}`)
+  //   }
+  //   phoneNumber = await getPhoneNumberFromAddress(address, context.connections.db, context.connections.redis.persistent)
+  //   if(!phoneNumber){
+  //     logger.warn(`No account found for till ${input}.`)
+  //     return { address: address, tag: address }
+  //   }
+  // }
 
   if (VPA_PATTERN.test(input)) {
     const address = await getAddressFromVpa(context.connections.graphql, context.connections.redis.persistent, input)
